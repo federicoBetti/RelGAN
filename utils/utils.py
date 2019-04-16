@@ -52,7 +52,7 @@ def pre_train_epoch(sess, g_pretrain_op, g_pretrain_loss, x_real, data_loader):
     data_loader.reset_pointer()
 
     for it in range(data_loader.num_batch):
-        if it % 10 == 20:
+        if np.mod(it, 20) == 0:
             print("Trained the batch {} over {}".format(it, data_loader.num_batch))
         batch = data_loader.next_batch()
         _, g_loss = sess.run([g_pretrain_op, g_pretrain_loss], feed_dict={x_real: batch})
