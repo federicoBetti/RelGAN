@@ -11,6 +11,16 @@ from utils.ops import gradient_penalty
 
 EPS = 1e-10
 
+from tensorflow.python.client import device_lib
+
+
+def get_available_gpus():
+    local_device_protos = device_lib.list_local_devices()
+    return [x.name for x in local_device_protos if x.device_type == 'GPU']
+
+
+get_available_gpus()
+
 
 # A function to initiate the graph and train the networks
 def real_train(generator, discriminator, oracle_loader, config):
@@ -63,7 +73,7 @@ def real_train(generator, discriminator, oracle_loader, config):
 
     # GAN / Divergence type
     log_pg, g_loss, d_loss = get_losses(d_out_real, d_out_fake, x_real_onehot, x_fake_onehot_appr,
-                                                    gen_o, discriminator, config)
+                                        gen_o, discriminator, config)
 
     # Global step
     global_step = tf.Variable(0, trainable=False)
@@ -108,6 +118,7 @@ def real_train(generator, discriminator, oracle_loader, config):
 
         print('Start pre-training...')
         for epoch in range(npre_epochs):
+            print("Pretrain epoch: {}".format(epoch))
             # pre-training
             g_pretrain_loss_np = pre_train_epoch(sess, g_pretrain_op, g_pretrain_loss, x_real, oracle_loader)
 
@@ -382,7 +393,7 @@ def get_fixed_temperature(temper, i, N, adapt):
     elif adapt == 'sigmoid':
         temper_var_np = (temper - 1) * 1 / (1 + np.exp((N / 2 - i) * 20 / N)) + 1  # sigmoid increase
     elif adapt == 'quad':
-        temper_var_np = (temper - 1) / (N - 1)**2 * i ** 2 + 1
+        temper_var_np = (temper - 1) / (N - 1) ** 2 * i ** 2 + 1
     elif adapt == 'sqrt':
         temper_var_np = (temper - 1) / np.sqrt(N - 1) * np.sqrt(i) + 1
     else:
