@@ -1,11 +1,11 @@
-import numpy as np
-import tensorflow as tf
-from tqdm import tqdm
 import time
-from utils.metrics.Nll import Nll
+
+from tqdm import tqdm
+
 from utils.metrics.DocEmbSim import DocEmbSim
-from utils.utils import *
+from utils.metrics.Nll import Nll
 from utils.ops import gradient_penalty
+from utils.utils import *
 
 EPS = 1e-10
 

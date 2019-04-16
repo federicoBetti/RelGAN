@@ -40,7 +40,7 @@ parser.add_argument('--temperature', default=1000, type=float, help='the largest
 # evaluation
 parser.add_argument('--nll-oracle', default=False, action='store_true', help='if using nll-oracle metric')
 parser.add_argument('--nll-gen', default=False, action='store_true', help='if using nll-gen metric')
-parser.add_argument('--bleu', default=False, action='store_true', help='if using bleu metric, [2,3,4,5]')
+parser.add_argument('--bleu', default=True, action='store_true', help='if using bleu metric, [2,3,4,5]')
 parser.add_argument('--selfbleu', default=False, action='store_true', help='if using selfbleu metric, [2,3,4,5]')
 parser.add_argument('--doc-embsim', default=False, action='store_true', help='if using DocEmbSim metric')
 
@@ -50,7 +50,7 @@ parser.add_argument('--head-size', default=512, type=int, help="head size or mem
 parser.add_argument('--num-heads', default=2, type=int, help="number of heads")
 
 # Data
-parser.add_argument('--dataset', default='oracle', type=str, help='[oracle, image_coco, emnlp_news]')
+parser.add_argument('--dataset', default='image_coco', type=str, help='[oracle, image_coco, emnlp_news]')
 parser.add_argument('--vocab-size', default=5000, type=int, help="vocabulary size")
 parser.add_argument('--start-token', default=0, type=int, help="start token for a sentence")
 parser.add_argument('--seq-len', default=20, type=int, help="sequence length: [20, 40]")
