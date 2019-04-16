@@ -15,9 +15,10 @@ def generate_samples(sess, gen_x, batch_size, generated_num, output_file=None, g
     # Generate Samples
     print("Generate Samples")
     generated_samples = []
-    max_gen = int(generated_num / batch_size) - 155  # 156
+    max_gen = int(generated_num / batch_size)  # 156
     for ii in range(max_gen):
-        print("generated {} over {}".format(ii, max_gen))
+        if ii % 10 == 0:
+            print("generated {} over {}".format(ii, max_gen))
         generated_samples.extend(sess.run(gen_x))
     print("Samples Generated")
     codes = list()
@@ -51,7 +52,8 @@ def pre_train_epoch(sess, g_pretrain_op, g_pretrain_loss, x_real, data_loader):
     data_loader.reset_pointer()
 
     for it in range(data_loader.num_batch):
-        print("Trained the batch {} over {}".format(it, data_loader.num_batch))
+        if it % 10 == 20:
+            print("Trained the batch {} over {}".format(it, data_loader.num_batch))
         batch = data_loader.next_batch()
         _, g_loss = sess.run([g_pretrain_op, g_pretrain_loss], feed_dict={x_real: batch})
         supervised_g_losses.append(g_loss)
