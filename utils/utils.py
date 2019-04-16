@@ -58,6 +58,8 @@ def pre_train_epoch(sess, g_pretrain_op, g_pretrain_loss, x_real, data_loader):
         _, g_loss = sess.run([g_pretrain_op, g_pretrain_loss], feed_dict={x_real: batch})
         supervised_g_losses.append(g_loss)
 
+    tf.summary.scalar("loss/generator/pretrain_loss", tf.reduce_mean(supervised_g_losses))
+
     return np.mean(supervised_g_losses)
 
 
