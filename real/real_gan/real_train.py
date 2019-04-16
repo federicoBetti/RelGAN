@@ -124,7 +124,7 @@ def real_train(generator, discriminator, oracle_loader, config):
 
             # Test
             ntest_pre = 10
-            if np.mod(epoch, ntest_pre) == 0 and epoch>0:
+            if np.mod(epoch, ntest_pre) == 0:
                 # generate fake data and create batches
                 gen_save_file = os.path.join(sample_dir, 'pre_samples_{:05d}.txt'.format(epoch))
                 generate_samples(sess, x_fake, batch_size, num_sentences, gen_file)
@@ -134,6 +134,7 @@ def real_train(generator, discriminator, oracle_loader, config):
                 # write summaries
                 print("Computing Metrics and writing summaries")
                 scores = [metric.get_score() for metric in metrics]
+                print("Scores computed")
                 metrics_summary_str = sess.run(metric_summary_op, feed_dict=dict(zip(metrics_pl, scores)))
                 sum_writer.add_summary(metrics_summary_str, epoch)
 
