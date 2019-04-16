@@ -132,7 +132,7 @@ def real_train(generator, discriminator, oracle_loader, config):
                 get_real_test_file(gen_file, gen_text_file, index_word_dict)
 
                 # write summaries
-                print("writing summaries")
+                print("Computing Metrics and writing summaries")
                 scores = [metric.get_score() for metric in metrics]
                 metrics_summary_str = sess.run(metric_summary_op, feed_dict=dict(zip(metrics_pl, scores)))
                 sum_writer.add_summary(metrics_summary_str, epoch)
