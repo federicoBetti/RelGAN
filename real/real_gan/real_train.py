@@ -164,13 +164,9 @@ def real_train(generator, discriminator, oracle_loader, config):
                 # write summaries
                 print("Computing Metrics and writing summaries")
                 scores = [metric.get_score() for metric in metrics]
-                print("Scores: {}".format(scores))
-                print("metrics_pl: {}".format(metrics_pl))
-                print("Scores computed")
                 metrics_summary_str = sess.run(metric_summary_op, feed_dict=dict(zip(metrics_pl, scores)))
                 sum_writer.add_summary(metrics_summary_str, epoch)
 
-                print("summaries wrtitten")
                 msg = 'pre_gen_epoch:' + str(epoch) + ', g_pre_loss: %.4f' % g_pretrain_loss_np
                 metric_names = [metric.get_name() for metric in metrics]
                 for (name, score) in zip(metric_names, scores):
@@ -222,6 +218,12 @@ def real_train(generator, discriminator, oracle_loader, config):
                 get_real_test_file(gen_file, gen_save_file, index_word_dict)
                 get_real_test_file(gen_file, gen_text_file, index_word_dict)
 
+                # take sentences from saved files
+                sent = take_sentences(gen_text_file)
+                sent = random.choice(sent)  # pick just one sentence
+                generated_strings_summary = sess.run(gen_sentences, feed_dict={gen_sentences_placeholder: sent})
+                sum_writer.add_summary(generated_strings_summary, niter + npre_epochs)
+
                 # write summaries
                 scores = [metric.get_score() for metric in metrics]
                 metrics_summary_str = sess.run(metric_summary_op, feed_dict=dict(zip(metrics_pl, scores)))
@@ -238,6 +240,16 @@ def real_train(generator, discriminator, oracle_loader, config):
 
 # A function to get different GAN losses
 def get_losses(d_out_real, d_out_fake, x_real_onehot, x_fake_onehot_appr, gen_o, discriminator, config):
+    '''
+    :param d_out_real: output del discriminatore ricevuto in input una frase reale
+    :param d_out_fake: output del discriminatore ricevuto in input l'output del generatore
+    :param x_real_onehot: input reale in one-hot
+    :param x_fake_onehot_appr: frasi generate dal generatore in one hot
+    :param gen_o: distribuzione di probabilità sulle parole della frase generata dal generatore
+    :param discriminator: discriminator
+    :param config: args passed as input
+    :return:
+    '''
     batch_size = config['batch_size']
     gan_type = config['gan_type']
 
@@ -253,6 +265,8 @@ def get_losses(d_out_real, d_out_fake, x_real_onehot, x_fake_onehot_appr, gen_o,
         g_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
             logits=d_out_fake, labels=tf.ones_like(d_out_fake)
         ))
+
+        # d_loss_fake e g_loss sono esattamente in contrapposizione, uno punta a 0 e uno a 1 con gli stessi dati
 
     elif gan_type == 'JS':  # the vanilla GAN loss
         d_loss_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
@@ -319,6 +333,16 @@ def get_losses(d_out_real, d_out_fake, x_real_onehot, x_fake_onehot_appr, gen_o,
 
 # A function to calculate the gradients and get training operations
 def get_train_ops(config, g_pretrain_loss, g_loss, d_loss, log_pg, temperature, global_step):
+    '''
+    :param config:
+    :param g_pretrain_loss: final loss del generatore in pretrain
+    :param g_loss: final loss del generatore in adv
+    :param d_loss: final loss del discriminatore
+    :param log_pg:
+    :param temperature:
+    :param global_step:
+    :return: ritorna i tre tensori che se 'runnati' fanno un epoca di train rispettivamente per gen_pretrain, gen_adv e discr_adv
+    '''
     optimizer_name = config['optimizer']
     nadv_steps = config['nadv_steps']
     d_lr = config['d_lr']
