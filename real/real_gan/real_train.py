@@ -1,5 +1,8 @@
+import random
+
 import numpy as np
 import tensorflow as tf
+from tensorflow.python.framework.errors_impl import NotFoundError
 from tqdm import tqdm
 import time
 from utils.metrics.Nll import Nll
@@ -105,8 +108,26 @@ def real_train(generator, discriminator, oracle_loader, config):
     # Metric Summaries
     metrics_pl, metric_summary_op = get_metric_summary_op(config)
 
+    # Placeholder for generator pretrain loss
+    gen_pretrain_loss_placeholder = tf.placeholder(tf.float32, name='pretrain_loss_placeholder')
+    gen_pretrain_loss = tf.summary.scalar('generator/pretrain_loss', gen_pretrain_loss_placeholder)
+
+    # Placeholder for generated text
+    gen_sentences_placeholder = tf.placeholder(tf.string, name='generated_sentences_placeholder')
+    gen_sentences = tf.summary.text('generator/generated_sentences', gen_sentences_placeholder)
+
+    saver = tf.train.Saver()
+
     # ------------- initial the graph --------------
     with init_sess() as sess:
+        restore_model = False
+        if restore_model:
+            try:
+                # Restore variables from disk.
+                saver.restore(sess, "/tmp/model.ckpt")
+                print("Model restored.")
+            except NotFoundError:
+                a = 1  # to continue
         log = open(csv_file, 'w')
         sum_writer = tf.summary.FileWriter(os.path.join(log_dir, 'summary'), sess.graph)
 
@@ -121,6 +142,9 @@ def real_train(generator, discriminator, oracle_loader, config):
             print("Pretrain epoch: {}".format(epoch))
             # pre-training
             g_pretrain_loss_np = pre_train_epoch(sess, g_pretrain_op, g_pretrain_loss, x_real, oracle_loader)
+            pretrain_summary = sess.run(gen_pretrain_loss,
+                                        feed_dict={gen_pretrain_loss_placeholder: g_pretrain_loss_np})
+            sum_writer.add_summary(pretrain_summary, epoch)
 
             # Test
             ntest_pre = 10
@@ -128,12 +152,20 @@ def real_train(generator, discriminator, oracle_loader, config):
                 # generate fake data and create batches
                 gen_save_file = os.path.join(sample_dir, 'pre_samples_{:05d}.txt'.format(epoch))
                 generate_samples(sess, x_fake, batch_size, num_sentences, gen_file)
-                get_real_test_file(gen_file, gen_save_file, index_word_dict)
-                get_real_test_file(gen_file, gen_text_file, index_word_dict)
+                get_real_test_file(gen_file, gen_save_file, index_word_dict)  # qua salvo ogni volta
+                get_real_test_file(gen_file, gen_text_file, index_word_dict)  # qua sovrascrivo l'ultima
+
+                # take sentences from saved files
+                sent = take_sentences(gen_text_file)
+                sent = random.choice(sent)  # pick just one sentence
+                generated_strings_summary = sess.run(gen_sentences, feed_dict={gen_sentences_placeholder: sent})
+                sum_writer.add_summary(generated_strings_summary, epoch)
 
                 # write summaries
                 print("Computing Metrics and writing summaries")
                 scores = [metric.get_score() for metric in metrics]
+                print("Scores: {}".format(scores))
+                print("metrics_pl: {}".format(metrics_pl))
                 print("Scores computed")
                 metrics_summary_str = sess.run(metric_summary_op, feed_dict=dict(zip(metrics_pl, scores)))
                 sum_writer.add_summary(metrics_summary_str, epoch)
@@ -146,6 +178,13 @@ def real_train(generator, discriminator, oracle_loader, config):
                 print(msg)
                 log.write(msg)
                 log.write('\n')
+
+                # Save the variables to disk.
+                # model_path = os.path.join("tmp", "model.ckpt")
+                # save_path = saver.save(sess, model_path)
+                # print("Model saved in path: %s" % save_path)
+                # send_mail(files=[os.path.join("tmp", f) for f in os.listdir("tmp")],
+                #           text="Model saved at epoch {} of pretrain, time: {}".format(epoch, time.time()))
 
         print('Start adversarial training...')
         progress = tqdm(range(nadv_steps))

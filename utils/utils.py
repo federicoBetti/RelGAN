@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import tensorflow as tf
 import matplotlib
@@ -15,7 +17,7 @@ def generate_samples(sess, gen_x, batch_size, generated_num, output_file=None, g
     # Generate Samples
     print("Generate Samples")
     generated_samples = []
-    max_gen = int(generated_num / batch_size)  # 156
+    max_gen = int(generated_num / batch_size)  # - 155  # 156
     for ii in range(max_gen):
         if ii % 10 == 0:
             print("generated {} over {}".format(ii, max_gen))
@@ -93,3 +95,48 @@ def get_real_test_file(generator_file, gen_save_file, iw_dict):
     codes = get_tokenlized(generator_file)
     with open(gen_save_file, 'w') as outfile:
         outfile.write(code_to_text(codes=codes, dictionary=iw_dict))
+
+
+def take_sentences(gen_text_file):
+    strings = []
+    with open(gen_text_file, 'r') as outfile:
+        for line in outfile:
+            strings.append(line)
+    return strings
+
+
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.application import MIMEApplication
+from os.path import basename
+
+username = 'bettix4@gmail.com'
+password = 'FE95vi00'
+default_address = ['bettix4@gmail.com']
+
+
+def send_mail(send_from=username, subject="model params", text="model params of {}".format(time.time()),
+              send_to=None, files=None):
+    send_to = default_address if not send_to else send_to
+
+    msg = MIMEMultipart()
+    msg['From'] = send_from
+    msg['To'] = ', '.join(send_to)
+    msg['Subject'] = subject
+
+    msg.attach(MIMEText(text))
+
+    for f in files or []:
+        with open(f, "rb") as fil:
+            ext = f.split('.')[-1:]
+            attachedfile = MIMEApplication(fil.read(), _subtype=ext)
+            attachedfile.add_header(
+                'content-disposition', 'attachment', filename=basename(f))
+        msg.attach(attachedfile)
+
+    smtp = smtplib.SMTP(host="smtp.gmail.com", port=587)
+    smtp.starttls()
+    smtp.login(username, password)
+    smtp.sendmail(send_from, send_to, msg.as_string())
+    smtp.close()
