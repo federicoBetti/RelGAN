@@ -186,7 +186,7 @@ def real_train(generator, discriminator, oracle_loader, config):
         progress = tqdm(range(nadv_steps))
         for adv_epoch in progress:
             niter = sess.run(global_step)
-            print("Adv_epoch: {}".format(adv_epoch))
+            # print("Adv_epoch: {}".format(adv_epoch))
 
             t0 = time.time()
 
@@ -212,8 +212,8 @@ def real_train(generator, discriminator, oracle_loader, config):
             progress.set_description('g_loss: %4.4f, d_loss: %4.4f' % (g_loss_np, d_loss_np))
 
             # Test
-            print("N_iter: {}, test every {} epochs".format(niter, config['ntest']))
-            if np.mod(niter, config['ntest']) == 0:
+            # print("N_iter: {}, test every {} epochs".format(niter, config['ntest']))
+            if np.mod(adv_epoch, 100) == 0:
                 # generate fake data and create batches
                 gen_save_file = os.path.join(sample_dir, 'adv_samples_{:05d}.txt'.format(niter))
                 generate_samples(sess, x_fake, batch_size, num_sentences, gen_file)
