@@ -157,7 +157,7 @@ def real_train(generator, discriminator, oracle_loader, config):
 
                 # take sentences from saved files
                 sent = take_sentences(gen_text_file)
-                sent = random.choice(sent)  # pick just one sentence
+                sent = random.sample(sent, 5)  # pick just one sentence
                 generated_strings_summary = sess.run(gen_sentences, feed_dict={gen_sentences_placeholder: sent})
                 sum_writer.add_summary(generated_strings_summary, epoch)
 
@@ -184,8 +184,9 @@ def real_train(generator, discriminator, oracle_loader, config):
 
         print('Start adversarial training...')
         progress = tqdm(range(nadv_steps))
-        for _ in progress:
+        for adv_epoch in progress:
             niter = sess.run(global_step)
+            print("Adv_epoch: {}".format(adv_epoch))
 
             t0 = time.time()
 
@@ -211,6 +212,7 @@ def real_train(generator, discriminator, oracle_loader, config):
             progress.set_description('g_loss: %4.4f, d_loss: %4.4f' % (g_loss_np, d_loss_np))
 
             # Test
+            print("N_iter: {}, test every {} epochs".format(niter, config['ntest']))
             if np.mod(niter, config['ntest']) == 0:
                 # generate fake data and create batches
                 gen_save_file = os.path.join(sample_dir, 'adv_samples_{:05d}.txt'.format(niter))
@@ -220,7 +222,7 @@ def real_train(generator, discriminator, oracle_loader, config):
 
                 # take sentences from saved files
                 sent = take_sentences(gen_text_file)
-                sent = random.choice(sent)  # pick just one sentence
+                sent = random.sample(sent, 5)  # pick just one sentence
                 generated_strings_summary = sess.run(gen_sentences, feed_dict={gen_sentences_placeholder: sent})
                 sum_writer.add_summary(generated_strings_summary, niter + npre_epochs)
 
@@ -251,7 +253,7 @@ def get_losses(d_out_real, d_out_fake, x_real_onehot, x_fake_onehot_appr, gen_o,
     :return:
     '''
     batch_size = config['batch_size']
-    gan_type = config['gan_type']
+    gan_type = config['gan_type']  # select the gan loss type
 
     if gan_type == 'standard':  # the non-satuating GAN loss
         d_loss_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
