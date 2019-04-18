@@ -15,7 +15,7 @@ pp = pprint.PrettyPrinter()
 
 def generate_samples(sess, gen_x, batch_size, generated_num, output_file=None, get_code=True):
     # Generate Samples
-    print("Generate Samples")
+    print("Generating Samples...", end="  ")
     generated_samples = []
     max_gen = int(generated_num / batch_size)  # - 155  # 156
     for ii in range(max_gen):
@@ -36,7 +36,7 @@ def generate_samples(sess, gen_x, batch_size, generated_num, output_file=None, g
     for sent in generated_samples:
         buffer = ' '.join([str(x) for x in sent]) + '\n'
         codes += buffer
-    print("Return from generated samples")
+
     return codes
 
 

@@ -41,7 +41,7 @@ class Bleu(Metrics):
             # In-place shuffle
             random.shuffle(reference)
             len_ref = len(reference)
-            reference = reference[:int(self.portion*len_ref)]
+            reference = reference[:int(self.portion * len_ref)]
 
             self.reference = reference
 
