@@ -18,12 +18,10 @@ def generator(x_real, temperature, vocab_size, batch_size, seq_len, gen_emb_dim,
     init_states = gen_mem.initial_state(batch_size)
 
     # ---------- generate tokens and approximated one-hot results (Adversarial) ---------
-    gen_o = tensor_array_ops.TensorArray(dtype=tf.float32, size=seq_len, dynamic_size=False, infer_shape=True,
-                                         name="gen_o_TensorArray")
-    gen_x = tensor_array_ops.TensorArray(dtype=tf.int32, size=seq_len, dynamic_size=False, infer_shape=True,
-                                         name="gen_x_TensorArray")
+    gen_o = tensor_array_ops.TensorArray(dtype=tf.float32, size=seq_len, dynamic_size=False, infer_shape=True)
+    gen_x = tensor_array_ops.TensorArray(dtype=tf.int32, size=seq_len, dynamic_size=False, infer_shape=True)
     gen_x_onehot_adv = tensor_array_ops.TensorArray(dtype=tf.float32, size=seq_len, dynamic_size=False,
-                                                    infer_shape=True, name="gen_x_onehot_adv_TensorArray")
+                                                    infer_shape=True)
 
     def _gen_recurrence(i, x_t, h_tm1, gen_o, gen_x, gen_x_onehot_adv):
         mem_o_t, h_t = gen_mem(x_t, h_tm1)  # hidden_memory_tuple, output della memoria che si potrebbe riutilizzare
@@ -63,10 +61,9 @@ def generator(x_real, temperature, vocab_size, batch_size, seq_len, gen_emb_dim,
     # ----------- pre-training for generator -----------------
     x_emb = tf.transpose(tf.nn.embedding_lookup(g_embeddings, x_real), perm=[1, 0, 2],
                          name="input_embedding")  # seq_len x batch_size x emb_dim
-    g_predictions = tensor_array_ops.TensorArray(dtype=tf.float32, size=seq_len, dynamic_size=False, infer_shape=True,
-                                                 name="g_predictions_TensorArray")
+    g_predictions = tensor_array_ops.TensorArray(dtype=tf.float32, size=seq_len, dynamic_size=False, infer_shape=True)
 
-    ta_emb_x = tensor_array_ops.TensorArray(dtype=tf.float32, size=seq_len, name="input_embedding_TensorArray")
+    ta_emb_x = tensor_array_ops.TensorArray(dtype=tf.float32, size=seq_len)
     ta_emb_x = ta_emb_x.unstack(x_emb)
 
     def _pretrain_recurrence(i, x_t, h_tm1, g_predictions):
