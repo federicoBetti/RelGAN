@@ -209,7 +209,7 @@ def create_output_unit(output_size, vocab_size):
 
 def add_gumbel(o_t, eps=1e-10):
     """Sample from Gumbel(0, 1)"""
-    with tf.variable_scope("Gumbel softmax"):
+    with tf.variable_scope("Gumbel_ softmax"):
         u = tf.random_uniform(tf.shape(o_t), minval=0, maxval=1, dtype=tf.float32)
         g_t = -tf.log(-tf.log(u + eps) + eps)
         gumbel_t = tf.add(o_t, g_t)
