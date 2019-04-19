@@ -366,7 +366,7 @@ def get_train_ops(config, g_pretrain_loss, g_loss, d_loss, log_pg, temperature, 
 
     # generator pre-training
     pretrain_opt = tf.train.AdamOptimizer(gpre_lr, beta1=0.9, beta2=0.999, name="gen_pretrain_adam")
-    pretrain_grad, _ = tf.clip_by_global_norm(tf.gradients(g_pretrain_loss, g_vars, name="g_pretrain_gradients"),
+    pretrain_grad, _ = tf.clip_by_global_norm(tf.gradients(g_pretrain_loss, g_vars, name="gradients_g_pretrain"),
                                               grad_clip, name="g_pretrain_clipping")  # gradient clipping
     g_pretrain_op = pretrain_opt.apply_gradients(zip(pretrain_grad, g_vars))
 
@@ -391,7 +391,7 @@ def get_train_ops(config, g_pretrain_loss, g_loss, d_loss, log_pg, temperature, 
         raise NotImplementedError
 
     # gradient clipping
-    g_grads, _ = tf.clip_by_global_norm(tf.gradients(g_loss, g_vars, name="g_adv_gradients"), grad_clip,
+    g_grads, _ = tf.clip_by_global_norm(tf.gradients(g_loss, g_vars, name="gradients_g_adv"), grad_clip,
                                         name="g_adv_clipping")
     g_train_op = g_optimizer.apply_gradients(zip(g_grads, g_vars))
 
@@ -399,7 +399,7 @@ def get_train_ops(config, g_pretrain_loss, g_loss, d_loss, log_pg, temperature, 
     print('len of g_grads: {}'.format(len(g_grads)))
 
     # gradient clipping
-    d_grads, _ = tf.clip_by_global_norm(tf.gradients(d_loss, d_vars, name="d_adv_gradients"), grad_clip,
+    d_grads, _ = tf.clip_by_global_norm(tf.gradients(d_loss, d_vars, name="gradients_d_adv"), grad_clip,
                                         name="d_adv_clipping")
     d_train_op = d_optimizer.apply_gradients(zip(d_grads, d_vars))
 
