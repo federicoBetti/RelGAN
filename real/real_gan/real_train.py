@@ -1,3 +1,4 @@
+import datetime
 import random
 
 import numpy as np
@@ -129,7 +130,9 @@ def real_train(generator, discriminator, oracle_loader, config):
             except NotFoundError:
                 a = 1  # to continue
         log = open(csv_file, 'w')
-        sum_writer = tf.summary.FileWriter(os.path.join(log_dir, 'summary'), sess.graph)
+        file_suffix = "date: {}, normal RelGAN, pretrain epochs: {}, adv epochs: {}".format(datetime.datetime.now(),
+                                                                                            npre_epochs, nadv_steps)
+        sum_writer = tf.summary.FileWriter(os.path.join(log_dir, 'summary'), sess.graph, filename_suffix=file_suffix)
 
         # generate oracle data and create batches
         index_word_dict = get_oracle_file(data_file, oracle_file, seq_len)
@@ -262,11 +265,15 @@ def get_losses(d_out_real, d_out_fake, x_real_onehot, x_fake_onehot_appr, gen_o,
         d_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
             logits=d_out_fake, labels=tf.zeros_like(d_out_fake)
         ))
-        d_loss = d_loss_real + d_loss_fake
+        d_loss = d_loss_real + d_loss_fake  # todo + d_loss_topic_real + d_loss_topic_fake
 
         g_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
             logits=d_out_fake, labels=tf.ones_like(d_out_fake)
         ))
+
+        # g_loss_topic = ....
+        # todo
+        # g_loss = g_loss + g_loss_topic
 
         # d_loss_fake e g_loss sono esattamente in contrapposizione, uno punta a 0 e uno a 1 con gli stessi dati
 

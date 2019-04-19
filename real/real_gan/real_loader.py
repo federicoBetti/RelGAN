@@ -2,7 +2,12 @@ import numpy as np
 import random
 
 
-class RealDataLoader():
+class RealDataLoader:
+    """
+    This is a custom data loader for real data that it is used all over the code,
+    we can work here to add new data (topic-related data)
+    """
+
     def __init__(self, batch_size, seq_length, end_token=0):
         self.batch_size = batch_size
         self.token_stream = []

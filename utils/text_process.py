@@ -1,4 +1,6 @@
 # coding=utf-8
+from typing import Tuple
+
 import nltk
 
 
@@ -64,7 +66,12 @@ def get_dict(word_set):
 
 
 # get sequence length and dict size
-def text_precess(train_text_loc, test_text_loc=None):
+def text_precess(train_text_loc, test_text_loc=None) -> Tuple[int, int]:
+    '''
+    :param train_text_loc: train file
+    :param test_text_loc: test file
+    :return: sequence length of the longest sentences and dict size (how many different words)
+    '''
     train_tokens = get_tokenlized(train_text_loc)
     if test_text_loc is None:
         test_tokens = list()

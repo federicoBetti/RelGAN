@@ -3,6 +3,11 @@ import tensorflow as tf
 
 
 def hw_flatten(x):
+    """
+    Remove the useless third dimension \n
+    :param x: input tensor
+    :return: input tensor with the third dim removed
+    """
     return tf.reshape(x, shape=[-1, x.shape[1] * x.shape[2], x.shape[-1]])
 
 
@@ -101,6 +106,21 @@ def mlp(input_, output_sizes, act_func=tf.nn.relu, use_bias=True):
 
 
 def conv2d(input_, out_nums, k_h=2, k_w=1, d_h=2, d_w=1, stddev=None, sn=False, padding='SAME', scope=None):
+    """
+    This function create a Conv2D layer using Glorot initialization.
+    Usually width params are set to 1 since you want to do to Conv only between the same sentence \n
+    :param input_: input tensor (batch_size x seq_len x 1 x channels_dim)
+    :param out_nums: output channel dim
+    :param k_h: filter height
+    :param k_w: filter width (usually 1)
+    :param d_h: stride height
+    :param d_w: stride width (usually 1)
+    :param stddev: usually None, so that the Glorot initialization is done
+    :param sn:
+    :param padding: padding type for Pooling procedure
+    :param scope: scope name of the Conv2D layer
+    :return: the Conv2D layer to added in the graph
+    """
     in_nums = input_.get_shape().as_list()[-1]
     # Glorot initialization
     if stddev is None:
@@ -117,22 +137,29 @@ def conv2d(input_, out_nums, k_h=2, k_w=1, d_h=2, d_w=1, stddev=None, sn=False, 
     return conv
 
 
-def self_attention(x, ch, sn=False):
-    """self-attention for GAN"""
-    f = conv2d(x, ch // 8, k_h=1, d_h=1, sn=sn, scope='f_conv')  # [bs, h, w, c']
-    g = conv2d(x, ch // 8, k_h=1, d_h=1, sn=sn, scope='g_conv')  # [bs, h, w, c']
-    h = conv2d(x, ch, k_h=1, d_h=1, sn=sn, scope='h_conv')  # [bs, h, w, c]
+def self_attention(x, ch, sn=False, scope="conv_self_attention"):
+    """
+    'self-attention for GAN' \n
+    :param x: input tensor (batch_size x sentence_len_remained x 1 x channels)
+    :param ch: output channels dim
+    :param sn:
+    :return:
+    """
+    with tf.variable_scope(scope):
+        f = conv2d(x, ch // 8, k_h=1, d_h=1, sn=sn, scope='f_conv')  # [bs, h, w, c']
+        g = conv2d(x, ch // 8, k_h=1, d_h=1, sn=sn, scope='g_conv')  # [bs, h, w, c']
+        h = conv2d(x, ch, k_h=1, d_h=1, sn=sn, scope='h_conv')  # [bs, h, w, c]
 
-    # N = h * w
-    s = tf.matmul(hw_flatten(g), hw_flatten(f), transpose_b=True)  # # [bs, N, N]
+        # N = h * w
+        s = tf.matmul(hw_flatten(g), hw_flatten(f), transpose_b=True, name="self_attention_key_x_query")  # [bs, N, N]
 
-    beta = tf.nn.softmax(s, axis=-1)  # attention map
+        beta = tf.nn.softmax(s, axis=-1, name="self_attention_softmax")  # attention map
 
-    o = tf.matmul(beta, hw_flatten(h))  # [bs, N, C]
-    gamma = tf.get_variable("gamma", [1], initializer=tf.constant_initializer(0.0))
+        o = tf.matmul(beta, hw_flatten(h), name="self_attention_prob_x_values")  # [bs, N, C]
+        gamma = tf.get_variable("gamma", [1], initializer=tf.constant_initializer(0.0))
 
-    o = tf.reshape(o, [-1] + x.get_shape().as_list()[1:])  # [bs, h, w, C]
-    x = gamma * o + x
+        o = tf.reshape(o, [-1] + x.get_shape().as_list()[1:])  # [bs, h, w, C]
+        x = tf.add(gamma * o, x, name="add_self_attention_input")
 
     return x
 

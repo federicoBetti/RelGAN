@@ -202,6 +202,7 @@ class RelationalMemory(object):
         """
 
         for _ in range(self._num_blocks):
+            # Memoria 'modificata'
             attended_memory = self._multihead_attention(memory)  # [B, N, H * V]
 
             # Add a skip connection to the multiheaded attention's input.
@@ -237,16 +238,20 @@ class RelationalMemory(object):
         inputs_reshape = tf.expand_dims(inputs, 1)  # [B, 1, V * H]
 
         memory_plus_input = tf.concat([memory, inputs_reshape], axis=1)  # [B, N + 1, V * H]
+        # qua faccio la self-attention sulla memoria per determinare la M(t+1)
         next_memory = self._attend_over_memory(memory_plus_input)  # [B, N + 1, V * H]
 
         n = inputs_reshape.get_shape().as_list()[1]
-        next_memory = next_memory[:, :-n, :]  # [B, N, V * H]
+        next_memory = next_memory[:, :-n, :]  # [B, N, V * H], rimuovo la dimensione in più data dal'input
 
         if self._gate_style == 'unit' or self._gate_style == 'memory':
             self._input_gate, self._forget_gate = self._create_gates(inputs_reshape, memory)
             next_memory = self._input_gate * tf.tanh(next_memory)
             next_memory += self._forget_gate * memory
 
+        # semplicemente per l'output prendo la memoria e la rendo a una dimensione. Questa dimensione non è quella
+        # del vocabolario perchè poi questo output appena usctio passa attraverso un MLP.
+        # L'output deriva direttamente dalla nuova memoria, si potrebbe usare l'output per determinare lambda
         output = tf.reshape(next_memory, [batch_size, -1])
         return output, next_memory
 

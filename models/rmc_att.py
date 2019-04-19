@@ -24,10 +24,13 @@ def generator(x_real, temperature, vocab_size, batch_size, seq_len, gen_emb_dim,
                                                     infer_shape=True)
 
     def _gen_recurrence(i, x_t, h_tm1, gen_o, gen_x, gen_x_onehot_adv):
-        mem_o_t, h_t = gen_mem(x_t, h_tm1)  # hidden_memory_tuple
+        mem_o_t, h_t = gen_mem(x_t, h_tm1)  # hidden_memory_tuple, output della memoria che si potrebbe riutilizzare
         o_t = g_output_unit(mem_o_t)  # batch x vocab, logits not prob
+        # lambda_ = g_output_unit_lamda(mem_o_t) todo
         gumbel_t = add_gumbel(o_t)
+        # gumbel_t = (1-lambda_)*gumbel_t + lambda_*topic_vector todo
         next_token = tf.cast(tf.argmax(gumbel_t, axis=1), tf.int32)
+        #  + lambda * topic_related
         x_onehot_appr = tf.nn.softmax(tf.multiply(gumbel_t, temperature))  # one-hot-like, [batch_size x vocab_size]
         # x_tp1 = tf.matmul(x_onehot_appr, g_embeddings)  # approximated embeddings, [batch_size x emb_dim]
         x_tp1 = tf.nn.embedding_lookup(g_embeddings, next_token)  # embeddings, [batch_size x emb_dim]
@@ -86,9 +89,11 @@ def generator(x_real, temperature, vocab_size, batch_size, seq_len, gen_emb_dim,
 
 
 def discriminator(x_onehot, batch_size, seq_len, vocab_size, dis_emb_dim, num_rep, sn):
+    # Compute its embedding matrix
     d_embeddings = tf.get_variable('d_emb', shape=[vocab_size, dis_emb_dim],
                                    initializer=create_linear_initializer(vocab_size))
     input_x_re = tf.reshape(x_onehot, [-1, vocab_size])
+    # Multiply each input for its embedding matrix
     emb_x_re = tf.matmul(input_x_re, d_embeddings)
     emb_x = tf.reshape(emb_x_re, [batch_size, seq_len, dis_emb_dim])  # batch_size x seq_len x dis_emb_dim
 
