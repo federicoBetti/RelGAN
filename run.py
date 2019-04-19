@@ -15,6 +15,7 @@ parser.add_argument('--gf-dim', default=64, type=int, help='Number of filters to
 parser.add_argument('--df-dim', default=64, type=int, help='Number of filters to use for discriminator')
 parser.add_argument('--g-architecture', default='rmc_att', type=str, help='Architecture for generator')
 parser.add_argument('--d-architecture', default='rmc_att', type=str, help='Architecture for discriminator')
+parser.add_argument('--topic-architecture', default='standard', type=str, help='Architecture for topic discriminator')
 parser.add_argument('--gan-type', default='standard', type=str, help='Which type of GAN to use')
 parser.add_argument('--hidden-dim', default=32, type=int, help='only used for OrcaleLstm and lstm_vanilla (generator)')
 parser.add_argument('--sn', default=False, action='store_true', help='if using spectral norm')
@@ -33,7 +34,8 @@ parser.add_argument('--log-dir', default='./oracle/logs', type=str, help='Where 
 parser.add_argument('--sample-dir', default='./oracle/samples', type=str, help='Where to put samples during training')
 parser.add_argument('--optimizer', default='adam', type=str, help='training method')
 parser.add_argument('--decay', default=False, action='store_true', help='if decaying learning rate')
-parser.add_argument('--adapt', default='exp', type=str, help='temperature control policy: [no, lin, exp, log, sigmoid, quad, sqrt]')
+parser.add_argument('--adapt', default='exp', type=str,
+                    help='temperature control policy: [no, lin, exp, log, sigmoid, quad, sqrt]')
 parser.add_argument('--seed', default=123, type=int, help='for reproducing the results')
 parser.add_argument('--temperature', default=1000, type=float, help='the largest temperature')
 
@@ -99,7 +101,13 @@ def main():
         discriminator = models.get_discriminator(args.d_architecture, batch_size=args.batch_size, seq_len=seq_len,
                                                  vocab_size=vocab_size, dis_emb_dim=args.dis_emb_dim,
                                                  num_rep=args.num_rep, sn=args.sn)
-        real_train(generator, discriminator, oracle_loader, config)
+
+        topic_discriminator = models.get_topic_discriminator(args.topic_architecture, batch_size=args.batch_size,
+                                                             seq_len=seq_len, vocab_size=vocab_size,
+                                                             dis_emb_dim=args.dis_emb_dim, num_rep=args.num_rep,
+                                                             sn=args.sn)
+
+        real_train(generator, discriminator, topic_discriminator, oracle_loader, config)
 
     else:
         raise NotImplementedError('{}: unknown dataset!'.format(args.dataset))

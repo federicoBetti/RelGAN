@@ -207,6 +207,26 @@ def create_output_unit(output_size, vocab_size):
     return unit
 
 
+def create_output_unit_lambda(output_size, input_size, additive_scope="_lambda"):
+    """
+    create a one-layer MLP with sigmoid in the end
+    :param output_size: if lambda is a scalar it is one
+    :param vocab_size: input size
+    :param additive_scope:
+    :return:
+    """
+    Wo = tf.get_variable('Wo', shape=[input_size, output_size], initializer=create_linear_initializer(output_size))
+    bo = tf.get_variable('bo', shape=[output_size], initializer=create_bias_initializer())
+
+    def unit(hidden_mem_o):
+        with tf.variable_scope("output_unit" + additive_scope):
+            logits = tf.matmul(hidden_mem_o, Wo) + bo
+            logits = tf.sigmoid(logits)
+        return logits
+
+    return unit
+
+
 def add_gumbel(o_t, eps=1e-10):
     """Sample from Gumbel(0, 1)"""
     with tf.variable_scope("Gumbel_softmax"):

@@ -15,6 +15,10 @@ discriminator_dict = {
     'rmc_vdcnn': rmc_vdcnn.discriminator
 }
 
+discriminator__topic_dict = {
+    'standard': rmc_att.topic_discriminator
+}
+
 
 def get_generator(model_name, scope='generator', **kwargs):
     model_func = generator_dict[model_name]
@@ -23,4 +27,9 @@ def get_generator(model_name, scope='generator', **kwargs):
 
 def get_discriminator(model_name, scope='discriminator', **kwargs):
     model_func = discriminator_dict[model_name]
+    return tf.make_template(scope, model_func, **kwargs)
+
+
+def get_topic_discriminator(model_name, scope='topic_discriminator', **kwargs):
+    model_func = discriminator__topic_dict[model_name]
     return tf.make_template(scope, model_func, **kwargs)

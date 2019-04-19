@@ -27,7 +27,7 @@ get_available_gpus()
 
 
 # A function to initiate the graph and train the networks
-def real_train(generator, discriminator, oracle_loader, config):
+def real_train(generator, discriminator, topic_discriminator, oracle_loader, config):
     batch_size = config['batch_size']
     num_sentences = config['num_sentences']
     vocab_size = config['vocab_size']
@@ -165,10 +165,12 @@ def real_train(generator, discriminator, oracle_loader, config):
                 sum_writer.add_summary(generated_strings_summary, epoch)
 
                 # write summaries
-                print("Computing Metrics and writing summaries")
+                print("Computing Metrics and writing summaries", end=" ")
+                t = time.time()
                 scores = [metric.get_score() for metric in metrics]
                 metrics_summary_str = sess.run(metric_summary_op, feed_dict=dict(zip(metrics_pl, scores)))
                 sum_writer.add_summary(metrics_summary_str, epoch)
+                print("in {} seconds".format(time.time() - t))
 
                 msg = 'pre_gen_epoch:' + str(epoch) + ', g_pre_loss: %.4f' % g_pretrain_loss_np
                 metric_names = [metric.get_name() for metric in metrics]

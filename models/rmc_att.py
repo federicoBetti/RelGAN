@@ -7,12 +7,14 @@ from utils.ops import *
 def generator(x_real, temperature, vocab_size, batch_size, seq_len, gen_emb_dim, mem_slots, head_size, num_heads,
               hidden_dim, start_token):
     start_tokens = tf.constant([start_token] * batch_size, dtype=tf.int32)
-    output_size = mem_slots * head_size * num_heads
+    output_memory_size = mem_slots * head_size * num_heads
 
     g_embeddings = tf.get_variable('g_emb', shape=[vocab_size, gen_emb_dim],
                                    initializer=create_linear_initializer(vocab_size))
     gen_mem = RelationalMemory(mem_slots=mem_slots, head_size=head_size, num_heads=num_heads)
-    g_output_unit = create_output_unit(output_size, vocab_size)
+    g_output_unit = create_output_unit(output_memory_size, vocab_size)
+    g_output_unit_lambda = create_output_unit_lambda(output_size=1, input_size=output_memory_size,
+                                                     additive_scope="_lambda")
 
     # initial states
     init_states = gen_mem.initial_state(batch_size)
@@ -22,13 +24,19 @@ def generator(x_real, temperature, vocab_size, batch_size, seq_len, gen_emb_dim,
     gen_x = tensor_array_ops.TensorArray(dtype=tf.int32, size=seq_len, dynamic_size=False, infer_shape=True)
     gen_x_onehot_adv = tensor_array_ops.TensorArray(dtype=tf.float32, size=seq_len, dynamic_size=False,
                                                     infer_shape=True)
+    our_solution = False
 
     def _gen_recurrence(i, x_t, h_tm1, gen_o, gen_x, gen_x_onehot_adv):
         mem_o_t, h_t = gen_mem(x_t, h_tm1)  # hidden_memory_tuple, output della memoria che si potrebbe riutilizzare
         o_t = g_output_unit(mem_o_t)  # batch x vocab, logits not prob
-        # lambda_ = g_output_unit_lamda(mem_o_t) todo
+
         gumbel_t = add_gumbel(o_t)
-        # gumbel_t = (1-lambda_)*gumbel_t + lambda_*topic_vector todo
+        if our_solution:
+            lambda_param = g_output_unit_lambda(mem_o_t)
+            topic_vector = tf.ones_like(gumbel_t)  # todo
+            assert gumbel_t.shape.as_list() == topic_vector.shape.as_list()
+            gumbel_t = (1 - lambda_param) * gumbel_t + lambda_param * topic_vector
+
         next_token = tf.cast(tf.argmax(gumbel_t, axis=1), tf.int32)
         #  + lambda * topic_related
         x_onehot_appr = tf.nn.softmax(tf.multiply(gumbel_t, temperature, name="gumbel_x_temp"),
@@ -126,3 +134,7 @@ def discriminator(x_onehot, batch_size, seq_len, vocab_size, dis_emb_dim, num_re
     logits = tf.squeeze(logits, -1)  # batch_size
 
     return logits
+
+
+def topic_discriminator():
+    return None
