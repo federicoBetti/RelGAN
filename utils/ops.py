@@ -143,6 +143,7 @@ def self_attention(x, ch, sn=False, scope="conv_self_attention"):
     :param x: input tensor (batch_size x sentence_len_remained x 1 x channels)
     :param ch: output channels dim
     :param sn:
+    :param scope: scope name for the layer, useful for tensorboard
     :return:
     """
     with tf.variable_scope(scope):
