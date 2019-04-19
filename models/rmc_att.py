@@ -18,10 +18,12 @@ def generator(x_real, temperature, vocab_size, batch_size, seq_len, gen_emb_dim,
     init_states = gen_mem.initial_state(batch_size)
 
     # ---------- generate tokens and approximated one-hot results (Adversarial) ---------
-    gen_o = tensor_array_ops.TensorArray(dtype=tf.float32, size=seq_len, dynamic_size=False, infer_shape=True)
-    gen_x = tensor_array_ops.TensorArray(dtype=tf.int32, size=seq_len, dynamic_size=False, infer_shape=True)
+    gen_o = tensor_array_ops.TensorArray(dtype=tf.float32, size=seq_len, dynamic_size=False, infer_shape=True,
+                                         name="gen_o_TensorArray")
+    gen_x = tensor_array_ops.TensorArray(dtype=tf.int32, size=seq_len, dynamic_size=False, infer_shape=True,
+                                         name="gen_x_TensorArray")
     gen_x_onehot_adv = tensor_array_ops.TensorArray(dtype=tf.float32, size=seq_len, dynamic_size=False,
-                                                    infer_shape=True)
+                                                    infer_shape=True, name="gen_x_onehot_adv_TensorArray")
 
     def _gen_recurrence(i, x_t, h_tm1, gen_o, gen_x, gen_x_onehot_adv):
         mem_o_t, h_t = gen_mem(x_t, h_tm1)  # hidden_memory_tuple, output della memoria che si potrebbe riutilizzare
@@ -31,8 +33,10 @@ def generator(x_real, temperature, vocab_size, batch_size, seq_len, gen_emb_dim,
         # gumbel_t = (1-lambda_)*gumbel_t + lambda_*topic_vector todo
         next_token = tf.cast(tf.argmax(gumbel_t, axis=1), tf.int32)
         #  + lambda * topic_related
-        x_onehot_appr = tf.nn.softmax(tf.multiply(gumbel_t, temperature))  # one-hot-like, [batch_size x vocab_size]
+        x_onehot_appr = tf.nn.softmax(tf.multiply(gumbel_t, temperature, name="gumbel_x_temp"),
+                                      name="softmax_gumbel_temp")  # one-hot-like, [batch_size x vocab_size]
         # x_tp1 = tf.matmul(x_onehot_appr, g_embeddings)  # approximated embeddings, [batch_size x emb_dim]
+
         x_tp1 = tf.nn.embedding_lookup(g_embeddings, next_token)  # embeddings, [batch_size x emb_dim]
         gen_o = gen_o.write(i, tf.reduce_sum(tf.multiply(tf.one_hot(next_token, vocab_size, 1.0, 0.0),
                                                          tf.nn.softmax(o_t)), 1))  # [batch_size] , prob
@@ -44,22 +48,25 @@ def generator(x_real, temperature, vocab_size, batch_size, seq_len, gen_emb_dim,
         cond=lambda i, _1, _2, _3, _4, _5: i < seq_len,
         body=_gen_recurrence,
         loop_vars=(tf.constant(0, dtype=tf.int32), tf.nn.embedding_lookup(g_embeddings, start_tokens),
-                   init_states, gen_o, gen_x, gen_x_onehot_adv))
+                   init_states, gen_o, gen_x, gen_x_onehot_adv), name="while_adv_recurrence")
 
     gen_x = gen_x.stack()  # seq_len x batch_size
-    gen_x = tf.transpose(gen_x, perm=[1, 0])  # batch_size x seq_len
+    gen_x = tf.transpose(gen_x, perm=[1, 0], name="gen_x_trans")  # batch_size x seq_len
 
     gen_o = gen_o.stack()
-    gen_o = tf.transpose(gen_o, perm=[1, 0])
+    gen_o = tf.transpose(gen_o, perm=[1, 0], name="gen_o_trans")
 
     gen_x_onehot_adv = gen_x_onehot_adv.stack()
-    gen_x_onehot_adv = tf.transpose(gen_x_onehot_adv, perm=[1, 0, 2])  # batch_size x seq_len x vocab_size
+    gen_x_onehot_adv = tf.transpose(gen_x_onehot_adv, perm=[1, 0, 2],
+                                    name="gen_x_onehot_adv_trans")  # batch_size x seq_len x vocab_size
 
     # ----------- pre-training for generator -----------------
-    x_emb = tf.transpose(tf.nn.embedding_lookup(g_embeddings, x_real), perm=[1, 0, 2])  # seq_len x batch_size x emb_dim
-    g_predictions = tensor_array_ops.TensorArray(dtype=tf.float32, size=seq_len, dynamic_size=False, infer_shape=True)
+    x_emb = tf.transpose(tf.nn.embedding_lookup(g_embeddings, x_real), perm=[1, 0, 2],
+                         name="input_embedding")  # seq_len x batch_size x emb_dim
+    g_predictions = tensor_array_ops.TensorArray(dtype=tf.float32, size=seq_len, dynamic_size=False, infer_shape=True,
+                                                 name="g_predictions_TensorArray")
 
-    ta_emb_x = tensor_array_ops.TensorArray(dtype=tf.float32, size=seq_len)
+    ta_emb_x = tensor_array_ops.TensorArray(dtype=tf.float32, size=seq_len, name="input_embedding_TensorArray")
     ta_emb_x = ta_emb_x.unstack(x_emb)
 
     def _pretrain_recurrence(i, x_t, h_tm1, g_predictions):
@@ -73,17 +80,19 @@ def generator(x_real, temperature, vocab_size, batch_size, seq_len, gen_emb_dim,
         cond=lambda i, _1, _2, _3: i < seq_len,
         body=_pretrain_recurrence,
         loop_vars=(tf.constant(0, dtype=tf.int32), tf.nn.embedding_lookup(g_embeddings, start_tokens),
-                   init_states, g_predictions))
+                   init_states, g_predictions),
+        name="while_pretrain")
 
     g_predictions = tf.transpose(g_predictions.stack(),
-                                 perm=[1, 0, 2])  # batch_size x seq_length x vocab_size
+                                 perm=[1, 0, 2], name="g_predictions_trans")  # batch_size x seq_length x vocab_size
 
     # pretraining loss
-    pretrain_loss = -tf.reduce_sum(
-        tf.one_hot(tf.to_int32(tf.reshape(x_real, [-1])), vocab_size, 1.0, 0.0) * tf.log(
-            tf.clip_by_value(tf.reshape(g_predictions, [-1, vocab_size]), 1e-20, 1.0)
-        )
-    ) / (seq_len * batch_size)
+    with tf.variable_scope("pretrain_loss_computation"):
+        pretrain_loss = -tf.reduce_sum(
+            tf.one_hot(tf.to_int32(tf.reshape(x_real, [-1])), vocab_size, 1.0, 0.0) * tf.log(
+                tf.clip_by_value(tf.reshape(g_predictions, [-1, vocab_size]), 1e-20, 1.0)
+            )
+        ) / (seq_len * batch_size)
 
     return gen_x_onehot_adv, gen_x, pretrain_loss, gen_o
 

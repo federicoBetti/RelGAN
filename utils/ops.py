@@ -200,7 +200,8 @@ def create_output_unit(output_size, vocab_size):
     bo = tf.get_variable('bo', shape=[vocab_size], initializer=create_bias_initializer())
 
     def unit(hidden_mem_o):
-        logits = tf.matmul(hidden_mem_o, Wo) + bo
+        with tf.variable_scope("output_unit"):
+            logits = tf.matmul(hidden_mem_o, Wo) + bo
         return logits
 
     return unit
@@ -208,9 +209,10 @@ def create_output_unit(output_size, vocab_size):
 
 def add_gumbel(o_t, eps=1e-10):
     """Sample from Gumbel(0, 1)"""
-    u = tf.random_uniform(tf.shape(o_t), minval=0, maxval=1, dtype=tf.float32)
-    g_t = -tf.log(-tf.log(u + eps) + eps)
-    gumbel_t = tf.add(o_t, g_t)
+    with tf.variable_scope("Gumbel softmax"):
+        u = tf.random_uniform(tf.shape(o_t), minval=0, maxval=1, dtype=tf.float32)
+        g_t = -tf.log(-tf.log(u + eps) + eps)
+        gumbel_t = tf.add(o_t, g_t)
     return gumbel_t
 
 

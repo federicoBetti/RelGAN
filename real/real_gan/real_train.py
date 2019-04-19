@@ -259,17 +259,18 @@ def get_losses(d_out_real, d_out_fake, x_real_onehot, x_fake_onehot_appr, gen_o,
     gan_type = config['gan_type']  # select the gan loss type
 
     if gan_type == 'standard':  # the non-satuating GAN loss
-        d_loss_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-            logits=d_out_real, labels=tf.ones_like(d_out_real)
-        ))
-        d_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-            logits=d_out_fake, labels=tf.zeros_like(d_out_fake)
-        ))
-        d_loss = d_loss_real + d_loss_fake  # todo + d_loss_topic_real + d_loss_topic_fake
+        with tf.variable_scope("standard_GAN_loss"):
+            d_loss_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+                logits=d_out_real, labels=tf.ones_like(d_out_real)
+            ), name="d_loss_real")
+            d_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+                logits=d_out_fake, labels=tf.zeros_like(d_out_fake)
+            ), name="d_loss_fake")
+            d_loss = d_loss_real + d_loss_fake  # todo + d_loss_topic_real + d_loss_topic_fake
 
-        g_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-            logits=d_out_fake, labels=tf.ones_like(d_out_fake)
-        ))
+            g_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+                logits=d_out_fake, labels=tf.ones_like(d_out_fake)
+            ), name="g_loss")
 
         # g_loss_topic = ....
         # todo
@@ -364,8 +365,9 @@ def get_train_ops(config, g_pretrain_loss, g_loss, d_loss, log_pg, temperature, 
     grad_clip = 5.0  # keep the same with the previous setting
 
     # generator pre-training
-    pretrain_opt = tf.train.AdamOptimizer(gpre_lr, beta1=0.9, beta2=0.999)
-    pretrain_grad, _ = tf.clip_by_global_norm(tf.gradients(g_pretrain_loss, g_vars), grad_clip)  # gradient clipping
+    pretrain_opt = tf.train.AdamOptimizer(gpre_lr, beta1=0.9, beta2=0.999, name="gen_pretrain_adam")
+    pretrain_grad, _ = tf.clip_by_global_norm(tf.gradients(g_pretrain_loss, g_vars, name="g_pretrain_gradients"),
+                                              grad_clip, name="g_pretrain_clipping")  # gradient clipping
     g_pretrain_op = pretrain_opt.apply_gradients(zip(pretrain_grad, g_vars))
 
     # decide if using the weight decaying
@@ -375,8 +377,8 @@ def get_train_ops(config, g_pretrain_loss, g_loss, d_loss, log_pg, temperature, 
 
     # Adam optimizer
     if optimizer_name == 'adam':
-        d_optimizer = tf.train.AdamOptimizer(d_lr, beta1=0.9, beta2=0.999)
-        g_optimizer = tf.train.AdamOptimizer(gadv_lr, beta1=0.9, beta2=0.999)
+        d_optimizer = tf.train.AdamOptimizer(d_lr, beta1=0.9, beta2=0.999, name="discriminator_adam")
+        g_optimizer = tf.train.AdamOptimizer(gadv_lr, beta1=0.9, beta2=0.999, name="generator_adam")
         temp_optimizer = tf.train.AdamOptimizer(1e-2, beta1=0.9, beta2=0.999)
 
     # RMSProp optimizer
@@ -389,14 +391,16 @@ def get_train_ops(config, g_pretrain_loss, g_loss, d_loss, log_pg, temperature, 
         raise NotImplementedError
 
     # gradient clipping
-    g_grads, _ = tf.clip_by_global_norm(tf.gradients(g_loss, g_vars), grad_clip)
+    g_grads, _ = tf.clip_by_global_norm(tf.gradients(g_loss, g_vars, name="g_adv_gradients"), grad_clip,
+                                        name="g_adv_clipping")
     g_train_op = g_optimizer.apply_gradients(zip(g_grads, g_vars))
 
     print('len of g_grads without None: {}'.format(len([i for i in g_grads if i is not None])))
     print('len of g_grads: {}'.format(len(g_grads)))
 
     # gradient clipping
-    d_grads, _ = tf.clip_by_global_norm(tf.gradients(d_loss, d_vars), grad_clip)
+    d_grads, _ = tf.clip_by_global_norm(tf.gradients(d_loss, d_vars, name="d_adv_gradients"), grad_clip,
+                                        name="d_adv_clipping")
     d_train_op = d_optimizer.apply_gradients(zip(d_grads, d_vars))
 
     return g_pretrain_op, g_train_op, d_train_op
