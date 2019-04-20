@@ -1,5 +1,6 @@
 import os
 import re
+import time
 from typing import List
 import pandas as pd
 
@@ -33,13 +34,14 @@ def evaluate_num_topics(dictionary, corpus, texts, limit, passes, iterations, ra
     perplexity = []
     lm_list = []
     for num_top in range(1, limit):
+        t = time.time()
         print("Check with {} topics".format(num_top), end=" ")
         lm = LdaModel(corpus=corpus, num_topics=num_top, id2word=dictionary, eval_every=1,
                       passes=passes, iterations=iterations, random_state=random_state)
         lm_list.append(lm)
         cm_cv = CoherenceModel(model=lm, texts=texts, dictionary=dictionary, coherence='c_v')
         c_v.append(cm_cv.get_coherence())
-        print("with coherence of {}".format(cm_cv.get_coherence()))
+        print("with coherence of {} in {} sec".format(cm_cv.get_coherence(), time.time() - t))
 
     # Show graph
     return lm_list, c_v
