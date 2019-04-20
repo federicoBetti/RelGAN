@@ -8,11 +8,12 @@ from topic_modelling.lda_utils import *
 
 
 class LDA:
-    def __init__(self, lda_train, corpus_text, corpus_bow, stops):
+    def __init__(self, lda_train, corpus_text, corpus_bow, stops, topic_num=42):
         self.lda_model = lda_train
         self.corpus_text = corpus_text
         self.corpus_bow = corpus_bow
         self.stops = stops
+        self.topic_num = topic_num
 
     def __str__(self):
         return "This is the class with this LDA model: {}".format(self.lda_model)
@@ -103,22 +104,49 @@ def train_specific_LDA(corpus, num_top, passes, iterations, random_state_lda=3, 
     lda = LDA(lda_train=lda_train, corpus_text=corpus, corpus_bow=corpus_bow, stops=stops)
 
     with open(os.path.join("topic_models",
-                           'lda_model_ntop_{}_iter_{}_pass_{}.pkl'.format(num_top, iterations, passes)),
-              'wb') as handle:
+                           'lda_model_ntop_{}_iter_{}_pass_{}_chunk_{}.pkl'.format(num_top, iterations, passes,
+                                                                                   chunksize)), 'wb') as handle:
         pickle.dump(lda, handle, protocol=pickle.HIGHEST_PROTOCOL)
         print("New model saved")
     return lda
+
+
+def get_most_representative_sentence_per_topic(lda: LDA):
+    lda_model = lda.lda_model
+    data_ready = lda.corpus_text
+    corpus = lda.corpus_bow
+    # Display setting to show more characters in column
+    pd.options.display.max_colwidth = 100
+
+    df_topic_sents_keywords = format_topics_sentences(ldamodel=lda_model, corpus=corpus, texts=data_ready)
+    print("sentence key word taken")
+    sent_topics_sorteddf_mallet = pd.DataFrame()
+    sent_topics_outdf_grpd = df_topic_sents_keywords.groupby('Dominant_Topic')
+
+    for i, grp in sent_topics_outdf_grpd:
+        sent_topics_sorteddf_mallet = pd.concat([sent_topics_sorteddf_mallet,
+                                                 grp.sort_values(['Perc_Contribution'], ascending=False).head(1)],
+                                                axis=0)
+
+    # Reset Index
+    sent_topics_sorteddf_mallet.reset_index(drop=True, inplace=True)
+
+    # Format
+    sent_topics_sorteddf_mallet.columns = ['Topic_Num', "Topic_Perc_Contrib", "Keywords", "Representative Text"]
+
+    # Show
+    return sent_topics_sorteddf_mallet.head(42)
 
 
 if __name__ == '__main__':
     freeze_support()
     # lda_train_result = train_lda()
 
-    corpus = get_corpus()
-    lda = train_specific_LDA(corpus, num_top=42, passes=2, iterations=2, chunksize=2000)
+    corpus_raw = get_corpus()
+    lda = train_specific_LDA(corpus_raw, num_top=10, passes=2, iterations=2, chunksize=2000)
 
-    # lda_train_result = use_lda()
-    print("Texts: {}".format(lda.corpus_text[:10]))
-    df = get_dominant_topic_and_contribution(lda_model=lda.lda_model, corpus=lda.corpus_bow, texts=lda.corpus_text[:10],
-                                        stops=lda.stops)
+    # df = get_dominant_topic_and_contribution(lda_model=lda.lda_model, corpus=lda.corpus_bow, texts=lda.corpus_text[:10],
+    #                                          stops=lda.stops)
+    # df = get_most_representative_sentence_per_topic(lda)
+    word_cloud(lda)
     a = 1
