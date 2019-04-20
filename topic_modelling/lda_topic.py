@@ -1,60 +1,82 @@
-import re
+import os
+import pickle
+from multiprocessing.spawn import freeze_support
 
-import gensim
 from gensim.corpora import Dictionary
-from gensim.models import CoherenceModel, LdaModel
-from gensim.utils import lemmatize
+from gensim.models import LdaModel
 from nltk.corpus import stopwords
 
-
-def process_texts(input_texts):
-    final = []
-    for i in input_texts:
-        texts = (re.sub(r"http\S+", "", i))
-        # tokenize
-        texts = gensim.utils.simple_tokenize(texts)
-        # lower case
-        texts = [word.lower() for word in texts]
-        # remove stopwords
-        texts = [word for word in texts if word not in stops]
-
-        # automatically detect common phrases
-        texts = [str(word).split('/')[0].split('b\'')[1] for word in
-                 lemmatize(' '.join(texts), allowed_tags=re.compile('(NN)'), min_length=3)]
-
-        final.append(texts)
-    return final
+from topic_modelling.lda_utils import *
 
 
-def evaluate_num_topics(dictionary, corpus, texts, limit, passes, iterations, random_state):
-    c_v = []
-    c_uci = []
-    u_mass = []
-    perplexity = []
-    lm_list = []
-    for num_top in range(1, limit):
-        lm = LdaModel(corpus=corpus, num_topics=num_top, id2word=dictionary, eval_every=1,
-                      passes=passes, iterations=iterations, random_state=random_state)
-        lm_list.append(lm)
-        cm_cv = CoherenceModel(model=lm, texts=texts, dictionary=dictionary, coherence='c_v')
-        c_v.append(cm_cv.get_coherence())
+class LDA:
+    def __init__(self, lda_train, corpus, stops):
+        self.lda_model = lda_train
+        self.corpus = corpus
+        self.stops = stops
 
-    # Show graph
-    return lm_list, c_v
+    def __str__(self):
+        return "This is the class with this LDA model: {}".format(self.lda_model)
 
 
-def create_LDA_model(texts, limit, chunksize, iterations, passes, random_state_lda):
-    tmp = process_texts(texts)
+def create_LDA_model(texts, limit, chunksize, iterations, passes, random_state_lda, stops):
+    tmp = process_texts(texts, stops)
     dictionary = Dictionary(tmp)
     corpus = [dictionary.doc2bow(i) for i in tmp]
-    lm_list, c_v = evaluate_num_topics(dictionary, corpus, tmp, limit, chunksize, iterations, random_state_lda)
+    lm_list, c_v = evaluate_num_topics(dictionary, corpus, tmp, limit, passes, iterations, random_state_lda)
     num_top = c_v.index(max(c_v)) + 1
     lda_train = LdaModel(corpus=corpus, num_topics=num_top, id2word=dictionary,
-                         eval_every=1, passes=passes, chunksize=chunksize,
+                         eval_every=1, passes=passes,  # chunksize=chunksize,
                          iterations=iterations, random_state=random_state_lda)
+    lda = LDA(lda_train=lda_train, corpus=corpus, stops=stops)
     return lda_train
 
 
-stops = set(stopwords.words('english'))
-stops.add(u"amp")
-print(create_LDA_model(['Hi I am Giorgia'], 2, 2, 2, 2, 3))
+def get_dominant_topic_and_contribution(lda_model, corpus, texts, stops):
+    """
+    get dominant topic for each document considering the ones in the lda model with the given corpus \n
+    :param lda_model: lda model
+    :param corpus: corpus on which lda is trained
+    :param texts: text to evaluate the dominant topic on
+    :param stops: stop words
+    :return:
+    """
+    tmp = process_texts(texts, stops)
+    df_topic_sents_keywords = format_topics_sentences(ldamodel=lda_model, corpus=corpus, texts=tmp)
+
+    # Format
+    df_dominant_topic = df_topic_sents_keywords.reset_index()
+    df_dominant_topic.columns = ['Document_No', 'Dominant_Topic', 'Topic_Perc_Contrib', 'Keywords', 'Text']
+    df_dominant_topic.head(10)
+
+
+def train_lda():
+    stops = set(stopwords.words('english'))
+    print("Stops: {}".format(stops))
+    stops.add(u"amp")
+
+    corpus = get_corpus()
+    lda_train = create_LDA_model(corpus, limit=50, chunksize=2, iterations=2, passes=2, random_state_lda=3, stops=stops)
+    print(lda_train)
+
+    print("Computation finished")
+
+    with open(os.path.join("topic_modelling", 'lda_model.pkl'), 'wb') as handle:
+        pickle.dump(lda_train, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    return lda_train
+
+
+def use_lda():
+    with open(os.path.join("topic_modelling", 'lda_model.pkl'), 'rb') as handle:
+        lda_train = pickle.load(handle)
+
+    return lda_train
+
+
+if __name__ == '__main__':
+    freeze_support()
+    lda_train_result = train_lda()
+
+    # lda_train_result = use_lda()
+    # get_dominant_topic_and_contribution(lda_model=lda_train_result.lda_train, corpus=lda_train_result.corpus, stops=lda_train_result.stops)
