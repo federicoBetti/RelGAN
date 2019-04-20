@@ -33,22 +33,23 @@ def evaluate_num_topics(dictionary, corpus, texts, limit, passes, iterations, ra
     perplexity = []
     lm_list = []
     for num_top in range(1, limit):
+        print("Check with {} topics".format(num_top), end=" ")
         lm = LdaModel(corpus=corpus, num_topics=num_top, id2word=dictionary, eval_every=1,
                       passes=passes, iterations=iterations, random_state=random_state)
         lm_list.append(lm)
         cm_cv = CoherenceModel(model=lm, texts=texts, dictionary=dictionary, coherence='c_v')
         c_v.append(cm_cv.get_coherence())
+        print("with coherence of {}".format(cm_cv.get_coherence()))
 
     # Show graph
     return lm_list, c_v
 
 
 def get_corpus() -> List[str]:
-    fname = os.path.join("data", "image_coco.txt")
+    fname = os.path.join("..", "data", "image_coco.txt")
     with open(fname) as f:
         lines = [line.rstrip('\n') for line in f]
     return lines
-
 
 
 def format_topics_sentences(ldamodel, corpus, texts):

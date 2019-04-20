@@ -1,9 +1,7 @@
-import os
 import pickle
 from multiprocessing.spawn import freeze_support
 
 from gensim.corpora import Dictionary
-from gensim.models import LdaModel
 from nltk.corpus import stopwords
 
 from topic_modelling.lda_utils import *
