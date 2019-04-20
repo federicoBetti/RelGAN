@@ -91,6 +91,7 @@ def train_specific_LDA(corpus, num_top, passes, iterations, random_state_lda=3, 
                                                                                        chunksize)),
                   'rb') as handle:
             lda = pickle.load(handle)
+            print("Model loaded")
         return lda
     except FileNotFoundError:
         print("No model found")
@@ -101,7 +102,7 @@ def train_specific_LDA(corpus, num_top, passes, iterations, random_state_lda=3, 
     lda_train = LdaModel(corpus=corpus_bow, num_topics=num_top, id2word=dictionary,
                          eval_every=1, passes=passes, chunksize=chunksize,
                          iterations=iterations, random_state=random_state_lda)
-    lda = LDA(lda_train=lda_train, corpus_text=corpus, corpus_bow=corpus_bow, stops=stops)
+    lda = LDA(lda_train=lda_train, corpus_text=corpus, corpus_bow=corpus_bow, stops=stops, topic_num=num_top)
 
     with open(os.path.join("topic_models",
                            'lda_model_ntop_{}_iter_{}_pass_{}_chunk_{}.pkl'.format(num_top, iterations, passes,
@@ -143,7 +144,7 @@ if __name__ == '__main__':
     # lda_train_result = train_lda()
 
     corpus_raw = get_corpus()
-    lda = train_specific_LDA(corpus_raw, num_top=10, passes=2, iterations=2, chunksize=2000)
+    lda = train_specific_LDA(corpus_raw, num_top=3, passes=2, iterations=2, chunksize=2000)
 
     # df = get_dominant_topic_and_contribution(lda_model=lda.lda_model, corpus=lda.corpus_bow, texts=lda.corpus_text[:10],
     #                                          stops=lda.stops)

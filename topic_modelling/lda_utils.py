@@ -1,3 +1,4 @@
+import math
 import os
 import re
 import time
@@ -101,11 +102,14 @@ def word_cloud(lda):
 
     topics = lda_model.show_topics(formatted=False)
 
-    fig, axes = plt.subplots(2, 2, figsize=(10, 10), sharex=True, sharey=True)
+    fig, axes = plt.subplots(math.ceil(lda.topic_num/2), 2, figsize=(10, 10), sharex=True, sharey=True)
 
     for i, ax in enumerate(axes.flatten()):
         fig.add_subplot(ax)
-        topic_words = dict(topics[i][1])
+        try:
+            topic_words = dict(topics[i][1])
+        except IndexError:
+            continue
         cloud.generate_from_frequencies(topic_words, max_font_size=300)
         plt.gca().imshow(cloud)
         plt.gca().set_title('Topic ' + str(i), fontdict=dict(size=16))
