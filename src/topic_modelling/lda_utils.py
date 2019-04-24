@@ -8,6 +8,8 @@ import pandas as pd
 from gensim.models import LdaModel, CoherenceModel
 from gensim.utils import lemmatize, simple_tokenize
 
+from src.path_resolution import resources_path
+
 
 def process_texts(input_texts, stops):
     final = []
@@ -48,8 +50,11 @@ def evaluate_num_topics(dictionary, corpus, texts, limit, passes, iterations, ra
     return lm_list, c_v
 
 
-def get_corpus() -> List[str]:
-    fname = os.path.join("..", "data", "image_coco.txt")
+def get_corpus(coco=True) -> List[str]:
+    if coco:
+        fname = resources_path("data", "image_coco.txt")
+    else:
+        fname = resources_path("data", "emnlp_news.txt")
     with open(fname) as f:
         lines = [line.rstrip('\n') for line in f]
     return lines

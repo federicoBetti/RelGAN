@@ -4,7 +4,7 @@ from multiprocessing.spawn import freeze_support
 from gensim.corpora import Dictionary
 from nltk.corpus import stopwords
 
-from topic_modelling.lda_utils import *
+from src.topic_modelling.lda_utils import *
 
 
 class LDA:
@@ -74,7 +74,7 @@ def use_lda(model_name='lda_model.pkl'):
     return lda_train
 
 
-def train_specific_LDA(corpus, num_top, passes, iterations, random_state_lda=3, chunksize=2000) -> LDA:
+def train_specific_LDA(corpus, num_top, passes, iterations, random_state_lda=3, chunksize=2000, coco=True) -> LDA:
     '''
     create an LDA model if needed, if it has been already computed and saved, use that one \n
     :param corpus: corpus (plain text)
@@ -86,15 +86,17 @@ def train_specific_LDA(corpus, num_top, passes, iterations, random_state_lda=3, 
     :return:
     '''
     try:
-        with open(os.path.join("topic_models",
-                               'lda_model_ntop_{}_iter_{}_pass_{}_chunk_{}.pkl'.format(num_top, iterations, passes,
-                                                                                       chunksize)),
+        with open(resources_path("topic_models",
+                                 'lda_model_ntop_{}_iter_{}_pass_{}_chunk_{}_coco_{}.pkl'.format(num_top, iterations,
+                                                                                                 passes,
+                                                                                                 chunksize, coco)),
                   'rb') as handle:
             lda = pickle.load(handle)
             print("Model loaded")
         return lda
     except FileNotFoundError:
         print("No model found")
+    print("No model found!!!")
     stops = set(stopwords.words('english'))
     tmp = process_texts(corpus, stops)
     dictionary = Dictionary(tmp)
@@ -104,9 +106,10 @@ def train_specific_LDA(corpus, num_top, passes, iterations, random_state_lda=3, 
                          iterations=iterations, random_state=random_state_lda)
     lda = LDA(lda_train=lda_train, corpus_text=corpus, corpus_bow=corpus_bow, stops=stops, topic_num=num_top)
 
-    with open(os.path.join("topic_models",
-                           'lda_model_ntop_{}_iter_{}_pass_{}_chunk_{}.pkl'.format(num_top, iterations, passes,
-                                                                                   chunksize)), 'wb') as handle:
+    with open(resources_path("topic_models",
+                             'lda_model_ntop_{}_iter_{}_pass_{}_chunk_{}_coco_{}.pkl'.format(num_top, iterations,
+                                                                                             passes, chunksize, coco)),
+              'wb') as handle:
         pickle.dump(lda, handle, protocol=pickle.HIGHEST_PROTOCOL)
         print("New model saved")
     return lda
@@ -143,11 +146,12 @@ if __name__ == '__main__':
     freeze_support()
     # lda_train_result = train_lda()
 
-    corpus_raw = get_corpus()
-    lda = train_specific_LDA(corpus_raw, num_top=3, passes=2, iterations=2, chunksize=2000)
+    coco = False
+    corpus_raw = get_corpus(coco=coco)
+    lda = train_specific_LDA(corpus_raw, num_top=3, passes=2, iterations=2, chunksize=2000, coco=coco)
 
     # df = get_dominant_topic_and_contribution(lda_model=lda.lda_model, corpus=lda.corpus_bow, texts=lda.corpus_text[:10],
     #                                          stops=lda.stops)
     # df = get_most_representative_sentence_per_topic(lda)
-    word_cloud(lda)
+    # word_cloud(lda)
     a = 1
