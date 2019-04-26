@@ -1,2 +1,8 @@
 
-.idea/workspace.xml
+.idea/
+#tmp files
+src/tmp/
+
+# topic models
+resources/oracle/*
+resources/topic_models/*.pkl

@@ -1,0 +1,1 @@
+in this folder there will be the topic models saved by the system. They are not pushed on git
