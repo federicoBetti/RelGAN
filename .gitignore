@@ -7,4 +7,4 @@ src/tmp/
 resources/oracle/*
 resources/topic_models/*.pkl
 
-*/__pycache__/*
+/__pycache__/
