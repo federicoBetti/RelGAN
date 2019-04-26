@@ -68,7 +68,7 @@ def get_dict(word_set: list) -> Tuple[Dict, Dict]:
     return word_index_dict, index_word_dict
 
 
-def text_precess(train_text_loc, test_text_loc=None) -> Tuple[int, int, Any]:
+def text_precess(train_text_loc, test_text_loc=None) -> Tuple[int, int, dict, dict]:
     """
     Get sequence length and dict size \n
     :param train_text_loc: train file
@@ -92,4 +92,4 @@ def text_precess(train_text_loc, test_text_loc=None) -> Tuple[int, int, Any]:
     # with open(oracle_file, 'w') as outfile:
     #     outfile.write(text_to_code(tokens, word_index_dict, seq_len))
 
-    return sequence_len, len(word_index_dict) + 1, word_index_dict
+    return sequence_len, len(word_index_dict) + 1, word_index_dict, index_word_dict

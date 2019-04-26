@@ -1,3 +1,5 @@
+from typing import Dict
+
 import numpy as np
 import random
 
@@ -45,36 +47,37 @@ class RealDataLoader:
         self.sequence_batches = np.split(np.array(self.token_stream), self.num_batch, axis=0)
         self.pointer = 0
 
-    def next_batch(self):
+    def next_batch(self, only_text=True):
         ret = self.sequence_batches[self.pointer]
         self.pointer = (self.pointer + 1) % self.num_batch
-        return ret
+        if only_text:
+            return ret
+        return ret, None
 
-    def random_batch(self):
+    def random_batch(self, only_text=True):
         rn_pointer = random.randint(0, self.num_batch - 1)
         ret = self.sequence_batches[rn_pointer]
-        return ret
+        if only_text:
+            return ret
+        return ret, None
 
     def reset_pointer(self):
         self.pointer = 0
 
 
-def get_LDA(data_file):
-    pass
-
-
 class RealDataTopicLoader(RealDataLoader):
+    model_index_word_dict: Dict[str, str]
+    model_word_index_dict: Dict[str, int]
+
     def __init__(self, batch_size, seq_length):
         super().__init__(batch_size, seq_length)
+        self.vocab_size = None
         self.model_word_index_dict = None
+        self.model_index_word_dict = None
         self.sentence_topic_array = None
+        self.topic_batches = None
 
     def create_batches(self, data_file):
-        lda_model = train_lda(datapath=data_file)
-        # or, for a specific model
-        # corpus = get_corpus(datapath=data_file)
-        # lda = train_specific_LDA(corpus, num_top=3, passes=2, iterations=2, chunksize=2000, coco=coco)
-
         self.token_stream = []
 
         with open(data_file, 'r') as raw:
@@ -90,12 +93,40 @@ class RealDataTopicLoader(RealDataLoader):
                         self.token_stream.append(parse_line)
 
         self.num_batch = int(len(self.token_stream) / self.batch_size)
+
         self.token_stream = self.token_stream[:self.num_batch * self.batch_size]
+        self.sentence_topic_array = self.sentence_topic_array[:self.num_batch * self.batch_size]
+
         self.sequence_batches = np.split(np.array(self.token_stream), self.num_batch, axis=0)
+        self.topic_batches = np.split(np.array(self.sentence_topic_array), self.num_batch, axis=0)
+
         self.pointer = 0
 
-    def set_model_word_index_dict(self, word_index_dict):
+    def next_batch(self, only_text=True):
+        # with the parameter I can change only when needed
+        ret_sent = self.sequence_batches[self.pointer]
+        ret_topic = self.topic_batches[self.pointer]
+        self.pointer = (self.pointer + 1) % self.num_batch
+        if only_text:
+            return ret_sent
+        else:
+            return ret_sent, ret_topic
+
+    def random_batch(self, only_text=True):
+        # with the parameter I can change only when needed
+        rn_pointer = random.randint(0, self.num_batch - 1)
+        ret_sent = self.sequence_batches[rn_pointer]
+        ret_topic = self.topic_batches[rn_pointer]
+        if only_text:
+            return ret_sent
+        else:
+            return ret_sent, ret_topic
+
+    def set_dictionaries(self, word_index_dict: Dict[str, int], index_word_dict: Dict[str, str]):
         self.model_word_index_dict = word_index_dict
+        self.model_index_word_dict = index_word_dict
+        assert len(word_index_dict) == len(index_word_dict)
+        self.vocab_size = len(self.model_index_word_dict)
         self.sentence_topic_array = self.get_sentence_topic_array()
 
     def get_sentence_topic_array(self):
@@ -109,7 +140,7 @@ class RealDataTopicLoader(RealDataLoader):
 
         # Create LDA model for the dataset, given parameters
         topic_num = 3
-        coco = True # Now it is just coco or not coco just for name saving reasons, it's already possible to integrate any dataset in the data-dir folder
+        coco = True  # Now it is just coco or not coco just for name saving reasons, it's already possible to integrate any dataset in the data-dir folder
         corpus_raw = get_corpus(coco)
         lda = train_specific_LDA(corpus_raw, num_top=topic_num, passes=2, iterations=2, chunksize=2000, coco=coco)
 
