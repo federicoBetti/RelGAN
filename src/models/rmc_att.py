@@ -137,4 +137,5 @@ def discriminator(x_onehot, batch_size, seq_len, vocab_size, dis_emb_dim, num_re
 
 
 def topic_discriminator():
+    # todo find a model and create it
     return None

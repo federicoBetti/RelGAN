@@ -24,7 +24,7 @@ def process_texts(input_texts, stops):
 
         # automatically detect common phrases
         texts = [str(word).split('/')[0].split('b\'')[1] for word in
-                 lemmatize(' '.join(texts), allowed_tags=re.compile('(NN)'), min_length=3)]
+                 lemmatize(' '.join(texts), allowed_tags=re.compile('(NN)'), min_length=2)]
 
         final.append(texts)
     return final
@@ -50,35 +50,43 @@ def evaluate_num_topics(dictionary, corpus, texts, limit, passes, iterations, ra
     return lm_list, c_v
 
 
-def get_corpus(coco=True) -> List[str]:
-    if coco:
-        fname = resources_path("data", "image_coco.txt")
+def get_corpus(coco=True, datapath=None) -> List[str]:
+    if datapath is None:
+        if coco:
+            fname = resources_path("data", "image_coco.txt")
+        else:
+            fname = resources_path("data", "emnlp_news.txt")
     else:
-        fname = resources_path("data", "emnlp_news.txt")
+        fname = datapath
+
     with open(fname) as f:
         lines = [line.rstrip('\n') for line in f]
     return lines
 
 
-def format_topics_sentences(ldamodel, corpus, texts):
+def format_topics_sentences(ldamodel: LdaModel, corpus, texts):
     # Init output
     sent_topics_df = pd.DataFrame()
 
     # Get main topic in each document
     for i, row_list in enumerate(ldamodel[corpus]):
         row = row_list[0] if ldamodel.per_word_topics else row_list
-        # print(row)
-        row = sorted(row, key=lambda x: (x[1]), reverse=True)
+
+        # row = sorted(row, key=lambda x: (x[1]), reverse=True) # sort list to get dominant topic
         # Get the Dominant topic, Perc Contribution and Keywords for each document
+        to_append = []
         for j, (topic_num, prop_topic) in enumerate(row):
-            if j == 0:  # => dominant topic
-                wp = ldamodel.show_topic(topic_num)
-                topic_keywords = ", ".join([word for word, prop in wp])
-                sent_topics_df = sent_topics_df.append(
-                    pd.Series([int(topic_num), round(prop_topic, 4), topic_keywords]), ignore_index=True)
-            else:
-                break
-    sent_topics_df.columns = ['Dominant_Topic', 'Perc_Contribution', 'Topic_Keywords']
+            # if j == 0:  # => dominant topic
+            #     wp = ldamodel.show_topic(topic_num)
+            #     topic_keywords = ", ".join([word for word, prop in wp])
+            #     sent_topics_df = sent_topics_df.append(
+            #         pd.Series([int(topic_num), round(prop_topic, 4), topic_keywords]), ignore_index=True)
+            # else:
+            #     break
+            to_append.append(prop_topic)
+        sent_topics_df = sent_topics_df.append(
+            pd.Series(to_append), ignore_index=True)
+    sent_topics_df.columns = ["Topic {}".format(topic_number) for topic_number in range(len(to_append))]
 
     # Add original text to the end of the output
     contents = pd.Series(texts)
@@ -107,7 +115,7 @@ def word_cloud(lda):
 
     topics = lda_model.show_topics(formatted=False)
 
-    fig, axes = plt.subplots(math.ceil(lda.topic_num/2), 2, figsize=(10, 10), sharex=True, sharey=True)
+    fig, axes = plt.subplots(math.ceil(lda.topic_num / 2), 2, figsize=(10, 10), sharex=True, sharey=True)
 
     for i, ax in enumerate(axes.flatten()):
         fig.add_subplot(ax)
@@ -125,3 +133,27 @@ def word_cloud(lda):
     plt.margins(x=0, y=0)
     plt.tight_layout()
     plt.show()
+
+
+def get_perc_sent_topic(ldamodel, corpus, texts, stops):
+    # Init output
+    sent_topics_df = pd.DataFrame()
+    texts = process_texts(texts, stops)
+
+    # Get main topic in each document
+    for i, row_list in enumerate(ldamodel[corpus]):
+        row = row_list[0] if ldamodel.per_word_topics else row_list
+
+        # row = sorted(row, key=lambda x: (x[1]), reverse=True) # sort list to get dominant topic
+        # Get the Dominant topic, Perc Contribution and Keywords for each document
+        to_append = []
+        for j, (topic_num, prop_topic) in enumerate(row):
+            to_append.append(prop_topic)
+        sent_topics_df = sent_topics_df.append(pd.Series(to_append), ignore_index=True)
+    sent_topics_df.columns = ["Topic {}".format(topic_number) for topic_number in range(len(to_append))]
+
+    # Add original text to the end of the output
+    contents = pd.Series(texts)
+    sent_topics_df = pd.concat([sent_topics_df, contents], axis=1)
+    sent_topics_df = sent_topics_df.reset_index()
+    return sent_topics_df

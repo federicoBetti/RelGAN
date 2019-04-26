@@ -1,13 +1,14 @@
 import argparse
-from utils.utils import pp
+
 import models
-import os
+from oracle.oracle_gan.oracle_loader import OracleDataLoader
 from oracle.oracle_gan.oracle_train import oracle_train
+from path_resolution import resources_path
+from real.real_gan.real_loader import RealDataTopicLoader
 from real.real_gan.real_train import real_train
 from utils.models.OracleLstm import OracleLstm
-from oracle.oracle_gan.oracle_loader import OracleDataLoader
-from real.real_gan.real_loader import RealDataLoader
 from utils.text_process import text_precess
+from utils.utils import pp
 
 parser = argparse.ArgumentParser(description='Train and run a RmcGAN')
 # Architecture
@@ -86,13 +87,15 @@ def main():
         oracle_train(generator, discriminator, oracle_model, oracle_loader, gen_loader, config)
 
     elif args.dataset in ['image_coco', 'emnlp_news']:
-        data_file = os.path.join(args.data_dir, '{}.txt'.format(args.dataset))
-        seq_len, vocab_size = text_precess(data_file)
+        data_file = resources_path(args.data_dir, '{}.txt'.format(args.dataset))
+        seq_len, vocab_size, word_index_dict = text_precess(data_file)
         config['seq_len'] = seq_len
         config['vocab_size'] = vocab_size
         print('seq_len: %d, vocab_size: %d' % (seq_len, vocab_size))
 
-        oracle_loader = RealDataLoader(args.batch_size, args.seq_len)
+        oracle_loader = RealDataTopicLoader(args.batch_size, args.seq_len)
+        oracle_loader.set_model_word_index_dict(word_index_dict)
+        # oracle_loader = RealDataLoader(args.batch_size, args.seq_len)
 
         generator = models.get_generator(args.g_architecture, vocab_size=vocab_size, batch_size=args.batch_size,
                                          seq_len=seq_len, gen_emb_dim=args.gen_emb_dim, mem_slots=args.mem_slots,

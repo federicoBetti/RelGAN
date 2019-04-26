@@ -8,18 +8,20 @@ from src.topic_modelling.lda_utils import *
 
 
 class LDA:
-    def __init__(self, lda_train, corpus_text, corpus_bow, stops, topic_num=42):
+    def __init__(self, lda_train, corpus_text, corpus_bow, stops, topic_num=42, dictionary=None):
         self.lda_model = lda_train
         self.corpus_text = corpus_text
         self.corpus_bow = corpus_bow
         self.stops = stops
         self.topic_num = topic_num
+        self.dictionary = dictionary
 
     def __str__(self):
         return "This is the class with this LDA model: {}".format(self.lda_model)
 
 
 def create_LDA_model(texts, limit, chunksize, iterations, passes, random_state_lda, stops):
+    print("Create_LDA_model")
     tmp = process_texts(texts, stops)
     dictionary = Dictionary(tmp)
     corpus = [dictionary.doc2bow(i) for i in tmp]
@@ -28,8 +30,9 @@ def create_LDA_model(texts, limit, chunksize, iterations, passes, random_state_l
     lda_train = LdaModel(corpus=corpus, num_topics=num_top, id2word=dictionary,
                          eval_every=1, passes=passes,  # chunksize=chunksize,
                          iterations=iterations, random_state=random_state_lda)
-    lda = LDA(lda_train=lda_train, corpus=corpus, stops=stops)
-    return lda_train
+    lda = LDA(lda_train=lda_train, stops=stops, corpus_text=texts, corpus_bow=corpus, topic_num=num_top,
+              dictionary=dictionary)
+    return lda
 
 
 def get_dominant_topic_and_contribution(lda_model, corpus, texts, stops):
@@ -47,23 +50,27 @@ def get_dominant_topic_and_contribution(lda_model, corpus, texts, stops):
     # Format
     df_dominant_topic = df_topic_sents_keywords.reset_index()
     df_dominant_topic.columns = ['Document_No', 'Dominant_Topic', 'Topic_Perc_Contrib', 'Keywords', 'Text']
-    return df_dominant_topic.head(10)
+    return df_dominant_topic
 
 
-def train_lda():
+def train_lda(coco=True, datapath=None):
     stops = set(stopwords.words('english'))
     print("Stops: {}".format(stops))
     stops.add(u"amp")
 
-    corpus = get_corpus()
+    corpus = get_corpus(coco, datapath)
+    print("Corpus len:", len(corpus))
     lda_train = create_LDA_model(corpus, limit=50, chunksize=2, iterations=2, passes=2, random_state_lda=3, stops=stops)
     print(lda_train)
 
     print("Computation finished")
 
-    with open(os.path.join("topic_models", 'lda_model.pkl'), 'wb') as handle:
+    with open(resources_path("topic_models",
+                             'lda_model_ntop_{}_iter_{}_pass_{}_chunk_{}_coco_{}.pkl'.format(lda_train.topic_num, 2,
+                                                                                             2, 2, coco)),
+              'wb') as handle:
         pickle.dump(lda_train, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
+        print("New model saved")
     return lda_train
 
 
@@ -104,7 +111,8 @@ def train_specific_LDA(corpus, num_top, passes, iterations, random_state_lda=3, 
     lda_train = LdaModel(corpus=corpus_bow, num_topics=num_top, id2word=dictionary,
                          eval_every=1, passes=passes, chunksize=chunksize,
                          iterations=iterations, random_state=random_state_lda)
-    lda = LDA(lda_train=lda_train, corpus_text=corpus, corpus_bow=corpus_bow, stops=stops, topic_num=num_top)
+    lda = LDA(lda_train=lda_train, corpus_text=corpus, corpus_bow=corpus_bow, stops=stops, topic_num=num_top,
+              dictionary=dictionary)
 
     with open(resources_path("topic_models",
                              'lda_model_ntop_{}_iter_{}_pass_{}_chunk_{}_coco_{}.pkl'.format(num_top, iterations,
@@ -144,9 +152,9 @@ def get_most_representative_sentence_per_topic(lda: LDA):
 
 if __name__ == '__main__':
     freeze_support()
-    # lda_train_result = train_lda()
-
-    coco = False
+    # lda_train_result = train_lda(coco=False)
+    #
+    coco = True
     corpus_raw = get_corpus(coco=coco)
     lda = train_specific_LDA(corpus_raw, num_top=3, passes=2, iterations=2, chunksize=2000, coco=coco)
 

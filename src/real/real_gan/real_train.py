@@ -6,6 +6,8 @@ import tensorflow as tf
 from tensorflow.python.framework.errors_impl import NotFoundError
 from tqdm import tqdm
 import time
+
+from path_resolution import resources_path
 from utils.metrics.Nll import Nll
 from utils.metrics.DocEmbSim import DocEmbSim
 from utils.metrics.Bleu import Bleu
@@ -23,7 +25,7 @@ def get_available_gpus():
     return [x.name for x in local_device_protos if x.device_type == 'GPU']
 
 
-get_available_gpus()
+print("Available GPUs: {}".format(get_available_gpus()))
 
 
 # A function to initiate the graph and train the networks
@@ -32,14 +34,16 @@ def real_train(generator, discriminator, topic_discriminator, oracle_loader, con
     num_sentences = config['num_sentences']
     vocab_size = config['vocab_size']
     seq_len = config['seq_len']
-    data_dir = config['data_dir']
     dataset = config['dataset']
-    log_dir = config['log_dir']
-    sample_dir = config['sample_dir']
     npre_epochs = config['npre_epochs']
     nadv_steps = config['nadv_steps']
     temper = config['temperature']
     adapt = config['adapt']
+
+    # changed to match resources path
+    data_dir = resources_path(config['data_dir'])
+    log_dir = resources_path(config['log_dir'])
+    sample_dir = resources_path(config['sample_dir'])
 
     # filename
     oracle_file = os.path.join(sample_dir, 'oracle_{}.txt'.format(dataset))
@@ -133,6 +137,7 @@ def real_train(generator, discriminator, topic_discriminator, oracle_loader, con
         file_suffix = "date: {}, normal RelGAN, pretrain epochs: {}, adv epochs: {}".format(datetime.datetime.now(),
                                                                                             npre_epochs, nadv_steps)
         sum_writer = tf.summary.FileWriter(os.path.join(log_dir, 'summary'), sess.graph, filename_suffix=file_suffix)
+        # todo capire perhè non scrive più il summary
 
         # generate oracle data and create batches
         index_word_dict = get_oracle_file(data_file, oracle_file, seq_len)

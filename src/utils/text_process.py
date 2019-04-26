@@ -1,5 +1,5 @@
 # coding=utf-8
-from typing import Tuple
+from typing import Tuple, Dict, Any
 
 import nltk
 
@@ -35,17 +35,17 @@ def code_to_text(codes, dictionary):
 
 
 # tokenlize the file
-def get_tokenlized(file):
-    tokenlized = list()
+def get_tokenized(file):
+    tokenized = list()
     with open(file) as raw:
         for text in raw:
             text = nltk.word_tokenize(text.lower())
-            tokenlized.append(text)
-    return tokenlized
+            tokenized.append(text)
+    return tokenized
 
 
 # get word set
-def get_word_list(tokens):
+def get_word_list(tokens: list) -> list:
     word_set = list()
     for sentence in tokens:
         for word in sentence:
@@ -54,29 +54,33 @@ def get_word_list(tokens):
 
 
 # get word_index_dict and index_word_dict
-def get_dict(word_set):
+def get_dict(word_set: list) -> Tuple[Dict, Dict]:
     word_index_dict = dict()
     index_word_dict = dict()
     index = 0
     for word in word_set:
+        assert isinstance(word, str)
+        if word.startswith("cucu"):
+            print(word)
         word_index_dict[word] = str(index)
         index_word_dict[str(index)] = word
         index += 1
     return word_index_dict, index_word_dict
 
 
-# get sequence length and dict size
-def text_precess(train_text_loc, test_text_loc=None) -> Tuple[int, int]:
-    '''
+def text_precess(train_text_loc, test_text_loc=None) -> Tuple[int, int, Any]:
+    """
+    Get sequence length and dict size \n
     :param train_text_loc: train file
     :param test_text_loc: test file
-    :return: sequence length of the longest sentences and dict size (how many different words)
-    '''
-    train_tokens = get_tokenlized(train_text_loc)
+    :return: sequence length of the longest sentences, dict size (how many different words), dict from word to index
+    """
+    train_tokens = get_tokenized(train_text_loc)
+    # todo stemming or lemmatization?
     if test_text_loc is None:
         test_tokens = list()
     else:
-        test_tokens = get_tokenlized(test_text_loc)
+        test_tokens = get_tokenized(test_text_loc)
     word_set = get_word_list(train_tokens + test_tokens)
     [word_index_dict, index_word_dict] = get_dict(word_set)
 
@@ -88,4 +92,4 @@ def text_precess(train_text_loc, test_text_loc=None) -> Tuple[int, int]:
     # with open(oracle_file, 'w') as outfile:
     #     outfile.write(text_to_code(tokens, word_index_dict, seq_len))
 
-    return sequence_len, len(word_index_dict) + 1
+    return sequence_len, len(word_index_dict) + 1, word_index_dict

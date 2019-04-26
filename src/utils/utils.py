@@ -82,7 +82,14 @@ def plot_csv(csv_file, pre_epoch_num, metrics, method):
 
 
 def get_oracle_file(data_file, oracle_file, seq_len):
-    tokens = get_tokenlized(data_file)
+    """
+    It generates the oracle_file made by tokens and output the dictionary from tokens to real words \n
+    :param data_file: real corpus file
+    :param oracle_file: file path where to store tokens
+    :param seq_len: max len of the sequence
+    :return: dictionary from tokens to real words
+    """
+    tokens = get_tokenized(data_file)
     word_set = get_word_list(tokens)
     [word_index_dict, index_word_dict] = get_dict(word_set)
     with open(oracle_file, 'w') as outfile:
@@ -92,7 +99,7 @@ def get_oracle_file(data_file, oracle_file, seq_len):
 
 
 def get_real_test_file(generator_file, gen_save_file, iw_dict):
-    codes = get_tokenlized(generator_file)
+    codes = get_tokenized(generator_file)
     with open(gen_save_file, 'w') as outfile:
         outfile.write(code_to_text(codes=codes, dictionary=iw_dict))
 
