@@ -8,3 +8,5 @@ resources/oracle/*
 resources/topic_models/*.pkl
 
 **/__pycache__/
+
+**/old_tensorboard/

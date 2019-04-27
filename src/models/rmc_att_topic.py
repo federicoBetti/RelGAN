@@ -4,8 +4,8 @@ from tensorflow.python.ops import tensor_array_ops, control_flow_ops
 from utils.ops import *
 
 
-def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen_emb_dim, mem_slots, head_size, num_heads,
-              hidden_dim, start_token):
+def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen_emb_dim, mem_slots, head_size,
+              num_heads, hidden_dim, start_token):
     start_tokens = tf.constant([start_token] * batch_size, dtype=tf.int32)
     output_memory_size = mem_slots * head_size * num_heads
 
@@ -24,18 +24,17 @@ def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen
     gen_x = tensor_array_ops.TensorArray(dtype=tf.int32, size=seq_len, dynamic_size=False, infer_shape=True)
     gen_x_onehot_adv = tensor_array_ops.TensorArray(dtype=tf.float32, size=seq_len, dynamic_size=False,
                                                     infer_shape=True)
-    our_solution = False
 
     def _gen_recurrence(i, x_t, h_tm1, gen_o, gen_x, gen_x_onehot_adv):
         mem_o_t, h_t = gen_mem(x_t, h_tm1)  # hidden_memory_tuple, output della memoria che si potrebbe riutilizzare
         o_t = g_output_unit(mem_o_t)  # batch x vocab, logits not prob
 
         gumbel_t = add_gumbel(o_t)
-        if our_solution:
-            lambda_param = g_output_unit_lambda(mem_o_t)
-            topic_vector = tf.ones_like(gumbel_t)  # todo
-            assert gumbel_t.shape.as_list() == topic_vector.shape.as_list()
-            gumbel_t = (1 - lambda_param) * gumbel_t + lambda_param * topic_vector
+        lambda_param = g_output_unit_lambda(mem_o_t)
+        topic_vector = x_topic
+        assert gumbel_t.shape.as_list() == topic_vector.shape.as_list(), "Gumbel: {}, Topic vector: {}".format(
+            gumbel_t.shape.as_list(), topic_vector.shape.as_list())
+        gumbel_t = (1 - lambda_param) * gumbel_t + lambda_param * topic_vector
 
         next_token = tf.cast(tf.argmax(gumbel_t, axis=1), tf.int32)
         #  + lambda * topic_related
@@ -129,13 +128,23 @@ def discriminator(x_onehot, batch_size, seq_len, vocab_size, dis_emb_dim, num_re
     out = tf.nn.relu(out)
 
     # fc
-    out = tf.contrib.layers.flatten(out)
+    out = tf.contrib.layers.flatten(out, scope="flatten_output_layer")
     logits = linear(out, output_size=1, use_bias=True, sn=sn, scope='fc5')
     logits = tf.squeeze(logits, -1)  # batch_size
 
+    # todo si potrebbe mettere qua e fare due output, uno che riguarda la frase in generale e uno che riguarda il topic
     return logits
 
 
-def topic_discriminator():
-    # todo find a model and create it
-    return None
+def topic_discriminator(x_onehot, x_topic, batch_size, seq_len, vocab_size, dis_emb_dim, num_rep, sn):
+    # Use the output layer of main discriminator to do a little of transfer learning
+    out_tensor_name = "discriminator_1/flatten_output_layer/flatten/Reshape:0"
+    out = tf.get_default_graph().get_tensor_by_name(out_tensor_name)
+
+    first_topic = linear(x_topic, output_size=512, use_bias=True, sn=sn, scope='topic_first_linear')
+
+    flatten = tf.concat([out, first_topic], axis=1)
+
+    logits = linear(flatten, output_size=1, use_bias=True, sn=sn, scope='fc_topic')
+    logits = tf.squeeze(logits, -1)  # batch_size
+    return logits

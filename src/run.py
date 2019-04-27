@@ -1,4 +1,5 @@
 import argparse
+import os
 
 import models
 from oracle.oracle_gan.oracle_loader import OracleDataLoader
@@ -10,6 +11,7 @@ from real.real_gan.real_train import real_train
 from utils.models.OracleLstm import OracleLstm
 from utils.text_process import text_precess
 from utils.utils import pp
+from topic_modelling.lda_topic import LDA
 
 parser = argparse.ArgumentParser(description='Train and run a RmcGAN')
 # Topic?
@@ -35,8 +37,10 @@ parser.add_argument('--d-lr', default=1e-4, type=float, help='Learning rate for 
 parser.add_argument('--gpre-lr', default=1e-2, type=float, help='Learning rate for the generator in pre-training')
 parser.add_argument('--gadv-lr', default=1e-4, type=float, help='Learning rate for the generator in adv-training')
 parser.add_argument('--batch-size', default=64, type=int, help='Batch size for training')
-parser.add_argument('--log-dir', default='./oracle/logs', type=str, help='Where to store log and checkpoint files')
-parser.add_argument('--sample-dir', default='./oracle/samples', type=str, help='Where to put samples during training')
+parser.add_argument('--log-dir', default=os.path.join('.', 'oracle', 'logs'), type=str,
+                    help='Where to store log and checkpoint files')
+parser.add_argument('--sample-dir', default=os.path.join('.', 'oracle', 'samples'), type=str,
+                    help='Where to put samples during training')
 parser.add_argument('--optimizer', default='adam', type=str, help='training method')
 parser.add_argument('--decay', default=False, action='store_true', help='if decaying learning rate')
 parser.add_argument('--adapt', default='exp', type=str,
@@ -65,7 +69,7 @@ parser.add_argument('--num-sentences', default=10000, type=int, help="number of 
 parser.add_argument('--gen-emb-dim', default=32, type=int, help="generator embedding dimension")
 parser.add_argument('--dis-emb-dim', default=64, type=int, help="TOTAL discriminator embedding dimension")
 parser.add_argument('--num-rep', default=64, type=int, help="number of discriminator embedded representations")
-parser.add_argument('--data-dir', default='./data', type=str, help='Where data data is stored')
+parser.add_argument('--data-dir', default=os.path.join('.', 'data'), type=str, help='Where data data is stored')
 
 
 def main():

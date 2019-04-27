@@ -17,8 +17,8 @@ discriminator_dict = {
     'rmc_vdcnn': rmc_vdcnn.discriminator
 }
 
-discriminator__topic_dict = {
-    'standard': rmc_att.topic_discriminator
+discriminator_topic_dict = {
+    'standard': rmc_att_topic.topic_discriminator
 }
 
 
@@ -33,5 +33,5 @@ def get_discriminator(model_name, scope='discriminator', **kwargs):
 
 
 def get_topic_discriminator(model_name, scope='topic_discriminator', **kwargs):
-    model_func = discriminator__topic_dict[model_name]
+    model_func = discriminator_topic_dict[model_name]
     return tf.make_template(scope, model_func, **kwargs)

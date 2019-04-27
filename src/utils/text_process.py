@@ -36,6 +36,12 @@ def code_to_text(codes, dictionary):
 
 # tokenlize the file
 def get_tokenized(file):
+    """
+    Returns a list with tokens, so an element is a single word.
+    Sometimes just tokens with \\n at the end arrive so it is used to separate them in sentences\n
+    :param file:
+    :return:
+    """
     tokenized = list()
     with open(file) as raw:
         for text in raw:
@@ -59,9 +65,6 @@ def get_dict(word_set: list) -> Tuple[Dict, Dict]:
     index_word_dict = dict()
     index = 0
     for word in word_set:
-        assert isinstance(word, str)
-        if word.startswith("cucu"):
-            print(word)
         word_index_dict[word] = str(index)
         index_word_dict[str(index)] = word
         index += 1

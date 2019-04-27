@@ -103,7 +103,7 @@ def train_specific_LDA(corpus, num_top, passes, iterations, random_state_lda=3, 
         return lda
     except FileNotFoundError:
         print("No model found")
-    print("No model found!!!")
+    t = time.time()
     stops = set(stopwords.words('english'))
     tmp = process_texts(corpus, stops)
     dictionary = Dictionary(tmp)
@@ -119,7 +119,7 @@ def train_specific_LDA(corpus, num_top, passes, iterations, random_state_lda=3, 
                                                                                              passes, chunksize, coco)),
               'wb') as handle:
         pickle.dump(lda, handle, protocol=pickle.HIGHEST_PROTOCOL)
-        print("New model saved")
+        print("New model saved in {}".format(time.time() - t))
     return lda
 
 
