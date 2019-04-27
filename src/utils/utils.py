@@ -96,7 +96,26 @@ def pre_train_epoch(sess, g_pretrain_op, g_pretrain_loss, x_real, data_loader):
     tf.summary.scalar("loss/generator/pretrain_loss", tf.reduce_mean(supervised_g_losses))
 
     return np.mean(supervised_g_losses)
-
+#
+# def pre_train_discriminator(sess, data_loader):
+#     # Pre-train the generator using MLE for one epoch
+#     supervised_g_losses = []
+#     data_loader.reset_pointer()
+#
+#     for it in range(data_loader.num_batch):
+#         if np.mod(it, 50) == 0:
+#             print("Trained the batch {} over {}".format(it, data_loader.num_batch))
+#         batch = data_loader.next_batch()
+#
+#         text_batch, topic_batch = oracle_loader.random_batch(only_text=False)
+#         sess.run(d_train_op, feed_dict={x_real: text_batch, x_topic: topic_batch,
+#                                         x_topic_random: oracle_loader.random_topic()}
+#         _, g_loss = sess.run([g_pretrain_op, g_pretrain_loss], feed_dict={x_real: batch})
+#         supervised_g_losses.append(g_loss)
+#
+#     tf.summary.scalar("loss/generator/pretrain_loss", tf.reduce_mean(supervised_g_losses))
+#
+#     return np.mean(supervised_g_losses)
 
 def plot_csv(csv_file, pre_epoch_num, metrics, method):
     names = [str(i) for i in range(len(metrics) + 1)]
@@ -156,7 +175,6 @@ def gen_real_test_file_not_file(codes: str, sentence_generated_from, file, iw_di
                                                                                      len(sentence_generated_from))
     with open(file, 'w') as outfile:
         for r, s in zip(tokenized, sentence_generated_from):
-            print(r)
             outfile.write(code_to_text(codes=[r], dictionary=iw_dict))
             outfile.write("\t Taken from: {}".format(code_to_text(codes=[s], dictionary=iw_dict)))
 

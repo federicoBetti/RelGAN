@@ -201,6 +201,9 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
                 log.write(msg)
                 log.write('\n')
 
+        print('Start topic Discriminator pre-training...')
+        # todo si potrebbe pensare di fare del pre-train con un po' di sample positivi e un po' negativi
+
         print('Start adversarial training...')
         progress = tqdm(range(nadv_steps))
         for adv_epoch in progress:
