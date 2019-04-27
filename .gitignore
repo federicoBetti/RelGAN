@@ -4,7 +4,7 @@
 src/tmp/
 
 # topic models
-resources/oracle/*
+resources/oracle/log/*
 resources/topic_models/*.pkl
 
 **/__pycache__/

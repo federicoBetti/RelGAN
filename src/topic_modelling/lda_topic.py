@@ -119,7 +119,7 @@ def train_specific_LDA(corpus, num_top, passes, iterations, random_state_lda=3, 
                                                                                              passes, chunksize, coco)),
               'wb') as handle:
         pickle.dump(lda, handle, protocol=pickle.HIGHEST_PROTOCOL)
-        print("New model saved in {}".format(time.time() - t))
+        print("New model saved in {} sec".format(time.time() - t))
     return lda
 
 

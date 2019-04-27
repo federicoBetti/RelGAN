@@ -96,7 +96,9 @@ def main():
 
     elif args.dataset in ['image_coco', 'emnlp_news']:
         data_file = resources_path(args.data_dir, '{}.txt'.format(args.dataset))
-        seq_len, vocab_size, word_index_dict, index_word_dict = text_precess(data_file)
+        sample_dir = resources_path(config['sample_dir'])
+        oracle_file = os.path.join(sample_dir, 'oracle_{}.txt'.format(args.dataset))
+        seq_len, vocab_size, word_index_dict, index_word_dict = text_precess(data_file, oracle_file=oracle_file)
         config['seq_len'] = seq_len
         config['vocab_size'] = vocab_size
         print('seq_len: %d, vocab_size: %d' % (seq_len, vocab_size))

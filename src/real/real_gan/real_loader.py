@@ -194,7 +194,7 @@ class RealDataTopicLoader(RealDataLoader):
                 invere_index = int(invere_index)
                 real_vector[:, invere_index] = topic_sentences[:, ind]
 
-        print("Topic model computed in {}!".format(time.time() - t))
+        print("Topic model computed in {} sec!".format(time.time() - t))
         return real_vector
 
     def random_topic(self):
