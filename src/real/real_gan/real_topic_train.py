@@ -242,11 +242,12 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
                 get_real_test_file(gen_file, gen_save_file, index_word_dict)
                 get_real_test_file(gen_file, gen_text_file, index_word_dict)
 
-                # take sentences from saved files
-                sent = take_sentences_topic(gen_text_file)
-                sent = random.sample(sent, 5)  # pick just one sentence
-                generated_strings_summary = sess.run(gen_sentences, feed_dict={gen_sentences_placeholder: sent})
-                sum_writer.add_summary(generated_strings_summary, niter + npre_epochs)
+                if np.mod(adv_epoch, 200) == 0:
+                    # take sentences from saved files
+                    sent = take_sentences_topic(gen_text_file)
+                    sent = random.sample(sent, 5)  # pick just one sentence
+                    generated_strings_summary = sess.run(gen_sentences, feed_dict={gen_sentences_placeholder: sent})
+                    sum_writer.add_summary(generated_strings_summary, niter + npre_epochs)
 
                 # write summaries
                 scores = [metric.get_score() for metric in metrics]
