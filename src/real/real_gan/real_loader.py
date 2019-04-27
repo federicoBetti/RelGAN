@@ -142,7 +142,7 @@ class RealDataTopicLoader(RealDataLoader):
         """
         print("Computation of topic model started...")
         t = time.time()
-        from src.topic_modelling.lda_topic import train_specific_LDA, get_corpus, LDA
+        from topic_modelling.lda_topic import train_specific_LDA, get_corpus, LDA
 
         # Create LDA model for the dataset, given parameters
         self.topic_num = 3

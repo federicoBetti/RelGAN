@@ -1,14 +1,13 @@
 import math
-import os
 import re
 import time
 from typing import List
-import pandas as pd
 
+import pandas as pd
 from gensim.models import LdaModel, CoherenceModel
 from gensim.utils import lemmatize, simple_tokenize
 
-from src.path_resolution import resources_path
+from path_resolution import resources_path
 
 
 def process_texts(input_texts, stops):
@@ -99,7 +98,7 @@ def word_cloud(lda):
     stop_words = lda.stops
     # 1. Wordcloud of Top N words in each topic
     from matplotlib import pyplot as plt
-    from wordcloud import WordCloud, STOPWORDS
+    from wordcloud import WordCloud
     import matplotlib.colors as mcolors
 
     cols = [color for name, color in mcolors.TABLEAU_COLORS.items()]  # more colors: 'mcolors.XKCD_COLORS'
