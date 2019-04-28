@@ -137,14 +137,40 @@ def discriminator(x_onehot, batch_size, seq_len, vocab_size, dis_emb_dim, num_re
 
 
 def topic_discriminator(x_onehot, x_topic, batch_size, seq_len, vocab_size, dis_emb_dim, num_rep, sn):
-    # Use the output layer of main discriminator to do a little of transfer learning
-    out_tensor_name = "discriminator_1/flatten_output_layer/flatten/Reshape:0"
-    out = tf.get_default_graph().get_tensor_by_name(out_tensor_name)
+    # Compute its embedding matrix
+    d_embeddings = tf.get_variable('d_emb', shape=[vocab_size, dis_emb_dim],
+                                   initializer=create_linear_initializer(vocab_size))
+    input_x_re = tf.reshape(x_onehot, [-1, vocab_size], name="input_reshaping")
+    # Multiply each input for its embedding matrix
+    emb_x_re = tf.matmul(input_x_re, d_embeddings, name="input_x_embeddings")
+    emb_x = tf.reshape(emb_x_re, [batch_size, seq_len, dis_emb_dim],
+                       name="reshape_back")  # batch_size x seq_len x dis_emb_dim
 
+    emb_x_expanded = tf.expand_dims(emb_x, 2, name="add_fake_dim_for_conv")  # batch_size x seq_len x 1 x emd_dim
+    # convolution
+    out = conv2d(emb_x_expanded, dis_emb_dim * 2, k_h=2, d_h=2, sn=sn, scope='conv1')
+    out = tf.nn.relu(out)
+    out = conv2d(out, dis_emb_dim * 2, k_h=1, d_h=1, sn=sn, scope='conv2')
+    out = tf.nn.relu(out)
+
+    # self-attention
+    out = self_attention(out, dis_emb_dim * 2, sn=sn)
+
+    # convolution
+    out = conv2d(out, dis_emb_dim * 4, k_h=2, d_h=2, sn=sn, scope='conv3')
+    out = tf.nn.relu(out)
+    out = conv2d(out, dis_emb_dim * 4, k_h=1, d_h=1, sn=sn, scope='conv4')
+    out = tf.nn.relu(out)
+
+    # fc
+    out = tf.contrib.layers.flatten(out, scope="flatten_output_layer")
+
+    # topic network
     first_topic = linear(x_topic, output_size=512, use_bias=True, sn=sn, scope='topic_first_linear')
 
     flatten = tf.concat([out, first_topic], axis=1)
 
     logits = linear(flatten, output_size=1, use_bias=True, sn=sn, scope='fc_topic')
+    logits = tf.sigmoid(logits)
     logits = tf.squeeze(logits, -1)  # batch_size
     return logits

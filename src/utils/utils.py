@@ -87,35 +87,37 @@ def pre_train_epoch(sess, g_pretrain_op, g_pretrain_loss, x_real, data_loader):
     data_loader.reset_pointer()
 
     for it in range(data_loader.num_batch):
-        if np.mod(it, 50) == 0:
-            print("Trained the batch {} over {}".format(it, data_loader.num_batch))
+        # if np.mod(it, 50) == 0:
+        #     print("Trained the batch {} over {}".format(it, data_loader.num_batch))
         batch = data_loader.next_batch()
         _, g_loss = sess.run([g_pretrain_op, g_pretrain_loss], feed_dict={x_real: batch})
         supervised_g_losses.append(g_loss)
 
-    tf.summary.scalar("loss/generator/pretrain_loss", tf.reduce_mean(supervised_g_losses))
-
     return np.mean(supervised_g_losses)
-#
-# def pre_train_discriminator(sess, data_loader):
-#     # Pre-train the generator using MLE for one epoch
-#     supervised_g_losses = []
-#     data_loader.reset_pointer()
-#
-#     for it in range(data_loader.num_batch):
-#         if np.mod(it, 50) == 0:
-#             print("Trained the batch {} over {}".format(it, data_loader.num_batch))
-#         batch = data_loader.next_batch()
-#
-#         text_batch, topic_batch = oracle_loader.random_batch(only_text=False)
-#         sess.run(d_train_op, feed_dict={x_real: text_batch, x_topic: topic_batch,
-#                                         x_topic_random: oracle_loader.random_topic()}
-#         _, g_loss = sess.run([g_pretrain_op, g_pretrain_loss], feed_dict={x_real: batch})
-#         supervised_g_losses.append(g_loss)
-#
-#     tf.summary.scalar("loss/generator/pretrain_loss", tf.reduce_mean(supervised_g_losses))
-#
-#     return np.mean(supervised_g_losses)
+
+
+def pre_train_discriminator(sess, d_topic_op, d_topic_loss, d_topic_accuracy, x_real, x_topic, x_topic_random,
+                            data_loader):
+    # Pre-train the generator using MLE for one epoch
+    supervised_g_losses = []
+    supervised_accuracy = []
+    data_loader.reset_pointer()
+
+    for it in range(data_loader.num_batch - 140):
+        if np.mod(it, 50) == 0:
+            print("Trained discriminator pre-train the batch {} over {}".format(it, data_loader.num_batch))
+
+        text_batch, topic_batch = data_loader.next_batch(only_text=False)
+        _, topic_loss, accuracy = sess.run([d_topic_op, d_topic_loss, d_topic_accuracy],
+                                           feed_dict={x_real: text_batch, x_topic: topic_batch,
+                                                      x_topic_random: data_loader.random_topic()})
+        supervised_g_losses.append(topic_loss)
+        supervised_accuracy.append(accuracy)
+
+    tf.summary.scalar("loss/topic_discriminator/pretrain_topic_loss", tf.reduce_mean(supervised_g_losses))
+
+    return np.mean(supervised_g_losses), np.mean(supervised_accuracy)
+
 
 def plot_csv(csv_file, pre_epoch_num, metrics, method):
     names = [str(i) for i in range(len(metrics) + 1)]
@@ -195,3 +197,32 @@ def take_sentences_topic(gen_text_file):
     for line, taken_from_line in zip(all_strings[0::2], all_strings[1::2]):
         strings.append(line + taken_from_line)
     return strings
+
+
+class CustomSummary(object):
+    """
+    This class is used to create custom summaries and does everything by itself
+    """
+    def __init__(self, name: str, scope: str, summary_type=tf.summary.scalar, item_type=tf.float32):
+        self.name = name
+        self.scope = scope
+        self.summary_type = summary_type
+        self.item_type = item_type
+
+        self.placeholder = tf.placeholder(self.item_type, name=self.name + '_placeholder')
+        self.final_summary = self.summary_type(self.scope + '/' + self.name, self.placeholder)
+
+        self.file_writer = None
+        self.sess = None
+
+    def set_file_writer(self, sum_writer, sess):
+        self.file_writer = sum_writer
+        self.sess = sess
+
+    def write_summary(self, value, epoch):
+        if self.file_writer is None or self.sess is None:
+            raise ValueError("file writer or session weren't defined")
+        fake_summary = self.sess.run(self.final_summary, feed_dict={self.placeholder: value})
+        self.file_writer.add_summary(fake_summary, epoch)
+
+

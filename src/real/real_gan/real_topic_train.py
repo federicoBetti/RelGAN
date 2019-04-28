@@ -38,6 +38,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
     seq_len = config['seq_len']
     dataset = config['dataset']
     npre_epochs = config['npre_epochs']
+    n_topic_pre_epochs = config['n_topic_pre_epochs']
     nadv_steps = config['nadv_steps']
     temper = config['temperature']
     adapt = config['adapt']
@@ -95,15 +96,17 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
         d_out_real, d_out_fake, x_real_onehot, x_fake_onehot_appr,
         d_topic_out_real_pos, d_topic_out_real_neg, d_topic_out_fake,
         gen_o, discriminator, config)
+    d_topic_loss = d_topic_loss_real_pos + d_topic_loss_real_neg  # only from real data for pretrain
+    d_topic_accuracy = get_accuracy(d_topic_out_real_pos, d_topic_out_real_neg)
 
     # Global step
     global_step = tf.Variable(0, trainable=False)
     global_step_op = global_step.assign_add(1)
 
     # Train ops
-    g_pretrain_op, g_train_op, d_train_op = get_train_ops(config, g_pretrain_loss, g_loss, d_loss,
-                                                          # d_topic_loss,
-                                                          log_pg, temperature, global_step)
+    g_pretrain_op, g_train_op, d_train_op, d_topic_pretrain_op = get_train_ops(config, g_pretrain_loss, g_loss, d_loss,
+                                                                               d_topic_loss,
+                                                                               log_pg, temperature, global_step)
 
     # Record wall clock time
     time_diff = tf.placeholder(tf.float32)
@@ -116,31 +119,46 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
 
     # Loss summaries
     loss_summaries = [
-        tf.summary.scalar('loss/d_loss_real', d_loss_real),
-        tf.summary.scalar('loss/d_loss_fake', d_loss_fake),
-        tf.summary.scalar('loss/d_topic_loss_real_pos', d_topic_loss_real_pos),
-        tf.summary.scalar('loss/d_topic_loss_real_neg', d_topic_loss_real_neg),
-        tf.summary.scalar('loss/d_topic_loss_fake', d_topic_loss_fake),
-        tf.summary.scalar('loss/discriminator', d_loss),
-        tf.summary.scalar('loss/g_sentence_loss', g_sentence_loss),
-        tf.summary.scalar('loss/g_topic_loss', g_topic_loss),
-        tf.summary.scalar('loss/g_loss', g_loss),
-        tf.summary.scalar('loss/log_pg', log_pg),
-        tf.summary.scalar('loss/Wall_clock_time', Wall_clock_time),
-        tf.summary.scalar('loss/temperature', temperature),
+        tf.summary.scalar('adv_loss/d_loss_real', d_loss_real),
+        tf.summary.scalar('adv_loss/d_loss_fake', d_loss_fake),
+        tf.summary.scalar('adv_loss/d_topic_loss_real_pos', d_topic_loss_real_pos),
+        tf.summary.scalar('adv_loss/d_topic_loss_real_neg', d_topic_loss_real_neg),
+        tf.summary.scalar('adv_loss/d_topic_loss_fake', d_topic_loss_fake),
+        tf.summary.scalar('adv_loss/discriminator', d_loss),
+        tf.summary.scalar('adv_loss/g_sentence_loss', g_sentence_loss),
+        tf.summary.scalar('adv_loss/g_topic_loss', g_topic_loss),
+        tf.summary.scalar('adv_loss/g_loss', g_loss),
+        tf.summary.scalar('adv_loss/log_pg', log_pg),
+        tf.summary.scalar('adv_loss/Wall_clock_time', Wall_clock_time),
+        tf.summary.scalar('adv_loss/temperature', temperature),
     ]
     loss_summary_op = tf.summary.merge(loss_summaries)
 
     # Metric Summaries
     metrics_pl, metric_summary_op = get_metric_summary_op(config)
 
-    # Placeholder for generator pretrain loss
-    gen_pretrain_loss_placeholder = tf.placeholder(tf.float32, name='pretrain_loss_placeholder')
-    gen_pretrain_loss = tf.summary.scalar('generator/pretrain_loss', gen_pretrain_loss_placeholder)
+    # Summaries
+    gen_pretrain_loss_summary = CustomSummary(name='pretrain_loss', scope='generator')
+    gen_sentences_summary = CustomSummary(name='generated_sentences', scope='generator',
+                                          summary_type=tf.summary.text, item_type=tf.string)
+    topic_discr_pretrain_summary = CustomSummary(name='pretrain_loss', scope='topic_discriminator')
+    topic_discr_accuracy_summary = CustomSummary(name='pretrain_accuracy', scope='topic_discriminator')
 
-    # Placeholder for generated text
-    gen_sentences_placeholder = tf.placeholder(tf.string, name='generated_sentences_placeholder')
-    gen_sentences = tf.summary.text('generator/generated_sentences', gen_sentences_placeholder)
+    custom_summaries = []
+    custom_summaries.append(gen_pretrain_loss_summary)
+    custom_summaries.append(gen_sentences_summary)
+    custom_summaries.append(topic_discr_pretrain_summary)
+    custom_summaries.append(topic_discr_accuracy_summary)
+    # gen_pretrain_loss_placeholder = tf.placeholder(tf.float32, name='pretrain_loss_placeholder')
+    # gen_pretrain_loss = tf.summary.scalar('generator/pretrain_loss', gen_pretrain_loss_placeholder)
+    #
+    # # Placeholder for generated text
+    # gen_sentences_placeholder = tf.placeholder(tf.string, name='generated_sentences_placeholder')
+    # gen_sentences = tf.summary.text('generator/generated_sentences', gen_sentences_placeholder)
+
+    # Placeholder for topic discriminator pretrain loss
+    # topic_discr_pretrain_placeholder = tf.placeholder(tf.float32, name='topic_discr_pretrain_placeholder')
+    # topic_discr_pretrain = tf.summary.scalar('topic_discriminator/pretrain_loss', topic_discr_pretrain_placeholder)
 
     # ------------- initial the graph --------------
     with init_sess() as sess:
@@ -150,7 +168,8 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
         print("FileWriter path: {}".format(os.path.join(log_dir, 'summary')))
         sum_writer = tf.summary.FileWriter(os.path.join(log_dir, 'summary'),
                                            sess.graph)  # , filename_suffix=file_suffix)
-        # todo capire perhè non scrive più il summary
+        for custom_summary in custom_summaries:
+            custom_summary.set_file_writer(sum_writer, sess)
 
         # generate oracle data and create batches
         # todo se le parole hanno poco senso potrebbe essere perchè qua ho la corrispondenza indice-parola sbagliata
@@ -162,12 +181,10 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
 
         print('Start pre-training...')
         for epoch in range(npre_epochs):
-            print("Pretrain epoch: {}".format(epoch))
+            print("Pretrain epoch: {}, hour: {}".format(epoch, time.asctime()))
             # pre-training
             g_pretrain_loss_np = pre_train_epoch(sess, g_pretrain_op, g_pretrain_loss, x_real, oracle_loader)
-            pretrain_summary = sess.run(gen_pretrain_loss,
-                                        feed_dict={gen_pretrain_loss_placeholder: g_pretrain_loss_np})
-            sum_writer.add_summary(pretrain_summary, epoch)
+            gen_pretrain_loss_summary.write_summary(g_pretrain_loss_np, epoch)
 
             # Test
             ntest_pre = 10
@@ -182,8 +199,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
                 # take sentences from saved files
                 sent = take_sentences_topic(gen_text_file)
                 sent = random.sample(sent, 5)  # pick just one sentence
-                generated_strings_summary = sess.run(gen_sentences, feed_dict={gen_sentences_placeholder: sent})
-                sum_writer.add_summary(generated_strings_summary, epoch)
+                gen_sentences_summary.write_summary(sent, epoch)
 
                 # write summaries
                 print("Computing Metrics and writing summaries", end=" ")
@@ -202,7 +218,14 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
                 log.write('\n')
 
         print('Start topic Discriminator pre-training...')
-        # todo si potrebbe pensare di fare del pre-train con un po' di sample positivi e un po' negativi
+        for epoch in range(n_topic_pre_epochs):
+            print("Topic discriminator pretrain epoch: {}, hour: {}".format(epoch, time.asctime()))
+            # pre-training and write loss
+            d_topic_pretrain_loss, accuracy_mean = pre_train_discriminator(sess, d_topic_pretrain_op, d_topic_loss,
+                                                                           d_topic_accuracy, x_real, x_topic,
+                                                                           x_topic_random, oracle_loader)
+            topic_discr_pretrain_summary.write_summary(d_topic_pretrain_loss, epoch)
+            topic_discr_accuracy_summary.write_summary(accuracy_mean, epoch)
 
         print('Start adversarial training...')
         progress = tqdm(range(nadv_steps))
@@ -250,8 +273,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
                     # take sentences from saved files
                     sent = take_sentences_topic(gen_text_file)
                     sent = random.sample(sent, 5)  # pick just one sentence
-                    generated_strings_summary = sess.run(gen_sentences, feed_dict={gen_sentences_placeholder: sent})
-                    sum_writer.add_summary(generated_strings_summary, niter + npre_epochs)
+                    gen_sentences_summary.write_summary(sent, epoch)
 
                 # write summaries
                 scores = [metric.get_score() for metric in metrics]
@@ -387,13 +409,14 @@ def get_losses(d_out_real, d_out_fake, x_real_onehot, x_fake_onehot_appr, d_topi
 
 
 # A function to calculate the gradients and get training operations
-def get_train_ops(config, g_pretrain_loss, g_loss, d_loss,  # d_topic_loss,
+def get_train_ops(config, g_pretrain_loss, g_loss, d_loss, d_topic_loss,
                   log_pg, temperature, global_step):
     '''
     :param config:
     :param g_pretrain_loss: final loss del generatore in pretrain
     :param g_loss: final loss del generatore in adv
-    :param d_loss: final loss del discriminatore
+    :param d_loss: final loss of discriminator (summing both discriminators)
+    :param d_topic_loss: loss of the topic discriminator considering only real data
     :param log_pg:
     :param temperature:
     :param global_step:
@@ -410,7 +433,7 @@ def get_train_ops(config, g_pretrain_loss, g_loss, d_loss,  # d_topic_loss,
     d_topic_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='topic_discriminator')
 
     # train together both discriminators
-    d_vars = d_vars + d_topic_vars
+    # d_vars = d_vars + d_topic_vars
 
     grad_clip = 5.0  # keep the same with the previous setting
 
@@ -455,11 +478,11 @@ def get_train_ops(config, g_pretrain_loss, g_loss, d_loss,  # d_topic_loss,
     d_train_op = d_optimizer.apply_gradients(zip(d_grads, d_vars))
 
     # gradient clipping
-    # d_topic_grads, _ = tf.clip_by_global_norm(tf.gradients(d_topic_loss, d_topic_vars, name="gradients_d_topic_adv"),
-    #                                           grad_clip, name="d_topic_adv_clipping")
-    # d_topic_train_op = d_optimizer.apply_gradients(zip(d_topic_grads, d_topic_vars))
+    d_topic_grads, _ = tf.clip_by_global_norm(tf.gradients(d_topic_loss, d_topic_vars, name="gradients_d_topic_adv"),
+                                              grad_clip, name="d_topic_adv_clipping")
+    d_topic_pretrain_op = d_optimizer.apply_gradients(zip(d_topic_grads, d_topic_vars))
 
-    return g_pretrain_op, g_train_op, d_train_op  # , d_topic_train_op
+    return g_pretrain_op, g_train_op, d_train_op, d_topic_pretrain_op
 
 
 # A function to get various evaluation metrics
@@ -535,3 +558,22 @@ def get_fixed_temperature(temper, i, N, adapt):
         raise Exception("Unknown adapt type!")
 
     return temper_var_np
+
+
+def get_accuracy(d_topic_out_real_pos, d_topic_out_real_neg):
+    """
+    Compute accuracy of the topic discriminator \n
+    :param d_topic_out_real_pos: output from the topic discriminator with correct topic
+    :param d_topic_out_real_neg: output from the topic discriminator with wrong topic
+    :return: summary tensor of the accuracy
+    """
+    d_topic_out_real_pos = tf.expand_dims(d_topic_out_real_pos, 1)
+    d_topic_out_real_neg = tf.expand_dims(d_topic_out_real_neg, 1)
+    correct_answer = tf.squeeze(
+        tf.concat([tf.ones_like(d_topic_out_real_pos), tf.zeros_like(d_topic_out_real_neg)], axis=0))
+    predictions = tf.squeeze(
+        tf.concat([tf.ones_like(d_topic_out_real_pos), tf.zeros_like(d_topic_out_real_neg)], axis=0))
+    predictions = tf.round(predictions)
+    equality = tf.equal(predictions, correct_answer)
+    accuracy = tf.reduce_mean(tf.cast(equality, tf.float32))
+    return accuracy

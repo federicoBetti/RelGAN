@@ -30,6 +30,8 @@ parser.add_argument('--sn', default=False, action='store_true', help='if using s
 # Training
 parser.add_argument('--gsteps', default='1', type=int, help='How many training steps to use for generator')
 parser.add_argument('--dsteps', default='5', type=int, help='How many training steps to use for discriminator')
+parser.add_argument('--n-topic-pre-epochs', default=150, type=int,
+                    help='Number of steps to run pre-training for the topic discriminator')
 parser.add_argument('--npre-epochs', default=150, type=int, help='Number of steps to run pre-training')
 parser.add_argument('--nadv-steps', default=5000, type=int, help='Number of steps to run adversarial training')
 parser.add_argument('--ntest', default=50, type=int, help='How often to run tests')
