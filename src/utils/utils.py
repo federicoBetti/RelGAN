@@ -103,9 +103,7 @@ def pre_train_discriminator(sess, d_topic_op, d_topic_loss, d_topic_accuracy, x_
     supervised_accuracy = []
     data_loader.reset_pointer()
 
-    for it in range(data_loader.num_batch - 140):
-        if np.mod(it, 50) == 0:
-            print("Trained discriminator pre-train the batch {} over {}".format(it, data_loader.num_batch))
+    for it in range(data_loader.num_batch):
 
         text_batch, topic_batch = data_loader.next_batch(only_text=False)
         _, topic_loss, accuracy = sess.run([d_topic_op, d_topic_loss, d_topic_accuracy],
@@ -178,7 +176,7 @@ def gen_real_test_file_not_file(codes: str, sentence_generated_from, file, iw_di
     with open(file, 'w') as outfile:
         for r, s in zip(tokenized, sentence_generated_from):
             outfile.write(code_to_text(codes=[r], dictionary=iw_dict))
-            outfile.write("\t Taken from: {}".format(code_to_text(codes=[s], dictionary=iw_dict)))
+            outfile.write("\t ---- {}".format(code_to_text(codes=[s], dictionary=iw_dict)))
 
 
 def take_sentences(gen_text_file):

@@ -203,7 +203,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
                 metric_names = [metric.get_name() for metric in metrics]
                 for (name, score) in zip(metric_names, scores):
                     msg += ', ' + name + ': %.4f' % score
-                print(msg)
+                progress.set_description(msg)
                 log.write(msg)
                 log.write('\n')
 
