@@ -144,11 +144,8 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
     topic_discr_pretrain_summary = CustomSummary(name='pretrain_loss', scope='topic_discriminator')
     topic_discr_accuracy_summary = CustomSummary(name='pretrain_accuracy', scope='topic_discriminator')
 
-    custom_summaries = []
-    custom_summaries.append(gen_pretrain_loss_summary)
-    custom_summaries.append(gen_sentences_summary)
-    custom_summaries.append(topic_discr_pretrain_summary)
-    custom_summaries.append(topic_discr_accuracy_summary)
+    custom_summaries = [gen_pretrain_loss_summary, gen_sentences_summary, topic_discr_pretrain_summary,
+                        topic_discr_accuracy_summary]
 
     # ------------- initial the graph --------------
     with init_sess() as sess:
@@ -217,6 +214,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
                                                                            d_topic_out_real_pos, d_topic_out_real_neg)
             topic_discr_pretrain_summary.write_summary(d_topic_pretrain_loss, epoch)
             topic_discr_accuracy_summary.write_summary(accuracy_mean, epoch)
+            progress.set_description('topic_loss: %4.4f, accuracy: %4.4f' % (d_topic_pretrain_loss, accuracy_mean))
 
         print('Start adversarial training...')
         progress = tqdm(range(nadv_steps))
