@@ -93,7 +93,7 @@ def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen
     # pretraining loss
     with tf.variable_scope("pretrain_loss_computation"):
         pretrain_loss = -tf.reduce_sum(
-            tf.one_hot(tf.to_int32(tf.reshape(x_real, [-1])), vocab_size, 1.0, 0.0) * tf.log(
+            tf.one_hot(tf.cast(tf.reshape(x_real, [-1]), tf.int32), vocab_size, 1.0, 0.0) * tf.log(
                 tf.clip_by_value(tf.reshape(g_predictions, [-1, vocab_size]), 1e-20, 1.0)
             )
         ) / (seq_len * batch_size)

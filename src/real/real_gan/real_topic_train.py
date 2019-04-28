@@ -170,8 +170,8 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
         metrics = get_metrics(config, oracle_loader, test_file, gen_text_file, g_pretrain_loss, x_real, sess)
 
         print('Start pre-training...')
-        for epoch in range(npre_epochs):
-            print("Pretrain epoch: {}, hour: {}".format(epoch, time.asctime()))
+        progress = tqdm(range(npre_epochs))
+        for epoch in progress:
             # pre-training
             g_pretrain_loss_np = pre_train_epoch(sess, g_pretrain_op, g_pretrain_loss, x_real, oracle_loader)
             gen_pretrain_loss_summary.write_summary(g_pretrain_loss_np, epoch)
@@ -208,8 +208,8 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
                 log.write('\n')
 
         print('Start topic Discriminator pre-training...')
-        for epoch in range(n_topic_pre_epochs):
-            print("Topic discriminator pretrain epoch: {}, hour: {}".format(epoch, time.asctime()))
+        progress = tqdm(range(n_topic_pre_epochs))
+        for epoch in progress:
             # pre-training and write loss
             d_topic_pretrain_loss, accuracy_mean = pre_train_discriminator(sess, d_topic_pretrain_op, d_topic_loss,
                                                                            d_topic_accuracy, x_real, x_topic,
