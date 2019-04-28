@@ -213,7 +213,8 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
             # pre-training and write loss
             d_topic_pretrain_loss, accuracy_mean = pre_train_discriminator(sess, d_topic_pretrain_op, d_topic_loss,
                                                                            d_topic_accuracy, x_real, x_topic,
-                                                                           x_topic_random, oracle_loader)
+                                                                           x_topic_random, oracle_loader,
+                                                                           d_topic_out_real_pos, d_topic_out_real_neg)
             topic_discr_pretrain_summary.write_summary(d_topic_pretrain_loss, epoch)
             topic_discr_accuracy_summary.write_summary(accuracy_mean, epoch)
 
@@ -308,12 +309,12 @@ def get_losses(d_out_real, d_out_fake, x_real_onehot, x_fake_onehot_appr, d_topi
             ), name="d_loss_fake")
 
             d_topic_loss_real_pos = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-                logits=d_topic_out_real_neg, labels=tf.ones_like(d_topic_out_real_neg)
+                logits=d_topic_out_real_pos, labels=tf.ones_like(d_topic_out_real_neg)
             ), name="d_topic_loss_real_pos")
 
             d_topic_loss_real_neg = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-                logits=d_topic_out_real_pos, labels=tf.zeros_like(d_topic_out_real_pos)
-            ), name="d_topic_loss_real_pos")
+                logits=d_topic_out_real_neg, labels=tf.zeros_like(d_topic_out_real_pos)
+            ), name="d_topic_loss_real_neg")
 
             d_topic_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
                 logits=d_topic_out_fake, labels=tf.zeros_like(d_topic_out_fake)
@@ -562,8 +563,9 @@ def get_accuracy(d_topic_out_real_pos, d_topic_out_real_neg):
     correct_answer = tf.squeeze(
         tf.concat([tf.ones_like(d_topic_out_real_pos), tf.zeros_like(d_topic_out_real_neg)], axis=0))
     predictions = tf.squeeze(
-        tf.concat([tf.ones_like(d_topic_out_real_pos), tf.zeros_like(d_topic_out_real_neg)], axis=0))
-    predictions = tf.round(predictions)
-    equality = tf.equal(predictions, correct_answer)
-    accuracy = tf.reduce_mean(tf.cast(equality, tf.float32))
+        tf.concat([d_topic_out_real_pos, d_topic_out_real_neg], axis=0))
+    # acc, acc_op = tf.metrics.accuracy(labels=correct_answer, predictions=predictions)
+    predicted_class = tf.greater(predictions, 0.5)
+    correct = tf.equal(predicted_class, tf.equal(correct_answer, 1.0))
+    accuracy = tf.reduce_mean(tf.cast(correct, 'float'))
     return accuracy

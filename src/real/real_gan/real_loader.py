@@ -167,25 +167,18 @@ class RealDataTopicLoader(RealDataLoader):
             topic_sentences[index] = np.dot(np.expand_dims(topic_weights[index], 0), topic_matrix).squeeze()
 
         # get model lemmatized version of the words, it's needed because LDA does it and model processing doesn't
-        texts = [str(lemmatize(word, min_length=2)).split('/')[0].split("b\'")[-1] for word in
-                 self.model_word_index_dict.keys()]
+        self.texts = [str(lemmatize(word, min_length=2)).split('/')[0].split("b\'")[-1] for word in
+                      self.model_word_index_dict.keys()]
         self.lda_index_word_dict = lda.dictionary.id2token
-
-        def get_model_index(lda_index):
-            word = self.lda_index_word_dict[lda_index]
-            try:
-                return self.model_word_index_dict[word]
-            except KeyError:
-                return [text_index for text_index in range(len(texts)) if texts[text_index] == word]
 
         # todo il +1 è stato aggiunto perchè anche nel modello lo fa, bisogna vedere se è da aggiungere sopra o sotto
         real_vector = np.zeros(
             (topic_sentences.shape[0], len(self.model_word_index_dict) + 1))  # sentence_number x vocab_size
-        inverse_indexes = [get_model_index(i) for i in range(len(self.lda_index_word_dict))]
+        self.inverse_indexes = [self.get_model_index(i) for i in range(len(self.lda_index_word_dict))]
 
         # since the parallelism is the same for each sentence, it is done word by word for all sentences all together.
         # It is possible that a word in the LDA corresponds to more words in the model due to lemmatization procedure
-        for ind, invere_index in enumerate(inverse_indexes):
+        for ind, invere_index in enumerate(self.inverse_indexes):
             if isinstance(invere_index, list):
                 # more than one index in the model because of lemmatization
                 for x in invere_index:
@@ -207,25 +200,13 @@ class RealDataTopicLoader(RealDataLoader):
 
         topic_sentences = np.dot(random_topic_weights, self.topic_matrix)
 
-        # get model lemmatized version of the words, it's needed because LDA does it and model processing doesn't
-        texts = [str(lemmatize(word, min_length=2)).split('/')[0].split("b\'")[-1] for word in
-                 self.model_word_index_dict.keys()]
-
-        def get_model_index(lda_index):
-            word = self.lda_index_word_dict[lda_index]
-            try:
-                return self.model_word_index_dict[word]
-            except KeyError:
-                return [text_index for text_index in range(len(texts)) if texts[text_index] == word]
-
         # todo stessa cosa di sopra
         real_vector = np.zeros(
             (topic_sentences.shape[0], len(self.model_word_index_dict) + 1))  # sentence_number x vocab_size
-        inverse_indexes = [get_model_index(i) for i in range(len(self.lda_index_word_dict))]
 
         # since the parallelism is the same for each sentence, it is done word by word for all sentences all together.
         # It is possible that a word in the LDA corresponds to more words in the model due to lemmatization procedure
-        for ind, invere_index in enumerate(inverse_indexes):
+        for ind, invere_index in enumerate(self.inverse_indexes):
             if isinstance(invere_index, list):
                 # more than one index in the model because of lemmatization
                 for x in invere_index:
@@ -235,3 +216,10 @@ class RealDataTopicLoader(RealDataLoader):
                 real_vector[:, invere_index] = topic_sentences[:, ind]
 
         return real_vector
+
+    def get_model_index(self, lda_index):
+        word = self.lda_index_word_dict[lda_index]
+        try:
+            return self.model_word_index_dict[word]
+        except KeyError:
+            return [text_index for text_index in range(len(self.texts)) if self.texts[text_index] == word]

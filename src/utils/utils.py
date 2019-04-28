@@ -77,7 +77,7 @@ def init_sess():
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     sess = tf.Session(config=config)
-    sess.run(tf.global_variables_initializer())
+    sess.run([tf.global_variables_initializer(), tf.local_variables_initializer()])
     return sess
 
 
@@ -97,7 +97,7 @@ def pre_train_epoch(sess, g_pretrain_op, g_pretrain_loss, x_real, data_loader):
 
 
 def pre_train_discriminator(sess, d_topic_op, d_topic_loss, d_topic_accuracy, x_real, x_topic, x_topic_random,
-                            data_loader):
+                            data_loader, d_topic_out_real_pos, d_topic_out_real_neg):
     # Pre-train the generator using MLE for one epoch
     supervised_g_losses = []
     supervised_accuracy = []
@@ -111,8 +111,6 @@ def pre_train_discriminator(sess, d_topic_op, d_topic_loss, d_topic_accuracy, x_
                                                       x_topic_random: data_loader.random_topic()})
         supervised_g_losses.append(topic_loss)
         supervised_accuracy.append(accuracy)
-
-    tf.summary.scalar("loss/topic_discriminator/pretrain_topic_loss", tf.reduce_mean(supervised_g_losses))
 
     return np.mean(supervised_g_losses), np.mean(supervised_accuracy)
 
@@ -201,6 +199,7 @@ class CustomSummary(object):
     """
     This class is used to create custom summaries and does everything by itself
     """
+
     def __init__(self, name: str, scope: str, summary_type=tf.summary.scalar, item_type=tf.float32):
         self.name = name
         self.scope = scope
@@ -222,5 +221,3 @@ class CustomSummary(object):
             raise ValueError("file writer or session weren't defined")
         fake_summary = self.sess.run(self.final_summary, feed_dict={self.placeholder: value})
         self.file_writer.add_summary(fake_summary, epoch)
-
-
