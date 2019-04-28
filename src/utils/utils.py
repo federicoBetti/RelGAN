@@ -52,8 +52,8 @@ def generate_samples_topic(sess, gen_x, batch_size, generated_num, oracle_loader
         text_batch, topic_batch = oracle_loader.random_batch(only_text=False)
         feed = {x_topic: topic_batch}
         sentence_generated_from.extend(text_batch)
-        if ii % 50 == 0:
-            print("generated {} over {}".format(ii, max_gen))
+        # if ii % 50 == 0:
+        #     print("generated {} over {}".format(ii, max_gen))
         generated_samples.extend(sess.run(gen_x, feed_dict=feed))
     print("Samples Generated")
     codes = list()
