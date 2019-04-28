@@ -149,16 +149,6 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
     custom_summaries.append(gen_sentences_summary)
     custom_summaries.append(topic_discr_pretrain_summary)
     custom_summaries.append(topic_discr_accuracy_summary)
-    # gen_pretrain_loss_placeholder = tf.placeholder(tf.float32, name='pretrain_loss_placeholder')
-    # gen_pretrain_loss = tf.summary.scalar('generator/pretrain_loss', gen_pretrain_loss_placeholder)
-    #
-    # # Placeholder for generated text
-    # gen_sentences_placeholder = tf.placeholder(tf.string, name='generated_sentences_placeholder')
-    # gen_sentences = tf.summary.text('generator/generated_sentences', gen_sentences_placeholder)
-
-    # Placeholder for topic discriminator pretrain loss
-    # topic_discr_pretrain_placeholder = tf.placeholder(tf.float32, name='topic_discr_pretrain_placeholder')
-    # topic_discr_pretrain = tf.summary.scalar('topic_discriminator/pretrain_loss', topic_discr_pretrain_placeholder)
 
     # ------------- initial the graph --------------
     with init_sess() as sess:

@@ -47,7 +47,7 @@ def generate_samples_topic(sess, gen_x, batch_size, generated_num, oracle_loader
     print("Generating Samples with Topic...", end="  ")
     generated_samples = []
     sentence_generated_from = []
-    max_gen = int(generated_num / batch_size) - 155  # 156
+    max_gen = int(generated_num / batch_size)  # 156
     for ii in range(max_gen):
         text_batch, topic_batch = oracle_loader.random_batch(only_text=False)
         feed = {x_topic: topic_batch}
