@@ -176,14 +176,28 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
             if not os.path.exists(model_path):
                 os.makedirs(model_path)
             save_path = saver.save(sess, os.path.join(model_path, "model.ckpt"))
-            print("Upto Generator Pretrain saved in path: %s" % save_path)
+            print("Up to Generator Pretrain saved in path: %s" % save_path)
 
-        print('Start Topic Discriminator pre-training...')
-        topic_discriminator_pretrain(n_topic_pre_epochs, sess, d_topic_pretrain_op, d_topic_loss,
-                                     d_topic_accuracy, x_real, x_topic,
-                                     x_topic_random, oracle_loader,
-                                     d_topic_out_real_pos, d_topic_out_real_neg, topic_discr_pretrain_summary,
-                                     topic_discr_accuracy_summary)
+
+        # Check if there is a pretrained generator and a topic discriminator saved
+        model_dir = "PretrainGeneratorAndTopicDiscriminator"
+        model_path = resources_path(os.path.join("checkpoint_folder", model_dir))
+        try:
+            new_saver = tf.train.import_meta_graph(os.path.join(model_path, "model.ckpt.meta"))
+            new_saver.restore(sess, os.path.join(model_path, "model.ckpt"))
+            print("Used saved model for topic discriminator and pretrained generator")
+        except OSError:
+            print('Start Topic Discriminator pre-training...')
+            topic_discriminator_pretrain(n_topic_pre_epochs, sess, d_topic_pretrain_op, d_topic_loss,
+                                         d_topic_accuracy, x_real, x_topic,
+                                         x_topic_random, oracle_loader,
+                                         d_topic_out_real_pos, d_topic_out_real_neg, topic_discr_pretrain_summary,
+                                         topic_discr_accuracy_summary)
+
+            if not os.path.exists(model_path):
+                os.makedirs(model_path)
+            save_path = saver.save(sess, os.path.join(model_path, "model.ckpt"))
+            print("Up to Topic Discriminator Pretrain saved in path: %s" % save_path)
 
         print('Start adversarial training...')
         progress = tqdm(range(nadv_steps))
