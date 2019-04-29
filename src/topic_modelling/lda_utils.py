@@ -3,14 +3,28 @@ import re
 import time
 from typing import List
 
+import nltk
+from nltk.corpus import wordnet
 import pandas as pd
 from gensim.models import LdaModel, CoherenceModel
-from gensim.utils import lemmatize, simple_tokenize
+from gensim.utils import simple_tokenize
 
 from path_resolution import resources_path
 
 
+def get_wordnet_pos(word):
+    """Map POS tag to first character lemmatize() accepts"""
+    tag = nltk.pos_tag([word])[0][1][0].upper()
+    tag_dict = {"J": wordnet.ADJ,
+                "N": wordnet.NOUN,
+                "V": wordnet.VERB,
+                "R": wordnet.ADV}
+
+    return tag_dict.get(tag, wordnet.NOUN)
+
 def process_texts(input_texts, stops):
+    from nltk.stem import WordNetLemmatizer
+    lemmatizer = WordNetLemmatizer()
     final = []
     for i in input_texts:
         texts = (re.sub(r"http\S+", "", i))
@@ -22,8 +36,9 @@ def process_texts(input_texts, stops):
         texts = [word for word in texts if word not in stops]
 
         # automatically detect common phrases
-        texts = [str(word).split('/')[0].split('b\'')[1] for word in
-                 lemmatize(' '.join(texts), allowed_tags=re.compile('(NN)'), min_length=2)]
+        sentence = ' '.join(texts)
+        texts = [lemmatizer.lemmatize(w, get_wordnet_pos(w)) for w in nltk.word_tokenize(sentence)]
+        # texts = [str(word).split('/')[0].split('b\'')[1] for word in lemmatizer.lemmatize(sentence)]  # , allowed_tags=re.compile('(NN)'), min_length=2)]
 
         final.append(texts)
     return final

@@ -4,7 +4,7 @@ from typing import Dict, List
 import numpy as np
 import random
 
-from gensim.utils import lemmatize
+# from gensim.utils import lemmatize
 
 from topic_modelling.lda_topic import train_lda, train_specific_LDA, LDA
 from topic_modelling.lda_utils import get_corpus, get_perc_sent_topic
@@ -157,8 +157,10 @@ class RealDataTopicLoader(RealDataLoader):
         topic_sentences = np.dot(topic_weights, topic_matrix)
 
         # get model lemmatized version of the words, it's needed because LDA does it and model processing doesn't
-        self.texts = [str(lemmatize(word, min_length=2)).split('/')[0].split("b\'")[-1] for word in
-                      self.model_word_index_dict.keys()]
+        from nltk.stem import WordNetLemmatizer
+        lemmatizer = WordNetLemmatizer()
+
+        self.texts = [lemmatizer.lemmatize(word) for word in self.model_word_index_dict.keys()]
         self.lda_index_word_dict = lda.dictionary.id2token
 
         # todo il +1 è stato aggiunto perchè anche nel modello lo fa, bisogna vedere se è da aggiungere sopra o sotto
@@ -203,6 +205,6 @@ class RealDataTopicLoader(RealDataLoader):
         word = self.lda_index_word_dict[lda_index]
         from_lemmatize = [text_index for text_index in range(len(self.texts)) if self.texts[text_index] == word]
         try:
-            return [self.model_word_index_dict[word]] + from_lemmatize
+            return [int(self.model_word_index_dict[word])] + from_lemmatize
         except KeyError:
             return from_lemmatize
