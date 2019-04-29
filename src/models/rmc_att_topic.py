@@ -31,6 +31,7 @@ def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen
 
         gumbel_t = add_gumbel(o_t)
         lambda_param = g_output_unit_lambda(mem_o_t)
+        # todo estrain lambda e printalo
         topic_vector = x_topic
         assert gumbel_t.shape.as_list() == topic_vector.shape.as_list(), "Gumbel: {}, Topic vector: {}".format(
             gumbel_t.shape.as_list(), topic_vector.shape.as_list())

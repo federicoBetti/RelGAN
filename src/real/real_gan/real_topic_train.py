@@ -204,7 +204,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
                 log.write(msg)
                 log.write('\n')
 
-        print('Start topic Discriminator pre-training...')
+        print('Start Topic Discriminator pre-training...')
         progress = tqdm(range(n_topic_pre_epochs))
         for epoch in progress:
             # pre-training and write loss
@@ -250,7 +250,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
 
             # Test
             # print("N_iter: {}, test every {} epochs".format(niter, config['ntest']))
-            if np.mod(adv_epoch, 100) == 0:
+            if np.mod(adv_epoch, 1000) == 0:
                 # generate fake data and create batches
                 gen_save_file = os.path.join(sample_dir, 'adv_samples_{:05d}.txt'.format(niter))
                 codes, sentence_generated_from = generate_samples_topic(sess, x_fake, batch_size, num_sentences,
@@ -318,7 +318,7 @@ def get_losses(d_out_real, d_out_fake, x_real_onehot, x_fake_onehot_appr, d_topi
                 logits=d_topic_out_fake, labels=tf.zeros_like(d_topic_out_fake)
             ), name="d_topic_loss_fake")
 
-            d_loss = d_loss_real + d_loss_fake + d_topic_loss_real_pos + d_topic_loss_real_neg + d_topic_loss_fake
+            d_loss = d_loss_real + d_loss_fake + d_topic_loss_real_pos + d_topic_loss_fake
 
             g_sentence_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
                 logits=d_out_fake, labels=tf.ones_like(d_out_fake)

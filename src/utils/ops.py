@@ -215,7 +215,7 @@ def create_output_unit_lambda(output_size, input_size, additive_scope="_lambda")
     :param additive_scope:
     :return:
     """
-    Wo = tf.get_variable('W_lambda', shape=[input_size, output_size], initializer=create_linear_initializer(output_size))
+    Wo = tf.get_variable('W_lambda', shape=[input_size, output_size], initializer=create_linear_initializer(input_size))
     bo = tf.get_variable('b_lambda', shape=[output_size], initializer=create_bias_initializer())
 
     def unit(hidden_mem_o):

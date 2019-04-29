@@ -79,7 +79,7 @@ class RealDataTopicLoader(RealDataLoader):
         self.topic_batches = None
         self.topic_matrix = None
         self.batches_shape = None
-        self.topic_num = None
+        self.topic_num = 3
 
     def create_batches(self, data_file):
         self.token_stream = []
@@ -145,7 +145,6 @@ class RealDataTopicLoader(RealDataLoader):
         from topic_modelling.lda_topic import train_specific_LDA, get_corpus, LDA
 
         # Create LDA model for the dataset, given parameters
-        self.topic_num = 3
         coco = True  # Now it is just coco or not coco just for name saving reasons, it's already possible to integrate any dataset in the data-dir folder
         corpus_raw = get_corpus(coco)
         lda = train_specific_LDA(corpus_raw, num_top=self.topic_num, passes=2, iterations=2, chunksize=2000, coco=coco)
