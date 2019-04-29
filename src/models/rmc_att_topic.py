@@ -5,7 +5,7 @@ from utils.ops import *
 
 
 def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen_emb_dim, mem_slots, head_size,
-              num_heads, hidden_dim, start_token):
+              num_heads, hidden_dim, start_token, use_lambda=True):
     start_tokens = tf.constant([start_token] * batch_size, dtype=tf.int32)
     output_memory_size = mem_slots * head_size * num_heads
 
@@ -30,12 +30,15 @@ def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen
         o_t = g_output_unit(mem_o_t)  # batch x vocab, logits not prob
 
         gumbel_t = add_gumbel(o_t)
-        lambda_param = g_output_unit_lambda(mem_o_t)
-        # todo estrain lambda e printalo
+
         topic_vector = x_topic
         assert gumbel_t.shape.as_list() == topic_vector.shape.as_list(), "Gumbel: {}, Topic vector: {}".format(
             gumbel_t.shape.as_list(), topic_vector.shape.as_list())
-        gumbel_t = (1 - lambda_param) * gumbel_t + lambda_param * topic_vector
+
+        if use_lambda:
+            lambda_param = g_output_unit_lambda(mem_o_t)
+            # todo estrain lambda e printalo
+            gumbel_t = (1 - lambda_param) * gumbel_t + lambda_param * topic_vector
 
         next_token = tf.cast(tf.argmax(gumbel_t, axis=1), tf.int32)
         #  + lambda * topic_related
