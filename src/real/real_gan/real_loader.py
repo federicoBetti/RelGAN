@@ -1,5 +1,5 @@
 import time
-from typing import Dict
+from typing import Dict, List
 
 import numpy as np
 import random
@@ -154,16 +154,7 @@ class RealDataTopicLoader(RealDataLoader):
         topic_matrix = lda.lda_model.get_topics()  # num_topic x num_words
         self.topic_matrix = topic_matrix
         topic_weights = df.values[:, 1:self.topic_num + 1]  # num_sentences x num_topic (each row sum to 1)
-        sentences_number = topic_weights.shape[0]
-        word_count = topic_matrix.shape[1]
-        size = (int(sentences_number), int(word_count))
-        topic_sentences = np.zeros(
-            size)  # contains the word influence for each sentence, considering the topic of the sentence
-        # print("Topic sentnece dim: {}".format(size))
-
-        for index in range(topic_sentences.shape[0]):
-            # multiply the percentage of the topic in the sentence with the topic itself
-            topic_sentences[index] = np.dot(np.expand_dims(topic_weights[index], 0), topic_matrix).squeeze()
+        topic_sentences = np.dot(topic_weights, topic_matrix)
 
         # get model lemmatized version of the words, it's needed because LDA does it and model processing doesn't
         self.texts = [str(lemmatize(word, min_length=2)).split('/')[0].split("b\'")[-1] for word in
@@ -178,13 +169,9 @@ class RealDataTopicLoader(RealDataLoader):
         # since the parallelism is the same for each sentence, it is done word by word for all sentences all together.
         # It is possible that a word in the LDA corresponds to more words in the model due to lemmatization procedure
         for ind, invere_index in enumerate(self.inverse_indexes):
-            if isinstance(invere_index, list):
-                # more than one index in the model because of lemmatization
-                for x in invere_index:
-                    real_vector[:, x] = topic_sentences[:, ind]
-            else:
-                invere_index = int(invere_index)
-                real_vector[:, invere_index] = topic_sentences[:, ind]
+            # more than one index in the model because of lemmatization
+            for x in invere_index:
+                real_vector[:, x] = topic_sentences[:, ind]
 
         print("Topic model computed in {} sec!".format(time.time() - t))
         return real_vector
@@ -206,19 +193,16 @@ class RealDataTopicLoader(RealDataLoader):
         # since the parallelism is the same for each sentence, it is done word by word for all sentences all together.
         # It is possible that a word in the LDA corresponds to more words in the model due to lemmatization procedure
         for ind, invere_index in enumerate(self.inverse_indexes):
-            if isinstance(invere_index, list):
-                # more than one index in the model because of lemmatization
-                for x in invere_index:
-                    real_vector[:, x] = topic_sentences[:, ind]
-            else:
-                invere_index = int(invere_index)
-                real_vector[:, invere_index] = topic_sentences[:, ind]
+            # more than one index in the model because of lemmatization
+            for x in invere_index:
+                real_vector[:, x] = topic_sentences[:, ind]
 
         return real_vector
 
-    def get_model_index(self, lda_index):
+    def get_model_index(self, lda_index) -> List[int]:
         word = self.lda_index_word_dict[lda_index]
+        from_lemmatize = [text_index for text_index in range(len(self.texts)) if self.texts[text_index] == word]
         try:
-            return self.model_word_index_dict[word]
+            return [self.model_word_index_dict[word]] + from_lemmatize
         except KeyError:
-            return [text_index for text_index in range(len(self.texts)) if self.texts[text_index] == word]
+            return from_lemmatize

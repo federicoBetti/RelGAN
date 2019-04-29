@@ -178,7 +178,6 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
             save_path = saver.save(sess, os.path.join(model_path, "model.ckpt"))
             print("Up to Generator Pretrain saved in path: %s" % save_path)
 
-
         # Check if there is a pretrained generator and a topic discriminator saved
         model_dir = "PretrainGeneratorAndTopicDiscriminator"
         model_path = resources_path(os.path.join("checkpoint_folder", model_dir))
