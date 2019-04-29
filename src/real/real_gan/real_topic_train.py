@@ -2,7 +2,6 @@
 import datetime
 import random
 
-from tensorflow.python.framework.errors_impl import NotFoundError
 from tqdm import tqdm
 
 from models import rmc_att_topic
@@ -147,12 +146,14 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
     custom_summaries = [gen_pretrain_loss_summary, gen_sentences_summary, topic_discr_pretrain_summary,
                         topic_discr_accuracy_summary]
 
+    # To save the trained model
+    saver = tf.train.Saver()
+
     # ------------- initial the graph --------------
     with init_sess() as sess:
         log = open(csv_file, 'w')
         # file_suffix = "date: {}, normal RelGAN, pretrain epochs: {}, adv epochs: {}".format(datetime.datetime.now(),
         #                                                                                     npre_epochs, nadv_steps)
-        print("FileWriter path: {}".format(os.path.join(log_dir, 'summary')))
         sum_writer = tf.summary.FileWriter(os.path.join(log_dir, 'summary'),
                                            sess.graph)  # , filename_suffix=file_suffix)
         for custom_summary in custom_summaries:
@@ -258,11 +259,10 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
                 gen_real_test_file_not_file(codes, sentence_generated_from, gen_save_file, index_word_dict)
                 gen_real_test_file_not_file(codes, sentence_generated_from, gen_text_file, index_word_dict)
 
-                if np.mod(adv_epoch, 200) == 0:
-                    # take sentences from saved files
-                    sent = take_sentences_topic(gen_text_file)
-                    sent = random.sample(sent, 5)  # pick just one sentence
-                    gen_sentences_summary.write_summary(sent, epoch)
+                # take sentences from saved files
+                sent = take_sentences_topic(gen_text_file)
+                sent = random.sample(sent, 5)  # pick just one sentence
+                gen_sentences_summary.write_summary(sent, adv_epoch)
 
                 # write summaries
                 scores = [metric.get_score() for metric in metrics]
@@ -276,6 +276,13 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
                 print(msg)
                 log.write(msg)
                 log.write('\n')
+
+        model_dir = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        model_path = resources_path(os.path.join("trained_models", model_dir))
+        if not os.path.exists(model_path):
+            os.makedirs(model_path)
+        save_path = saver.save(sess, os.path.join(model_path, "model.ckpt"))
+        print("Model saved in path: %s" % save_path)
 
 
 # A function to get different GAN losses
