@@ -155,16 +155,18 @@ def gen_real_test_file_not_file(codes: str, sentence_generated_from, file, iw_di
     :param iw_dict: index to word dictionary to convert from codes to words
     """
     raw = codes.split('\n')[:-1]
-    tokenized = []
-    for text in raw:
-        text = nltk.word_tokenize(text.lower())
-        tokenized.append(text)
-    assert len(tokenized) == len(sentence_generated_from), \
-        "Codes and sentence generated from have different lengths: {} and {}".format(len(tokenized),
-                                                                                     len(sentence_generated_from))
+    # This was useless because it only arrives "int (float) int (float) ... "
+    # tokenized = []
+    # for text in raw:
+    #     print(text)
+    #     text = nltk.word_tokenize(text.lower())
+    #     tokenized.append(text)
+    # assert len(tokenized) == len(sentence_generated_from), \
+    #     "Codes and sentence generated from have different lengths: {} and {}".format(len(tokenized),
+    #                                                                                  len(sentence_generated_from))
     with open(file, 'w') as outfile:
-        for r, s in zip(tokenized, sentence_generated_from):
-            # todo  problema che arriva a code to text anche (lambda) per ogni parola
+        for r, s in zip(raw, sentence_generated_from):
+
             outfile.write(code_to_text(codes=[r], dictionary=iw_dict))
             outfile.write("\t ---- {}".format(code_to_text(codes=[s], dictionary=iw_dict)))
 

@@ -25,12 +25,15 @@ def code_to_text(codes, dictionary):
     paras = ""
     eof_code = len(dictionary)
     for line in codes:
-        numbers = map(int, line)
-        for number in numbers:
-
-            if number == eof_code:
-                continue
-            paras += (dictionary[str(number)] + ' ')
+        numbers_or_par = line.split(" ")
+        for number in numbers_or_par:
+            if '(' in number or ')' in number:
+                paras += number
+            else:
+                number = int(number)
+                if number == eof_code:
+                    continue
+                paras += (dictionary[str(number)] + ' ')
         paras += '\n'
     return paras
 
@@ -80,7 +83,6 @@ def text_precess(train_text_loc, test_text_loc=None, oracle_file=None) -> Tuple[
     :return: sequence length of the longest sentences, dict size (how many different words), dict from word to index
     """
     train_tokens = get_tokenized(train_text_loc)
-    # todo stemming or lemmatization?
     if test_text_loc is None:
         test_tokens = list()
     else:
