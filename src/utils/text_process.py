@@ -27,6 +27,7 @@ def code_to_text(codes, dictionary):
     for line in codes:
         numbers = map(int, line)
         for number in numbers:
+
             if number == eof_code:
                 continue
             paras += (dictionary[str(number)] + ' ')

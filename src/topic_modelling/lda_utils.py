@@ -22,6 +22,7 @@ def get_wordnet_pos(word):
 
     return tag_dict.get(tag, wordnet.NOUN)
 
+
 def process_texts(input_texts, stops):
     from nltk.stem import WordNetLemmatizer
     lemmatizer = WordNetLemmatizer()

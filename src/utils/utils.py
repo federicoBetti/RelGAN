@@ -41,33 +41,27 @@ def generate_samples(sess, gen_x, batch_size, generated_num, output_file=None,
     return codes
 
 
-def generate_samples_topic(sess, gen_x, batch_size, generated_num, oracle_loader=None, x_topic=None, output_file=None,
+def generate_samples_topic(sess, gen_x, batch_size, generated_num, lambda_values=None, oracle_loader=None, x_topic=None,
                            get_code=True):
     # Generate Samples
-    print("Generating Samples with Topic...", end="  ")
+    # print("Generating Samples with Topic...", end="  ")
     generated_samples = []
+    generated_samples_lambda = []
     sentence_generated_from = []
     max_gen = int(generated_num / batch_size)  # 156
     for ii in range(max_gen):
         text_batch, topic_batch = oracle_loader.random_batch(only_text=False)
         feed = {x_topic: topic_batch}
         sentence_generated_from.extend(text_batch)
-        # if ii % 50 == 0:
-        #     print("generated {} over {}".format(ii, max_gen))
-        generated_samples.extend(sess.run(gen_x, feed_dict=feed))
-    print("Samples Generated")
-    codes = list()
-    if output_file is not None:
-        with open(output_file, 'w') as fout:
-            for sent in generated_samples:
-                buffer = ' '.join([str(x) for x in sent]) + '\n'
-                fout.write(buffer)
-                if get_code:
-                    codes.append(sent)
-        return np.array(codes), sentence_generated_from
+        gen_x_res, lambda_values_res = sess.run([gen_x, lambda_values], feed_dict=feed)
+        assert len(gen_x_res) == len(lambda_values_res)
+        assert len(gen_x_res[0]) == len(lambda_values_res[0])
+        generated_samples.extend(gen_x_res)
+        generated_samples_lambda.extend(lambda_values_res)
+    # print("Samples Generated")
     codes = ""
-    for sent in generated_samples:
-        buffer = ' '.join([str(x) for x in sent]) + '\n'
+    for sent, lambda_value_sent in zip(generated_samples, generated_samples_lambda):
+        buffer = ' '.join(["{} ({:.4f})".format(x, y) for x, y in zip(sent, lambda_value_sent)]) + '\n'
         codes += buffer
 
     return codes, sentence_generated_from
@@ -102,7 +96,6 @@ def pre_train_discriminator(sess, d_topic_op, d_topic_loss, d_topic_accuracy, x_
     data_loader.reset_pointer()
 
     for it in range(data_loader.num_batch):
-
         text_batch, topic_batch = data_loader.next_batch(only_text=False)
         _, topic_loss, accuracy = sess.run([d_topic_op, d_topic_loss, d_topic_accuracy],
                                            feed_dict={x_real: text_batch, x_topic: topic_batch,
@@ -171,6 +164,7 @@ def gen_real_test_file_not_file(codes: str, sentence_generated_from, file, iw_di
                                                                                      len(sentence_generated_from))
     with open(file, 'w') as outfile:
         for r, s in zip(tokenized, sentence_generated_from):
+            # todo  problema che arriva a code to text anche (lambda) per ogni parola
             outfile.write(code_to_text(codes=[r], dictionary=iw_dict))
             outfile.write("\t ---- {}".format(code_to_text(codes=[s], dictionary=iw_dict)))
 

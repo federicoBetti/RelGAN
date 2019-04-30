@@ -74,8 +74,9 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
     assert x_real_onehot.get_shape().as_list() == [batch_size, seq_len, vocab_size]
 
     # generator and discriminator outputs
-    x_fake_onehot_appr, x_fake, g_pretrain_loss, gen_o = generator(x_real=x_real, temperature=temperature,
-                                                                   x_topic=x_topic)
+    x_fake_onehot_appr, x_fake, g_pretrain_loss, gen_o, lambda_values_returned = generator(x_real=x_real,
+                                                                                           temperature=temperature,
+                                                                                           x_topic=x_topic)
     d_out_real = discriminator(x_onehot=x_real_onehot)
     d_out_fake = discriminator(x_onehot=x_fake_onehot_appr)
     d_topic_out_real_pos = topic_discriminator(x_onehot=x_real_onehot, x_topic=x_topic)
@@ -111,15 +112,15 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
 
     # Loss summaries
     loss_summaries = [
-        tf.summary.scalar('adv_loss/d_loss_real', d_loss_real),
-        tf.summary.scalar('adv_loss/d_loss_fake', d_loss_fake),
-        tf.summary.scalar('adv_loss/d_topic_loss_real_pos', d_topic_loss_real_pos),
-        tf.summary.scalar('adv_loss/d_topic_loss_real_neg', d_topic_loss_real_neg),
-        tf.summary.scalar('adv_loss/d_topic_loss_fake', d_topic_loss_fake),
-        tf.summary.scalar('adv_loss/discriminator', d_loss),
-        tf.summary.scalar('adv_loss/g_sentence_loss', g_sentence_loss),
-        tf.summary.scalar('adv_loss/g_topic_loss', g_topic_loss),
-        tf.summary.scalar('adv_loss/g_loss', g_loss),
+        tf.summary.scalar('adv_loss/discriminator/classic/d_loss_real', d_loss_real),
+        tf.summary.scalar('adv_loss/discriminator/classic/d_loss_fake', d_loss_fake),
+        tf.summary.scalar('adv_loss/discriminator/topic_discriminator/d_topic_loss_real_pos', d_topic_loss_real_pos),
+        # tf.summary.scalar('adv_loss/discriminator/topic_discriminator/d_topic_loss_real_neg', d_topic_loss_real_neg),
+        tf.summary.scalar('adv_loss/discriminator/topic_discriminator/d_topic_loss_fake', d_topic_loss_fake),
+        tf.summary.scalar('adv_loss/discriminator/total', d_loss),
+        tf.summary.scalar('adv_loss/generator/g_sentence_loss', g_sentence_loss),
+        tf.summary.scalar('adv_loss/generator/g_topic_loss', g_topic_loss),
+        tf.summary.scalar('adv_loss/generator/total_g_loss', g_loss),
         tf.summary.scalar('adv_loss/log_pg', log_pg),
         tf.summary.scalar('adv_loss/Wall_clock_time', Wall_clock_time),
         tf.summary.scalar('adv_loss/temperature', temperature),
@@ -171,7 +172,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
             generator_pretrain(npre_epochs, sess, g_pretrain_op, g_pretrain_loss, x_real, oracle_loader,
                                gen_pretrain_loss_summary, sample_dir, x_fake, batch_size, num_sentences, x_topic,
                                gen_text_file, index_word_dict, gen_sentences_summary, metrics, metric_summary_op,
-                               metrics_pl, sum_writer, log)
+                               metrics_pl, sum_writer, log, lambda_values_returned)
 
             if not os.path.exists(model_path):
                 os.makedirs(model_path)
@@ -243,6 +244,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
                 # take sentences from saved files
                 sent = take_sentences_topic(gen_text_file)
                 sent = random.sample(sent, 5)  # pick just one sentence
+                print(sent)
                 gen_sentences_summary.write_summary(sent, adv_epoch)
 
                 # write summaries
@@ -268,7 +270,8 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
 
 def generator_pretrain(npre_epochs, sess, g_pretrain_op, g_pretrain_loss, x_real, oracle_loader,
                        gen_pretrain_loss_summary, sample_dir, x_fake, batch_size, num_sentences, x_topic, gen_text_file,
-                       index_word_dict, gen_sentences_summary, metrics, metric_summary_op, metrics_pl, sum_writer, log):
+                       index_word_dict, gen_sentences_summary, metrics, metric_summary_op, metrics_pl, sum_writer, log,
+                       lambda_values):
     progress = tqdm(range(npre_epochs))
     for epoch in progress:
         # pre-training
@@ -281,6 +284,7 @@ def generator_pretrain(npre_epochs, sess, g_pretrain_op, g_pretrain_loss, x_real
             # generate fake data and create batches
             gen_save_file = os.path.join(sample_dir, 'pre_samples_{:05d}.txt'.format(epoch))
             codes, sentence_generated_from = generate_samples_topic(sess, x_fake, batch_size, num_sentences,
+                                                                    lambda_values=lambda_values,
                                                                     oracle_loader=oracle_loader, x_topic=x_topic)
             gen_real_test_file_not_file(codes, sentence_generated_from, gen_save_file, index_word_dict)
             gen_real_test_file_not_file(codes, sentence_generated_from, gen_text_file, index_word_dict)

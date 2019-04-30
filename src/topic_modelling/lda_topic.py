@@ -1,3 +1,4 @@
+import os
 import pickle
 from multiprocessing.spawn import freeze_support
 
@@ -5,6 +6,7 @@ from gensim.corpora import Dictionary
 from nltk.corpus import stopwords
 
 from topic_modelling.lda_utils import *
+import numpy as np
 
 
 class LDA:
@@ -110,7 +112,7 @@ def train_specific_LDA(corpus, num_top, passes, iterations, random_state_lda=3, 
     corpus_bow = [dictionary.doc2bow(i) for i in tmp]
     lda_train = LdaModel(corpus=corpus_bow, num_topics=num_top, id2word=dictionary,
                          eval_every=1, passes=passes, chunksize=chunksize,
-                         iterations=iterations, random_state=random_state_lda)
+                         iterations=iterations, random_state=random_state_lda, dtype=np.float32)
     lda = LDA(lda_train=lda_train, corpus_text=corpus, corpus_bow=corpus_bow, stops=stops, topic_num=num_top,
               dictionary=dictionary)
 

@@ -150,7 +150,7 @@ def get_train_ops(config, g_pretrain_loss, g_loss, d_loss, d_topic_loss,
     d_topic_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='topic_discriminator')
 
     # train together both discriminators
-    # d_vars = d_vars + d_topic_vars
+    d_vars = d_vars + d_topic_vars
 
     grad_clip = 5.0  # keep the same with the previous setting
 
