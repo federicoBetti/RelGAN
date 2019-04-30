@@ -33,7 +33,7 @@ def code_to_text(codes, dictionary):
             else:
                 number = int(number)
                 if number == eof_code:
-                    continue
+                    break
                 paras += (dictionary[str(number)] + ' ')
         paras += '\n'
     return paras

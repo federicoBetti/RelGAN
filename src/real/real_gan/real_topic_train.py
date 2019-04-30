@@ -243,8 +243,9 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
 
                 # take sentences from saved files
                 sent = take_sentences_topic(gen_text_file)
-                sent = random.sample(sent, 5)  # pick just one sentence
-                print(sent)
+                if adv_epoch < 3500:
+                    sent_number = 8
+                    sent = random.sample(sent, sent_number)
                 gen_sentences_summary.write_summary(sent, adv_epoch)
 
                 # write summaries
@@ -291,7 +292,7 @@ def generator_pretrain(npre_epochs, sess, g_pretrain_op, g_pretrain_loss, x_real
 
             # take sentences from saved files
             sent = take_sentences_topic(gen_text_file)
-            sent = random.sample(sent, 5)  # pick just one sentence
+            sent = random.sample(sent, 5)
             gen_sentences_summary.write_summary(sent, epoch)
 
             # write summaries
