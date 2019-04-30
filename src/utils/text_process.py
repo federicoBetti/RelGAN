@@ -25,9 +25,10 @@ def code_to_text(codes, dictionary):
     paras = ""
     eof_code = len(dictionary)
     for line in codes:
-        numbers_or_par = line.split(" ")
-        for number in numbers_or_par:
-            if '(' in number or ')' in number:
+        if isinstance(line, str):
+            line = line.split(" ")
+        for number in line:
+            if isinstance(number, str) and ('(' in number or ')' in number):
                 paras += number
             else:
                 number = int(number)

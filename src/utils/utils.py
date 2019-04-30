@@ -166,7 +166,6 @@ def gen_real_test_file_not_file(codes: str, sentence_generated_from, file, iw_di
     #                                                                                  len(sentence_generated_from))
     with open(file, 'w') as outfile:
         for r, s in zip(raw, sentence_generated_from):
-
             outfile.write(code_to_text(codes=[r], dictionary=iw_dict))
             outfile.write("\t ---- {}".format(code_to_text(codes=[s], dictionary=iw_dict)))
 
