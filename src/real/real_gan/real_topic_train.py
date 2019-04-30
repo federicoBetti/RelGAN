@@ -236,7 +236,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
             if np.mod(adv_epoch, 1000) == 0:
                 # generate fake data and create batches
                 gen_save_file = os.path.join(sample_dir, 'adv_samples_{:05d}.txt'.format(niter))
-                codes, sentence_generated_from = generate_samples_topic(sess, x_fake, batch_size, num_sentences,
+                codes, sentence_generated_from = generate_samples_topic(sess, x_fake, batch_size, num_sentences, lambda_values=lambda_values_returned,
                                                                         oracle_loader=oracle_loader, x_topic=x_topic)
                 gen_real_test_file_not_file(codes, sentence_generated_from, gen_save_file, index_word_dict)
                 gen_real_test_file_not_file(codes, sentence_generated_from, gen_text_file, index_word_dict)
