@@ -26,8 +26,6 @@ class Nll(Metrics):
         self.data_loader.reset_pointer()
         batch_num = self.data_loader.num_batch
         for it in range(batch_num):
-            # if np.mod(it, 50) == 0:
-            #     print("Inside batch to compute NLL loss: {} of {}".format(it, self.data_loader.num_batch))
             batch = self.data_loader.next_batch()
             g_loss = self.sess.run(self.pretrain_loss, {self.x_real: batch})
             nll.append(g_loss)

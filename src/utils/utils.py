@@ -179,6 +179,10 @@ def take_sentences(gen_text_file):
 
 
 def take_sentences_topic(gen_text_file):
+    """
+    :param gen_text_file: file containing generated sentences
+    :return: list of strings with generated sentences and sentences from which they have been taken from
+    """
     strings, all_strings = [], []
     with open(gen_text_file, 'r') as outfile:
         for line in outfile:

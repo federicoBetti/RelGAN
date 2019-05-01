@@ -4,7 +4,10 @@ from utils.metrics.DocEmbSim import DocEmbSim
 from utils.metrics.Nll import Nll
 from utils.metrics.SelfBleu import SelfBleu
 from utils.ops import gradient_penalty
+import numpy as np
+
 EPS = 1e-10
+
 
 # A function to get different GAN losses
 def get_losses(d_out_real, d_out_fake, x_real_onehot, x_fake_onehot_appr, d_topic_out_real_pos, d_topic_out_real_neg,
@@ -142,6 +145,7 @@ def get_train_ops(config, g_pretrain_loss, g_loss, d_loss, d_topic_loss,
     optimizer_name = config['optimizer']
     nadv_steps = config['nadv_steps']
     d_lr = config['d_lr']
+    d_topic_lr = config['d_lr']
     gpre_lr = config['gpre_lr']
     gadv_lr = config['gadv_lr']
 
@@ -163,6 +167,7 @@ def get_train_ops(config, g_pretrain_loss, g_loss, d_loss, d_topic_loss,
     # decide if using the weight decaying
     if config['decay']:
         d_lr = tf.train.exponential_decay(d_lr, global_step=global_step, decay_steps=nadv_steps, decay_rate=0.1)
+        d_topic_lr = tf.train.exponential_decay(d_lr, global_step=global_step, decay_steps=nadv_steps, decay_rate=0.1)
         gadv_lr = tf.train.exponential_decay(gadv_lr, global_step=global_step, decay_steps=nadv_steps, decay_rate=0.1)
 
     # Adam optimizer
@@ -175,6 +180,7 @@ def get_train_ops(config, g_pretrain_loss, g_loss, d_loss, d_topic_loss,
     # RMSProp optimizer
     elif optimizer_name == 'rmsprop':
         d_optimizer = tf.train.RMSPropOptimizer(d_lr)
+        d_topic_optimizer = tf.train.RMSPropOptimizer(d_topic_lr)
         g_optimizer = tf.train.RMSPropOptimizer(gadv_lr)
         temp_optimizer = tf.train.RMSPropOptimizer(1e-2)
 
@@ -197,7 +203,7 @@ def get_train_ops(config, g_pretrain_loss, g_loss, d_loss, d_topic_loss,
     # gradient clipping
     d_topic_grads, _ = tf.clip_by_global_norm(tf.gradients(d_topic_loss, d_topic_vars, name="gradients_d_topic_adv"),
                                               grad_clip, name="d_topic_adv_clipping")
-    d_topic_pretrain_op = d_optimizer.apply_gradients(zip(d_topic_grads, d_topic_vars))
+    d_topic_pretrain_op = d_topic_optimizer.apply_gradients(zip(d_topic_grads, d_topic_vars))
 
     return g_pretrain_op, g_train_op, d_train_op, d_topic_pretrain_op
 
