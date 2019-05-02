@@ -158,7 +158,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
         index_word_dict = oracle_loader.model_index_word_dict
         oracle_loader.create_batches(oracle_file)
 
-        metrics = get_metrics(config, oracle_loader, test_file, gen_text_file, g_pretrain_loss, x_real, sess)
+        metrics = get_metrics(config, oracle_loader, test_file, gen_text_file, g_pretrain_loss, x_real, x_topic, sess)
 
         # Check if there is a pretrained generator saved
         model_dir = "PretrainGenerator"
@@ -258,7 +258,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
                 metric_names = [metric.get_name() for metric in metrics]
                 for (name, score) in zip(metric_names, scores):
                     msg += ', ' + name + ': %.4f' % score
-                print(msg)
+                tqdm.write(msg)
                 log.write(msg)
                 log.write('\n')
 
@@ -277,7 +277,7 @@ def generator_pretrain(npre_epochs, sess, g_pretrain_op, g_pretrain_loss, x_real
     progress = tqdm(range(npre_epochs))
     for epoch in progress:
         # pre-training
-        g_pretrain_loss_np = pre_train_epoch(sess, g_pretrain_op, g_pretrain_loss, x_real, oracle_loader)
+        g_pretrain_loss_np = pre_train_epoch(sess, g_pretrain_op, g_pretrain_loss, x_real, oracle_loader, x_topic)
         gen_pretrain_loss_summary.write_summary(g_pretrain_loss_np, epoch)
 
         # Test
@@ -297,12 +297,12 @@ def generator_pretrain(npre_epochs, sess, g_pretrain_op, g_pretrain_loss, x_real
             gen_sentences_summary.write_summary(sent, epoch)
 
             # write summaries
-            print("Computing Metrics and writing summaries", end=" ")
+            tqdm.write("Computing Metrics and writing summaries", end=" ")
             t = time.time()
             scores = [metric.get_score() for metric in metrics]
             metrics_summary_str = sess.run(metric_summary_op, feed_dict=dict(zip(metrics_pl, scores)))
             sum_writer.add_summary(metrics_summary_str, epoch)
-            print("in {} seconds".format(time.time() - t))
+            tqdm.write("in {} seconds".format(time.time() - t))
 
             msg = 'pre_gen_epoch:' + str(epoch) + ', g_pre_loss: %.4f' % g_pretrain_loss_np
             metric_names = [metric.get_name() for metric in metrics]

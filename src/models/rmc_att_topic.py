@@ -85,7 +85,8 @@ def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen
     def _pretrain_recurrence(i, x_t, h_tm1, g_predictions):
         mem_o_t, h_t = gen_mem(x_t, h_tm1)
         o_t = g_output_unit(mem_o_t)
-        g_predictions = g_predictions.write(i, tf.nn.softmax(o_t))  # batch_size x vocab_size
+        lambda_param = g_output_unit_lambda(mem_o_t)
+        g_predictions = g_predictions.write(i, tf.nn.softmax((1 - lambda_param) * o_t + lambda_param * x_topic))  # batch_size x vocab_size
         x_tp1 = ta_emb_x.read(i)
         return i + 1, x_tp1, h_t, g_predictions
 

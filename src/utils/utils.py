@@ -75,14 +75,19 @@ def init_sess():
     return sess
 
 
-def pre_train_epoch(sess, g_pretrain_op, g_pretrain_loss, x_real, data_loader):
+def pre_train_epoch(sess, g_pretrain_op, g_pretrain_loss, x_real, data_loader, x_topic=None):
     # Pre-train the generator using MLE for one epoch
     supervised_g_losses = []
     data_loader.reset_pointer()
 
     for it in range(data_loader.num_batch):
-        batch = data_loader.next_batch()
-        _, g_loss = sess.run([g_pretrain_op, g_pretrain_loss], feed_dict={x_real: batch})
+        if x_topic is not None:
+            text_batch, topic_batch = data_loader.next_batch(only_text=False)
+            _, g_loss = sess.run([g_pretrain_op, g_pretrain_loss], feed_dict={x_real: text_batch, x_topic: topic_batch})
+        else:
+            text_batch = data_loader.next_batch()
+            _, g_loss = sess.run([g_pretrain_op, g_pretrain_loss], feed_dict={x_real: text_batch})
+
         supervised_g_losses.append(g_loss)
 
     return np.mean(supervised_g_losses)

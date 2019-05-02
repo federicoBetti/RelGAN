@@ -1,7 +1,7 @@
 import tensorflow as tf
 from utils.metrics.Bleu import Bleu
 from utils.metrics.DocEmbSim import DocEmbSim
-from utils.metrics.Nll import Nll
+from utils.metrics.Nll import Nll, NllTopic
 from utils.metrics.SelfBleu import SelfBleu
 from utils.ops import gradient_penalty
 import numpy as np
@@ -209,11 +209,11 @@ def get_train_ops(config, g_pretrain_loss, g_loss, d_loss, d_topic_loss,
 
 
 # A function to get various evaluation metrics
-def get_metrics(config, oracle_loader, test_file, gen_file, g_pretrain_loss, x_real, sess):
+def get_metrics(config, oracle_loader, test_file, gen_file, g_pretrain_loss, x_real, x_topic, sess):
     # set up evaluation metric
     metrics = []
     if config['nll_gen']:
-        nll_gen = Nll(oracle_loader, g_pretrain_loss, x_real, sess, name='nll_gen')
+        nll_gen = NllTopic(oracle_loader, g_pretrain_loss, x_real, sess, name='nll_gen', x_topic=x_topic)
         metrics.append(nll_gen)
     if config['doc_embsim']:
         doc_embsim = DocEmbSim(test_file, gen_file, config['vocab_size'], name='doc_embsim')
