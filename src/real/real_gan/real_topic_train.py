@@ -1,5 +1,6 @@
 # In this file I will create the training for the model with topics
 import datetime
+import gc
 import random
 
 from tqdm import tqdm
@@ -297,7 +298,7 @@ def generator_pretrain(npre_epochs, sess, g_pretrain_op, g_pretrain_loss, x_real
             gen_sentences_summary.write_summary(sent, epoch)
 
             # write summaries
-            tqdm.write("Computing Metrics and writing summaries", end=" ")
+            tqdm.write("Epoch: {}; Computing Metrics and writing summaries".format(epoch), end=" ")
             t = time.time()
             scores = [metric.get_score() for metric in metrics]
             metrics_summary_str = sess.run(metric_summary_op, feed_dict=dict(zip(metrics_pl, scores)))
@@ -311,6 +312,8 @@ def generator_pretrain(npre_epochs, sess, g_pretrain_op, g_pretrain_loss, x_real
             progress.set_description(msg)
             log.write(msg)
             log.write('\n')
+
+            gc.collect()
 
 
 def topic_discriminator_pretrain(n_topic_pre_epochs, sess, d_topic_pretrain_op, d_topic_loss,
