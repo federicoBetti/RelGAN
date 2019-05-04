@@ -263,6 +263,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
                 log.write(msg)
                 log.write('\n')
 
+        sum_writer.close()
         model_dir = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
         model_path = resources_path(os.path.join("trained_models", model_dir))
         if not os.path.exists(model_path):
