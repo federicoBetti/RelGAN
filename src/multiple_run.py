@@ -58,9 +58,9 @@ for job_id in range(job_number):
         # Training
         '--gsteps', gsteps[job_id],
         '--dsteps', dsteps[job_id],
-        '--npre-epochs', '0', #npre_epochs[job_id],
-        '--nadv-steps', '1', #nadv_steps[job_id],
-        '--n-topic-pre-epochs', '1', #ntopic_pre_epochs[job_id],
+        '--npre-epochs', npre_epochs[job_id],
+        '--nadv-steps', nadv_steps[job_id],
+        '--n-topic-pre-epochs', ntopic_pre_epochs[job_id],
         '--ntest', ntest,
         '--d-lr', d_lr[job_id],
         '--gpre-lr', gpre_lr,
