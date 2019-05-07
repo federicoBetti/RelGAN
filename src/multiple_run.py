@@ -1,0 +1,100 @@
+import subprocess
+import os
+
+# Architecture Related
+architecture = ['rmc_att_topic', 'rmc_att_topic', 'rmc_att_topic', 'rmc_att_topic']
+topic_architecture = [ 'reuse_att_topic', 'standard', 'reuse_att_topic', 'standard']
+gantype =      ['standard', 'standard', 'standard', 'standard', 'standard'] # per ora funziona solo con questo il topic
+gsteps =       ['2', '2', '2', '2']
+dsteps =       ['1', '1', '2', '2']
+npre_epochs =  ['150', '150', '250', '150']
+nadv_steps =   ['5000', '5000', '5000', '5000']
+ntopic_pre_epochs = ['250', '250', '250', '50']
+opt_type =     ['adam', 'adam', 'adam', 'adam']
+temperature =  ['100', '1000', '1000', '100']
+d_lr =         ['1e-4', '1e-4', '1e-4', '1e-4']
+gadv_lr =      ['1e-4', '1e-4', '1e-4', '1e-4']
+
+# Topic Related
+topic_number = ['3', '3', '3', '6']
+
+# Memory Related
+mem_slots =    ['1', '1', '1', '1', '1', '1', '1', '1']
+head_size =    ['256', '256', '256', '256', '256', '256', '256', '256']
+num_heads =    ['2', '2', '2', '2', '2', '2', '2', '2']
+seed =         ['171', '172', '173', '174', '175', '176', '177', '178']
+
+bs = '64'
+gpre_lr = '1e-2'
+hidden_dim = '32'
+seq_len = '20'
+dataset = 'image_coco'
+
+gen_emb_dim = '32'
+dis_emb_dim = '64'
+num_rep = '64'
+sn = False
+decay = False
+adapt = 'exp'
+ntest = '20'
+
+job_number = 4
+configurations = []
+for job_id in range(job_number):
+    configurations.append([
+        # File Name
+        'run.py',
+
+        # Architecture
+        '--topic',
+        '--gf-dim', '64',
+        '--df-dim', '64',
+        '--g-architecture', architecture[job_id],
+        '--d-architecture', architecture[job_id],
+        '--topic-architecture', topic_architecture[job_id],
+        '--gan-type', gantype[job_id],
+        '--hidden-dim', hidden_dim,
+
+        # Training
+        '--gsteps', gsteps[job_id],
+        '--dsteps', dsteps[job_id],
+        '--npre-epochs', '0', #npre_epochs[job_id],
+        '--nadv-steps', '1', #nadv_steps[job_id],
+        '--n-topic-pre-epochs', '1', #ntopic_pre_epochs[job_id],
+        '--ntest', ntest,
+        '--d-lr', d_lr[job_id],
+        '--gpre-lr', gpre_lr,
+        '--gadv-lr', gadv_lr[job_id],
+        '--batch-size', bs,
+        '--log-dir', os.path.join('.', 'oracle', 'logs'),
+        '--sample-dir', os.path.join('.', 'oracle', 'samples'),
+        '--optimizer', opt_type[job_id],
+        '--seed', seed[job_id],
+        '--temperature', temperature[job_id],
+        '--adapt', adapt,
+
+        # evaluation
+        '--nll-gen',
+        # '--bleu',
+        # '--selfbleu',
+        # '--doc-embsim',
+
+        # relational memory
+        '--mem-slots', mem_slots[job_id],
+        '--head-size', head_size[job_id],
+        '--num-heads', num_heads[job_id],
+
+        # dataset
+        '--dataset', dataset,
+        '--vocab-size', '5000',
+        '--start-token', '0',
+        '--seq-len', seq_len,
+        '--num-sentences', '10000',  # how many generated sentences to use per evaluation
+        '--gen-emb-dim', gen_emb_dim,
+        '--dis-emb-dim', dis_emb_dim,
+        '--num-rep', num_rep,
+        '--data-dir', os.path.join('.', 'data')
+    ])
+
+for configuration in configurations:
+    subprocess.run(["python"] + configuration, shell=True)
