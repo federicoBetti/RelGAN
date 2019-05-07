@@ -23,7 +23,7 @@ print("Available GPUs: {}".format(get_available_gpus()))
 
 # A function to initiate the graph and train the networks
 def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_topic.discriminator,
-                     topic_discriminator: rmc_att_topic.topic_discriminator, oracle_loader: RealDataTopicLoader,
+                     topic_discriminator, oracle_loader: RealDataTopicLoader,
                      config):
     batch_size = config['batch_size']
     num_sentences = config['num_sentences']
@@ -78,8 +78,8 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
     x_fake_onehot_appr, x_fake, g_pretrain_loss, gen_o, lambda_values_returned = generator(x_real=x_real,
                                                                                            temperature=temperature,
                                                                                            x_topic=x_topic)
-    d_out_real = discriminator(x_onehot=x_real_onehot)
-    d_out_fake = discriminator(x_onehot=x_fake_onehot_appr)
+    d_out_real = discriminator(x_onehot=x_real_onehot, with_out=False)
+    d_out_fake = discriminator(x_onehot=x_fake_onehot_appr, with_out=False)
     d_topic_out_real_pos = topic_discriminator(x_onehot=x_real_onehot, x_topic=x_topic)
     d_topic_out_real_neg = topic_discriminator(x_onehot=x_real_onehot, x_topic=x_topic_random)
     d_topic_out_fake = topic_discriminator(x_onehot=x_fake_onehot_appr, x_topic=x_topic)
@@ -175,10 +175,10 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
                                gen_text_file, index_word_dict, gen_sentences_summary, metrics, metric_summary_op,
                                metrics_pl, sum_writer, log, lambda_values_returned)
 
-            if not os.path.exists(model_path):
-                os.makedirs(model_path)
-            save_path = saver.save(sess, os.path.join(model_path, "model.ckpt"))
-            print("Up to Generator Pretrain saved in path: %s" % save_path)
+            # if not os.path.exists(model_path):
+            #     os.makedirs(model_path)
+            # save_path = saver.save(sess, os.path.join(model_path, "model.ckpt"))
+            # print("Up to Generator Pretrain saved in path: %s" % save_path)
 
         # Check if there is a pretrained generator and a topic discriminator saved
         model_dir = "PretrainGeneratorAndTopicDiscriminator"
@@ -195,10 +195,10 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
                                          d_topic_out_real_pos, d_topic_out_real_neg, topic_discr_pretrain_summary,
                                          topic_discr_accuracy_summary)
 
-            if not os.path.exists(model_path):
-                os.makedirs(model_path)
-            save_path = saver.save(sess, os.path.join(model_path, "model.ckpt"))
-            print("Up to Topic Discriminator Pretrain saved in path: %s" % save_path)
+            # if not os.path.exists(model_path):
+            #     os.makedirs(model_path)
+            # save_path = saver.save(sess, os.path.join(model_path, "model.ckpt"))
+            # print("Up to Topic Discriminator Pretrain saved in path: %s" % save_path)
 
         print('Start adversarial training...')
         progress = tqdm(range(nadv_steps))
@@ -247,7 +247,9 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
                 sent = take_sentences_topic(gen_text_file)
                 if adv_epoch < 3500:
                     sent_number = 8
-                    sent = random.sample(sent, sent_number)
+                else:
+                    sent_number = 20
+                sent = random.sample(sent, sent_number)
                 gen_sentences_summary.write_summary(sent, adv_epoch)
 
                 # write summaries
@@ -264,12 +266,12 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
                 log.write('\n')
 
         sum_writer.close()
-        model_dir = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-        model_path = resources_path(os.path.join("trained_models", model_dir))
-        if not os.path.exists(model_path):
-            os.makedirs(model_path)
-        save_path = saver.save(sess, os.path.join(model_path, "model.ckpt"))
-        print("Model saved in path: %s" % save_path)
+        # model_dir = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        # model_path = resources_path(os.path.join("trained_models", model_dir))
+        # if not os.path.exists(model_path):
+        #     os.makedirs(model_path)
+        # save_path = saver.save(sess, os.path.join(model_path, "model.ckpt"))
+        # print("Model saved in path: %s" % save_path)
 
 
 def generator_pretrain(npre_epochs, sess, g_pretrain_op, g_pretrain_loss, x_real, oracle_loader,

@@ -16,6 +16,7 @@ from topic_modelling.lda_topic import LDA
 parser = argparse.ArgumentParser(description='Train and run a RmcGAN')
 # Topic?
 parser.add_argument('--topic', default=False, action='store_true', help='If to use topic models or not')
+parser.add_argument('--topic_number', default=3, type=int, help='How many topic to use in the LDA')
 
 # Architecture
 parser.add_argument('--gf-dim', default=64, type=int, help='Number of filters to use for generator')
@@ -106,7 +107,9 @@ def main():
         print('seq_len: %d, vocab_size: %d' % (seq_len, vocab_size))
 
         if config['topic']:
+            topic_number = config['topic_number']
             oracle_loader = RealDataTopicLoader(args.batch_size, args.seq_len)
+            oracle_loader.topic_num = topic_number
             oracle_loader.set_dictionaries(word_index_dict, index_word_dict)
 
             generator = models.get_generator("rmc_att_topic", vocab_size=vocab_size, batch_size=args.batch_size,
@@ -115,14 +118,15 @@ def main():
                                              hidden_dim=args.hidden_dim,
                                              start_token=args.start_token)
 
-            discriminator = models.get_discriminator("rmc_att_topic", batch_size=args.batch_size, seq_len=seq_len,
+            discriminator = models.get_discriminator("rmc_att_topic", batch_size=args.batch_size,
+                                                     seq_len=seq_len,
                                                      vocab_size=vocab_size, dis_emb_dim=args.dis_emb_dim,
                                                      num_rep=args.num_rep, sn=args.sn)
 
             topic_discriminator = models.get_topic_discriminator(args.topic_architecture, batch_size=args.batch_size,
                                                                  seq_len=seq_len, vocab_size=vocab_size,
                                                                  dis_emb_dim=args.dis_emb_dim, num_rep=args.num_rep,
-                                                                 sn=args.sn)
+                                                                 sn=args.sn, discriminator=discriminator)
             real_topic_train(generator, discriminator, topic_discriminator, oracle_loader, config)
         else:
 
@@ -140,6 +144,8 @@ def main():
 
             real_train(generator, discriminator, oracle_loader, config)
 
+        print("Run Finished!")
+        return
     else:
         raise NotImplementedError('{}: unknown dataset!'.format(args.dataset))
 

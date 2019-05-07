@@ -18,7 +18,8 @@ discriminator_dict = {
 }
 
 discriminator_topic_dict = {
-    'standard': rmc_att_topic.topic_discriminator
+    'standard': rmc_att_topic.topic_discriminator,
+    'reuse_att_topic': rmc_att_topic.topic_discriminator_reuse
 }
 
 

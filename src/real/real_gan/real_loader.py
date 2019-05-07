@@ -1,3 +1,4 @@
+import gc
 import time
 from typing import Dict, List
 
@@ -154,7 +155,9 @@ class RealDataTopicLoader(RealDataLoader):
         topic_matrix = lda.lda_model.get_topics()  # num_topic x num_words
         self.topic_matrix = topic_matrix
         topic_weights = df.values[:, 1:self.topic_num + 1]  # num_sentences x num_topic (each row sum to 1)
-        topic_sentences = np.dot(topic_weights, topic_matrix)
+        topic_sentences = np.dot(topic_weights, topic_matrix)  # num_sentences x num_word
+        topic_sentences = np.divide(topic_sentences,
+                                    np.sum(topic_sentences, axis=1, keepdims=True))  # rowwise normalization
 
         # get model lemmatized version of the words, it's needed because LDA does it and model processing doesn't
         from nltk.stem import WordNetLemmatizer
@@ -176,6 +179,7 @@ class RealDataTopicLoader(RealDataLoader):
                 real_vector[:, x] = topic_sentences[:, ind]
 
         print("Topic model computed in {} sec!".format(time.time() - t))
+        gc.collect()
         return real_vector
 
     def random_topic(self):
@@ -187,8 +191,9 @@ class RealDataTopicLoader(RealDataLoader):
         random_topic_weights = np.divide(random_topic_weights, np.sum(random_topic_weights, axis=1, keepdims=True))
 
         topic_sentences = np.dot(random_topic_weights, self.topic_matrix)
+        topic_sentences = np.divide(topic_sentences,
+                                    np.sum(topic_sentences, axis=1, keepdims=True))  # rowwise normalization
 
-        # todo stessa cosa di sopra
         real_vector = np.zeros(
             (topic_sentences.shape[0], len(self.model_word_index_dict) + 1))  # sentence_number x vocab_size
 

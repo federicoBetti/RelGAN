@@ -113,7 +113,7 @@ def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen
     return gen_x_onehot_adv, gen_x, pretrain_loss, gen_o, topicness_values
 
 
-def discriminator(x_onehot, batch_size, seq_len, vocab_size, dis_emb_dim, num_rep, sn):
+def discriminator(x_onehot, with_out, batch_size, seq_len, vocab_size, dis_emb_dim, num_rep, sn):
     # Compute its embedding matrix
     d_embeddings = tf.get_variable('d_emb', shape=[vocab_size, dis_emb_dim],
                                    initializer=create_linear_initializer(vocab_size))
@@ -145,10 +145,13 @@ def discriminator(x_onehot, batch_size, seq_len, vocab_size, dis_emb_dim, num_re
     logits = tf.squeeze(logits, -1)  # batch_size
 
     # todo si potrebbe mettere qua e fare due output, uno che riguarda la frase in generale e uno che riguarda il topic
-    return logits
+    if with_out:
+        return logits, out
+    else:
+        return logits
 
 
-def topic_discriminator(x_onehot, x_topic, batch_size, seq_len, vocab_size, dis_emb_dim, num_rep, sn):
+def topic_discriminator(x_onehot, x_topic, batch_size, seq_len, vocab_size, dis_emb_dim, num_rep, sn, discriminator):
     # Compute its embedding matrix
     d_embeddings = tf.get_variable('d_emb', shape=[vocab_size, dis_emb_dim],
                                    initializer=create_linear_initializer(vocab_size))
@@ -181,6 +184,21 @@ def topic_discriminator(x_onehot, x_topic, batch_size, seq_len, vocab_size, dis_
     first_topic = linear(x_topic, output_size=512, use_bias=True, sn=sn, scope='topic_first_linear')
 
     flatten = tf.concat([out, first_topic], axis=1)
+
+    logits = linear(flatten, output_size=1, use_bias=True, sn=sn, scope='fc_topic')
+    logits = tf.sigmoid(logits)
+    logits = tf.squeeze(logits, -1)  # batch_size
+    return logits
+
+
+def topic_discriminator_reuse(x_onehot, x_topic, batch_size, seq_len, vocab_size, dis_emb_dim, num_rep, sn, discriminator):
+    _, out = discriminator(x_onehot, True)
+
+    # topic network
+    first_topic = linear(x_topic, output_size=512, use_bias=True, sn=sn, scope='topic_first_linear')
+    second_topic = linear(first_topic, output_size=32, use_bias=True, sn=sn, scope='topic_second_linear')
+
+    flatten = tf.concat([out, second_topic], axis=1)
 
     logits = linear(flatten, output_size=1, use_bias=True, sn=sn, scope='fc_topic')
     logits = tf.sigmoid(logits)
