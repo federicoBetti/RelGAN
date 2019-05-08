@@ -42,9 +42,6 @@ job_number = 4
 configurations = []
 for job_id in range(job_number):
     configurations.append([
-        # File Name
-        'run.py',
-
         # Architecture
         '--topic',
         '--gf-dim', '64',
@@ -97,4 +94,4 @@ for job_id in range(job_number):
     ])
 
 for configuration in configurations:
-    subprocess.run(["python"] + configuration, shell=True)
+    subprocess.run(["python", "run.py"] + configuration, shell=True)
