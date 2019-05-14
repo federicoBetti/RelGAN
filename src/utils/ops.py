@@ -202,6 +202,7 @@ def create_output_unit(output_size, vocab_size):
     def unit(hidden_mem_o):
         with tf.variable_scope("output_unit"):
             logits = tf.matmul(hidden_mem_o, Wo) + bo
+            # logits = tf.nn.softmax(logits)  # so that they are positive todo fare qualcosa qua nel caso
         return logits
 
     return unit
@@ -228,7 +229,12 @@ def create_output_unit_lambda(output_size, input_size, additive_scope="_lambda")
 
 
 def add_gumbel(o_t, eps=1e-10):
-    """Sample from Gumbel(0, 1)"""
+    """
+    Sample from Gumbel(0, 1)
+    After some research and tests I discovered that it introdcues a noise with Final mean: 0.5862 and std: 1.29265
+    This is a quite high std for that mean, and the added noise is high if compared to a softmax between 5k values
+    that has mean of 0.0002!
+    """
     with tf.variable_scope("Gumbel_softmax"):
         u = tf.random_uniform(tf.shape(o_t), minval=0, maxval=1, dtype=tf.float32)
         g_t = -tf.log(-tf.log(u + eps) + eps)

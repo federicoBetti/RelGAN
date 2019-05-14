@@ -97,6 +97,7 @@ class RealDataTopicLoader(RealDataLoader):
                     if len(parse_line) == self.seq_length:
                         self.token_stream.append(parse_line)
 
+        gc.collect()
         self.num_batch = int(len(self.token_stream) / self.batch_size)
 
         self.token_stream = self.token_stream[:self.num_batch * self.batch_size]
@@ -106,7 +107,6 @@ class RealDataTopicLoader(RealDataLoader):
         self.topic_batches = np.split(np.array(self.sentence_topic_array), self.num_batch, axis=0)
 
         self.pointer = 0
-
     def next_batch(self, only_text=True):
         # with the parameter I can change only when needed
         ret_sent = self.sequence_batches[self.pointer]
@@ -170,6 +170,7 @@ class RealDataTopicLoader(RealDataLoader):
         real_vector = np.zeros(
             (topic_sentences.shape[0], len(self.model_word_index_dict) + 1))  # sentence_number x vocab_size
         self.inverse_indexes = [self.get_model_index(i) for i in range(len(self.lda_index_word_dict))]
+        print("number of LDA words: {}".format(len(self.lda_index_word_dict)))
 
         # since the parallelism is the same for each sentence, it is done word by word for all sentences all together.
         # It is possible that a word in the LDA corresponds to more words in the model due to lemmatization procedure

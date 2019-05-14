@@ -1,3 +1,5 @@
+import sys
+
 import tensorflow as tf
 from utils.models.relational_memory import RelationalMemory
 from tensorflow.python.ops import tensor_array_ops, control_flow_ops
@@ -31,23 +33,33 @@ def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen
         mem_o_t, h_t = gen_mem(x_t, h_tm1)  # hidden_memory_tuple, output della memoria che si potrebbe riutilizzare
         o_t = g_output_unit(mem_o_t)  # batch x vocab, logits not prob
 
+        print_op = tf.print("o_t shape", o_t.shape, ", o_t: ", o_t[0], output_stream=sys.stderr)
         gumbel_t = add_gumbel(o_t)
+        # gumbel_t = tf.divide(gumbel_t, tf.reduce_sum(gumbel_t, axis=1, keepdims=True))
+        print_op1 = tf.print("Gumbel_t before lambda: ", gumbel_t[0])
+        # print_op2 = tf.print("x_topic shape", x_topic.shape, ", x_topic: ", x_topic, output_stream=sys.stderr)
 
         topic_vector = x_topic
+        print_op_topic = tf.print("Topic: ", topic_vector[0])
+
         assert gumbel_t.shape.as_list() == topic_vector.shape.as_list(), "Gumbel: {}, Topic vector: {}".format(
             gumbel_t.shape.as_list(), topic_vector.shape.as_list())
 
         if use_lambda:
             lambda_param = g_output_unit_lambda(mem_o_t)
-            gumbel_t = (1 - lambda_param) * gumbel_t + lambda_param * topic_vector
+            print_op_lambda = tf.print("Lambda= iteration:", i," shape: {}, values:".format(lambda_param.shape), lambda_param)
+            # gumbel_t = (1 - lambda_param) * gumbel_t + lambda_param * topic_vector
 
         next_token = tf.cast(tf.argmax(gumbel_t, axis=1), tf.int32)
-        #  + lambda * topic_related
+
         x_onehot_appr = tf.nn.softmax(tf.multiply(gumbel_t, temperature, name="gumbel_x_temp"),
                                       name="softmax_gumbel_temp")  # one-hot-like, [batch_size x vocab_size]
+        x_onehot_appr = (1 - lambda_param) * x_onehot_appr + lambda_param * topic_vector
+        print_op2 = tf.print("Final x_one_hot_appr: ", x_onehot_appr[0])
         # x_tp1 = tf.matmul(x_onehot_appr, g_embeddings)  # approximated embeddings, [batch_size x emb_dim]
 
-        x_tp1 = tf.nn.embedding_lookup(g_embeddings, next_token)  # embeddings, [batch_size x emb_dim]
+        with tf.control_dependencies([print_op, print_op1, print_op2, print_op_topic, print_op_lambda]):
+            x_tp1 = tf.nn.embedding_lookup(g_embeddings, next_token)  # embeddings, [batch_size x emb_dim]
         gen_o = gen_o.write(i, tf.reduce_sum(tf.multiply(tf.one_hot(next_token, vocab_size, 1.0, 0.0),
                                                          tf.nn.softmax(o_t)), 1))  # [batch_size] , prob
         gen_x = gen_x.write(i, next_token)  # indices, [batch_size]
@@ -191,7 +203,8 @@ def topic_discriminator(x_onehot, x_topic, batch_size, seq_len, vocab_size, dis_
     return logits
 
 
-def topic_discriminator_reuse(x_onehot, x_topic, batch_size, seq_len, vocab_size, dis_emb_dim, num_rep, sn, discriminator):
+def topic_discriminator_reuse(x_onehot, x_topic, batch_size, seq_len, vocab_size, dis_emb_dim, num_rep, sn,
+                              discriminator):
     _, out = discriminator(x_onehot, True)
 
     # topic network

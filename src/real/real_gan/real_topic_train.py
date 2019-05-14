@@ -286,7 +286,7 @@ def generator_pretrain(npre_epochs, sess, g_pretrain_op, g_pretrain_loss, x_real
 
         # Test
         ntest_pre = 30
-        if np.mod(epoch, ntest_pre) == 0:
+        if np.mod(epoch, ntest_pre) == 0 or epoch==10:
             # generate fake data and create batches
             gen_save_file = os.path.join(sample_dir, 'pre_samples_{:05d}.txt'.format(epoch))
             codes, sentence_generated_from = generate_samples_topic(sess, x_fake, batch_size, num_sentences,

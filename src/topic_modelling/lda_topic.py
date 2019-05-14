@@ -5,7 +5,7 @@ from multiprocessing.spawn import freeze_support
 from gensim.corpora import Dictionary
 from nltk.corpus import stopwords
 
-from topic_modelling.lda_utils import *
+from src.topic_modelling.lda_utils import *
 import numpy as np
 
 

@@ -44,6 +44,7 @@ for job_id in range(job_number):
     configurations.append([
         # Architecture
         '--topic',
+        '--topic_number', topic_number[job_id],
         '--gf-dim', '64',
         '--df-dim', '64',
         '--g-architecture', architecture[job_id],

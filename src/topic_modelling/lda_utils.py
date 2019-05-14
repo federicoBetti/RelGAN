@@ -9,7 +9,7 @@ import pandas as pd
 from gensim.models import LdaModel, CoherenceModel
 from gensim.utils import simple_tokenize
 
-from path_resolution import resources_path
+from src.path_resolution import resources_path
 
 
 def get_wordnet_pos(word):
@@ -79,13 +79,13 @@ def get_corpus(coco=True, datapath=None) -> List[str]:
     return lines
 
 
-def format_topics_sentences(ldamodel: LdaModel, corpus, texts):
+def format_topics_sentences(lda_model: LdaModel, corpus, texts):
     # Init output
     sent_topics_df = pd.DataFrame()
 
     # Get main topic in each document
-    for i, row_list in enumerate(ldamodel[corpus]):
-        row = row_list[0] if ldamodel.per_word_topics else row_list
+    for i, row_list in enumerate(lda_model[corpus]):
+        row = row_list[0] if lda_model.per_word_topics else row_list
 
         # row = sorted(row, key=lambda x: (x[1]), reverse=True) # sort list to get dominant topic
         # Get the Dominant topic, Perc Contribution and Keywords for each document
