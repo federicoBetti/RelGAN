@@ -7,16 +7,16 @@ topic_architecture = [ 'reuse_att_topic', 'standard', 'reuse_att_topic', 'standa
 gantype =      ['standard', 'standard', 'standard', 'standard', 'standard'] # per ora funziona solo con questo il topic
 gsteps =       ['2', '2', '2', '2']
 dsteps =       ['1', '1', '2', '2']
-npre_epochs =  ['150', '150', '250', '150']
+npre_epochs =  ['300', '300', '250', '150']
 nadv_steps =   ['5000', '5000', '5000', '5000']
-ntopic_pre_epochs = ['250', '250', '250', '50']
+ntopic_pre_epochs = ['300', '300', '250', '50']
 opt_type =     ['adam', 'adam', 'adam', 'adam']
 temperature =  ['100', '1000', '1000', '100']
 d_lr =         ['1e-4', '1e-4', '1e-4', '1e-4']
 gadv_lr =      ['1e-4', '1e-4', '1e-4', '1e-4']
 
 # Topic Related
-topic_number = ['3', '3', '3', '6']
+topic_number = ['3', '6', '3', '6']
 
 # Memory Related
 mem_slots =    ['1', '1', '1', '1', '1', '1', '1', '1']
@@ -38,7 +38,7 @@ decay = False
 adapt = 'exp'
 ntest = '20'
 
-job_number = 4
+job_number = 2
 configurations = []
 for job_id in range(job_number):
     configurations.append([
