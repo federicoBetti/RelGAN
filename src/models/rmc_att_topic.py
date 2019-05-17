@@ -1,8 +1,8 @@
 import sys
 
-import tensorflow as tf
-from utils.models.relational_memory import RelationalMemory
 from tensorflow.python.ops import tensor_array_ops, control_flow_ops
+
+from utils.models.relational_memory import RelationalMemory
 from utils.ops import *
 
 

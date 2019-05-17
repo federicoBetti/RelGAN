@@ -9,7 +9,7 @@ import pandas as pd
 from gensim.models import LdaModel, CoherenceModel
 from gensim.utils import simple_tokenize
 
-from src.path_resolution import resources_path
+from path_resolution import resources_path
 
 
 def get_wordnet_pos(word):
