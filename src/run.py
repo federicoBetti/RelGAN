@@ -110,7 +110,7 @@ def main():
             topic_number = config['topic_number']
             oracle_loader = RealDataTopicLoader(args.batch_size, args.seq_len)
             oracle_loader.topic_num = topic_number
-            oracle_loader.set_dictionaries(word_index_dict, index_word_dict)
+            oracle_loader.set_dictionaries(word_index_dict, index_word_dict, data_file)
 
             generator = models.get_generator("rmc_att_topic", vocab_size=vocab_size, batch_size=args.batch_size,
                                              seq_len=seq_len, gen_emb_dim=args.gen_emb_dim, mem_slots=args.mem_slots,

@@ -127,14 +127,14 @@ class RealDataTopicLoader(RealDataLoader):
         else:
             return ret_sent, ret_topic
 
-    def set_dictionaries(self, word_index_dict: Dict[str, int], index_word_dict: Dict[str, str]):
+    def set_dictionaries(self, word_index_dict: Dict[str, int], index_word_dict: Dict[str, str], data_file):
         self.model_word_index_dict = word_index_dict
         self.model_index_word_dict = index_word_dict
         assert len(word_index_dict) == len(index_word_dict)
         self.vocab_size = len(self.model_index_word_dict)
-        self.sentence_topic_array = self.get_sentence_topic_array()
+        self.sentence_topic_array = self.get_sentence_topic_array(data_file)
 
-    def get_sentence_topic_array(self):
+    def get_sentence_topic_array(self, data_file):
         """
         compute for each sentence in the corpus its topic vector.
         It does it extracting the topics in the dataset with LDA, it checks the influence of each topic
@@ -146,8 +146,8 @@ class RealDataTopicLoader(RealDataLoader):
         from topic_modelling.lda_topic import train_specific_LDA, get_corpus, LDA
 
         # Create LDA model for the dataset, given parameters
-        coco = True  # Now it is just coco or not coco just for name saving reasons, it's already possible to integrate any dataset in the data-dir folder
-        corpus_raw = get_corpus(coco)
+        coco = True if "coco" in data_file else False  # Now it is just coco or not coco just for name saving reasons
+        corpus_raw = get_corpus(coco, datapath=data_file)
         lda = train_specific_LDA(corpus_raw, num_top=self.topic_num, passes=2, iterations=2, chunksize=2000, coco=coco)
 
         # Get percentage of each topic in each sentence

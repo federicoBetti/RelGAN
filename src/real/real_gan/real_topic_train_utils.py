@@ -17,9 +17,9 @@ def get_losses(d_out_real, d_out_fake, x_real_onehot, x_fake_onehot_appr, d_topi
     :param d_out_fake: output del discriminatore ricevuto in input l'output del generatore
     :param x_real_onehot: input reale in one-hot
     :param x_fake_onehot_appr: frasi generate dal generatore in one hot
-    :param d_topic_out_real_pos:
-    :param d_topic_out_real_neg:
-    :param d_topic_out_fake:
+    :param d_topic_out_real_pos: output del topic discriminator ricevedno in input la frase reale e il suo topic
+    :param d_topic_out_real_neg: output del topic discriminator ricevedno in input la frase reale e un topic sbagliato
+    :param d_topic_out_fake: output del topic discriminator ricevendo in input la frase generata
     :param gen_o: distribuzione di probabilità sulle parole della frase generata dal generatore
     :param discriminator: discriminator
     :param config: args passed as input

@@ -58,8 +58,8 @@ def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen
         print_op2 = tf.print("Final x_one_hot_appr: ", x_onehot_appr[0])
         # x_tp1 = tf.matmul(x_onehot_appr, g_embeddings)  # approximated embeddings, [batch_size x emb_dim]
 
-        with tf.control_dependencies([print_op, print_op1, print_op2, print_op_topic, print_op_lambda]):
-            x_tp1 = tf.nn.embedding_lookup(g_embeddings, next_token)  # embeddings, [batch_size x emb_dim]
+        # with tf.control_dependencies([print_op, print_op1, print_op2, print_op_topic, print_op_lambda]):
+        x_tp1 = tf.nn.embedding_lookup(g_embeddings, next_token)  # embeddings, [batch_size x emb_dim]
         gen_o = gen_o.write(i, tf.reduce_sum(tf.multiply(tf.one_hot(next_token, vocab_size, 1.0, 0.0),
                                                          tf.nn.softmax(o_t)), 1))  # [batch_size] , prob
         gen_x = gen_x.write(i, next_token)  # indices, [batch_size]
