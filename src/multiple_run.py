@@ -96,3 +96,5 @@ for job_id in range(job_number):
 
 for configuration in configurations:
     subprocess.run(["python", "run.py"] + configuration, shell=False)
+
+

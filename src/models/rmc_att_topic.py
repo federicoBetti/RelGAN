@@ -48,13 +48,13 @@ def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen
         if use_lambda:
             lambda_param = g_output_unit_lambda(mem_o_t)
             print_op_lambda = tf.print("Lambda= iteration:", i," shape: {}, values:".format(lambda_param.shape), lambda_param)
-            # gumbel_t = (1 - lambda_param) * gumbel_t + lambda_param * topic_vector
+            gumbel_t = gumbel_t + lambda_param * topic_vector
 
         next_token = tf.cast(tf.argmax(gumbel_t, axis=1), tf.int32)
 
         x_onehot_appr = tf.nn.softmax(tf.multiply(gumbel_t, temperature, name="gumbel_x_temp"),
                                       name="softmax_gumbel_temp")  # one-hot-like, [batch_size x vocab_size]
-        x_onehot_appr = (1 - lambda_param) * x_onehot_appr + lambda_param * topic_vector
+        # x_onehot_appr = (1 - lambda_param) * x_onehot_appr + lambda_param * topic_vector
         print_op2 = tf.print("Final x_one_hot_appr: ", x_onehot_appr[0])
         # x_tp1 = tf.matmul(x_onehot_appr, g_embeddings)  # approximated embeddings, [batch_size x emb_dim]
 

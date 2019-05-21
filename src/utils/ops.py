@@ -222,7 +222,7 @@ def create_output_unit_lambda(output_size, input_size, additive_scope="_lambda")
     def unit(hidden_mem_o):
         with tf.variable_scope("output_unit" + additive_scope):
             logits = tf.matmul(hidden_mem_o, Wo) + bo
-            logits = tf.sigmoid(logits)
+            # logits = tf.sigmoid(logits)
         return logits
 
     return unit
