@@ -158,7 +158,7 @@ def discriminator(x_onehot, with_out, batch_size, seq_len, vocab_size, dis_emb_d
 
     # todo si potrebbe mettere qua e fare due output, uno che riguarda la frase in generale e uno che riguarda il topic
     if with_out:
-        return logits, out
+        return logits, out, d_embeddings
     else:
         return logits
 
@@ -193,7 +193,8 @@ def topic_discriminator(x_onehot, x_topic, batch_size, seq_len, vocab_size, dis_
     out = tf.contrib.layers.flatten(out, scope="flatten_output_layer")
 
     # topic network
-    first_topic = linear(x_topic, output_size=512, use_bias=True, sn=sn, scope='topic_first_linear')
+    emb_topic = tf.matmul(x_topic, d_embeddings, name="x_topic_embeddings")
+    first_topic = linear(emb_topic, output_size=128, use_bias=True, sn=sn, scope='topic_first_linear')
 
     flatten = tf.concat([out, first_topic], axis=1)
 
@@ -205,11 +206,11 @@ def topic_discriminator(x_onehot, x_topic, batch_size, seq_len, vocab_size, dis_
 
 def topic_discriminator_reuse(x_onehot, x_topic, batch_size, seq_len, vocab_size, dis_emb_dim, num_rep, sn,
                               discriminator):
-    _, out = discriminator(x_onehot, True)
+    _, out, d_embeddings = discriminator(x_onehot, True)
 
     # topic network
-    first_topic = linear(x_topic, output_size=512, use_bias=True, sn=sn, scope='topic_first_linear')
-    second_topic = linear(first_topic, output_size=32, use_bias=True, sn=sn, scope='topic_second_linear')
+    emb_topic = tf.matmul(x_topic, d_embeddings, name="x_topic_embeddings")
+    second_topic = linear(emb_topic, output_size=32, use_bias=True, sn=sn, scope='topic_second_linear')
 
     flatten = tf.concat([out, second_topic], axis=1)
 

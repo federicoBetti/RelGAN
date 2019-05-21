@@ -70,7 +70,6 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
 
     temperature = tf.Variable(1., trainable=False, name='temperature')
 
-    # todo check that here it uses vocab size from params that is 5000 instead of 4682 that is the output of text_preprocessing
     x_real_onehot = tf.one_hot(x_real, vocab_size)  # batch_size x seq_len x vocab_size
     assert x_real_onehot.get_shape().as_list() == [batch_size, seq_len, vocab_size]
 

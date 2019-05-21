@@ -49,7 +49,7 @@ def get_losses(d_out_real, d_out_fake, x_real_onehot, x_fake_onehot_appr, d_topi
                 logits=d_topic_out_fake, labels=tf.zeros_like(d_topic_out_fake)
             ), name="d_topic_loss_fake")
 
-            d_loss = d_loss_real + d_loss_fake + d_topic_loss_real_pos + d_topic_loss_fake
+            d_loss = d_loss_real + d_loss_fake + (d_topic_loss_real_pos + d_topic_loss_fake) / 10
 
             g_sentence_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
                 logits=d_out_fake, labels=tf.ones_like(d_out_fake)
@@ -59,7 +59,7 @@ def get_losses(d_out_real, d_out_fake, x_real_onehot, x_fake_onehot_appr, d_topi
                 logits=d_topic_out_fake, labels=tf.ones_like(d_topic_out_fake)
             ), name="g_topic_loss")
 
-            g_loss = g_sentence_loss + g_topic_loss
+            g_loss = g_sentence_loss + (g_topic_loss / 10)
 
             log_pg = tf.reduce_mean(tf.log(gen_o + EPS))  # [1], measures the log p_g(x)
 
