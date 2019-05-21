@@ -16,14 +16,11 @@ pp = pprint.PrettyPrinter()
 def generate_samples(sess, gen_x, batch_size, generated_num, output_file=None,
                      get_code=True):
     # Generate Samples
-    print("Generating Samples...", end="  ")
+    print("Generating Samples...")
     generated_samples = []
     max_gen = int(generated_num / batch_size)  # - 155  # 156
     for ii in range(max_gen):
-        if ii % 50 == 0:
-            print("generated {} over {}".format(ii, max_gen))
         generated_samples.extend(sess.run(gen_x))
-    print("Samples Generated")
     codes = list()
     if output_file is not None:
         with open(output_file, 'w') as fout:

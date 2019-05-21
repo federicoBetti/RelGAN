@@ -1,19 +1,15 @@
-import datetime
 import random
 
-import numpy as np
-import tensorflow as tf
 from tensorflow.python.framework.errors_impl import NotFoundError
 from tqdm import tqdm
-import time
 
 from path_resolution import resources_path
-from utils.metrics.Nll import Nll
-from utils.metrics.DocEmbSim import DocEmbSim
 from utils.metrics.Bleu import Bleu
+from utils.metrics.DocEmbSim import DocEmbSim
+from utils.metrics.Nll import Nll
 from utils.metrics.SelfBleu import SelfBleu
-from utils.utils import *
 from utils.ops import gradient_penalty
+from utils.utils import *
 
 EPS = 1e-10
 
@@ -134,10 +130,9 @@ def real_train(generator, discriminator, oracle_loader, config):
             except NotFoundError:
                 a = 1  # to continue
         log = open(csv_file, 'w')
-        file_suffix = "date: {}, normal RelGAN, pretrain epochs: {}, adv epochs: {}".format(datetime.datetime.now(),
-                                                                                            npre_epochs, nadv_steps)
-        sum_writer = tf.summary.FileWriter(os.path.join(log_dir, 'summary'), sess.graph, filename_suffix=file_suffix)
-        # todo capire perhè non scrive più il summary
+        # file_suffix = "date: {}, normal RelGAN, pretrain epochs: {}, adv epochs: {}".format(datetime.datetime.now(),
+        #                                                                                     npre_epochs, nadv_steps)
+        sum_writer = tf.summary.FileWriter(os.path.join(log_dir, 'summary'), sess.graph)
 
         # generate oracle data and create batches
         index_word_dict = get_oracle_file(data_file, oracle_file, seq_len)
@@ -223,7 +218,7 @@ def real_train(generator, discriminator, oracle_loader, config):
 
             # Test
             # print("N_iter: {}, test every {} epochs".format(niter, config['ntest']))
-            if np.mod(adv_epoch, 100) == 0:
+            if np.mod(adv_epoch, 250) == 0:
                 # generate fake data and create batches
                 gen_save_file = os.path.join(sample_dir, 'adv_samples_{:05d}.txt'.format(niter))
                 generate_samples(sess, x_fake, batch_size, num_sentences, gen_file)
@@ -232,7 +227,7 @@ def real_train(generator, discriminator, oracle_loader, config):
 
                 # take sentences from saved files
                 sent = take_sentences(gen_text_file)
-                sent = random.sample(sent, 5)  # pick just one sentence
+                sent = random.sample(sent, 8)  # pick just one sentence
                 generated_strings_summary = sess.run(gen_sentences, feed_dict={gen_sentences_placeholder: sent})
                 sum_writer.add_summary(generated_strings_summary, niter + npre_epochs)
 
