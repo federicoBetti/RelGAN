@@ -127,7 +127,7 @@ def main():
                                                                  seq_len=seq_len, vocab_size=vocab_size,
                                                                  dis_emb_dim=args.dis_emb_dim, num_rep=args.num_rep,
                                                                  sn=args.sn, discriminator=discriminator)
-            real_topic_train(generator, discriminator, topic_discriminator, oracle_loader, config)
+            real_topic_train(generator, discriminator, topic_discriminator, oracle_loader, config, args)
         else:
 
             generator = models.get_generator(args.g_architecture, vocab_size=vocab_size, batch_size=args.batch_size,
@@ -142,7 +142,7 @@ def main():
 
             oracle_loader = RealDataLoader(args.batch_size, args.seq_len)
 
-            real_train(generator, discriminator, oracle_loader, config)
+            real_train(generator, discriminator, oracle_loader, config, args)
 
         print("Run Finished!")
         return

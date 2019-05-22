@@ -24,7 +24,7 @@ print("Available GPUs: {}".format(get_available_gpus()))
 # A function to initiate the graph and train the networks
 def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_topic.discriminator,
                      topic_discriminator, oracle_loader: RealDataTopicLoader,
-                     config):
+                     config, args):
     batch_size = config['batch_size']
     num_sentences = config['num_sentences']
     vocab_size = config['vocab_size']
@@ -136,9 +136,10 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
                                           summary_type=tf.summary.text, item_type=tf.string)
     topic_discr_pretrain_summary = CustomSummary(name='pretrain_loss', scope='topic_discriminator')
     topic_discr_accuracy_summary = CustomSummary(name='pretrain_accuracy', scope='topic_discriminator')
-
+    run_information = CustomSummary(name='run_information', scope='info',
+                                          summary_type=tf.summary.text, item_type=tf.string)
     custom_summaries = [gen_pretrain_loss_summary, gen_sentences_summary, topic_discr_pretrain_summary,
-                        topic_discr_accuracy_summary]
+                        topic_discr_accuracy_summary, run_information]
 
     # To save the trained model
     saver = tf.train.Saver()
@@ -153,6 +154,8 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
         for custom_summary in custom_summaries:
             custom_summary.set_file_writer(sum_writer, sess)
 
+        run_information.write_summary(str(args), 0)
+        print("Information stored in the summary!")
         # generate oracle data and create batches
         # todo se le parole hanno poco senso potrebbe essere perchè qua ho la corrispondenza indice-parola sbagliata
         index_word_dict = oracle_loader.model_index_word_dict

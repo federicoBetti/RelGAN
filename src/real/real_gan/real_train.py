@@ -25,7 +25,7 @@ print("Available GPUs: {}".format(get_available_gpus()))
 
 
 # A function to initiate the graph and train the networks
-def real_train(generator, discriminator, oracle_loader, config):
+def real_train(generator, discriminator, oracle_loader, config, args):
     batch_size = config['batch_size']
     num_sentences = config['num_sentences']
     vocab_size = config['vocab_size']
