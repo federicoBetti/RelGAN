@@ -10,4 +10,8 @@ resources/topic_models/*.pkl
 **/__pycache__/
 
 **/old_tensorboard/
+**/checkpoint_folder/
 **/trained_models/
+**/oracle/logs/summary/
+**/oracle/samples/
+**/oracle/logs/
