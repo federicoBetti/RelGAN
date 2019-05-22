@@ -16,7 +16,7 @@ d_lr =         ['1e-4', '1e-4', '1e-4', '1e-4']
 gadv_lr =      ['1e-4', '1e-4', '1e-4', '1e-4']
 
 # Topic Related
-topic_number = ['3', '6', '3', '6']
+topic_number = ['6', '6', '3', '6']
 
 # Memory Related
 mem_slots =    ['1', '1', '1', '1', '1', '1', '1', '1']
