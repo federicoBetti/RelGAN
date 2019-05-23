@@ -8,6 +8,7 @@ from nltk.corpus import wordnet
 import pandas as pd
 from gensim.models import LdaModel, CoherenceModel
 from gensim.utils import simple_tokenize
+import numpy as np
 
 from path_resolution import resources_path
 
@@ -150,7 +151,7 @@ def word_cloud(lda):
     plt.show()
 
 
-def get_perc_sent_topic(ldamodel, corpus, texts, stops):
+def get_perc_sent_topic(ldamodel, corpus, texts, stops, topic_num):
     # Init output
     sent_topics_df = pd.DataFrame()
     texts = process_texts(texts, stops)
@@ -158,13 +159,14 @@ def get_perc_sent_topic(ldamodel, corpus, texts, stops):
     # Get main topic in each document
     for i, row_list in enumerate(ldamodel[corpus]):
         row = row_list[0] if ldamodel.per_word_topics else row_list
-
+        #print(row)
         # row = sorted(row, key=lambda x: (x[1]), reverse=True) # sort list to get dominant topic
         # Get the Dominant topic, Perc Contribution and Keywords for each document
-        to_append = []
-        for j, (topic_num, prop_topic) in enumerate(row):
-            to_append.append(prop_topic)
+        to_append = np.zeros(topic_num)
+        for j, (topic_n, prop_topic) in enumerate(row):
+            to_append[topic_n] = prop_topic
         sent_topics_df = sent_topics_df.append(pd.Series(to_append), ignore_index=True)
+
     sent_topics_df.columns = ["Topic {}".format(topic_number) for topic_number in range(len(to_append))]
 
     # Add original text to the end of the output
