@@ -9,14 +9,14 @@ gsteps =       ['2', '2', '2', '2']
 dsteps =       ['1', '1', '2', '2']
 npre_epochs =  ['400', '400', '250', '150']
 nadv_steps =   ['6000', '6000', '5000', '5000']
-ntopic_pre_epochs = ['500', '500', '250', '50']
+ntopic_pre_epochs = ['300', '500', '250', '50']
 opt_type =     ['adam', 'adam', 'adam', 'adam']
 temperature =  ['1000', '1000', '1000', '100']
 d_lr =         ['1e-4', '1e-4', '1e-4', '1e-4']
 gadv_lr =      ['1e-4', '1e-4', '1e-4', '1e-4']
 
 # Topic Related
-topic_number = ['6', '12', '3', '6']
+topic_number = ['42', '12', '3', '6']
 
 # Memory Related
 mem_slots =    ['1', '1', '1', '1', '1', '1', '1', '1']
@@ -38,7 +38,7 @@ decay = False
 adapt = 'exp'
 ntest = '20'
 
-job_number = 2
+job_number = 1
 configurations = []
 for job_id in range(job_number):
     configurations.append([
