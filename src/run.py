@@ -68,7 +68,7 @@ parser.add_argument('--dataset', default='image_coco', type=str, help='[oracle, 
 parser.add_argument('--vocab-size', default=5000, type=int, help="vocabulary size")
 parser.add_argument('--start-token', default=0, type=int, help="start token for a sentence")
 parser.add_argument('--seq-len', default=20, type=int, help="sequence length: [20, 40]")
-parser.add_argument('--num-sentences', default=1000, type=int, help="number of total sentences")
+parser.add_argument('--num-sentences', default=100, type=int, help="number of total sentences")
 parser.add_argument('--gen-emb-dim', default=32, type=int, help="generator embedding dimension")
 parser.add_argument('--dis-emb-dim', default=64, type=int, help="TOTAL discriminator embedding dimension")
 parser.add_argument('--num-rep', default=64, type=int, help="number of discriminator embedded representations")
