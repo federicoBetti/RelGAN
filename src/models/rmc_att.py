@@ -24,21 +24,13 @@ def generator(x_real, temperature, vocab_size, batch_size, seq_len, gen_emb_dim,
     gen_x = tensor_array_ops.TensorArray(dtype=tf.int32, size=seq_len, dynamic_size=False, infer_shape=True)
     gen_x_onehot_adv = tensor_array_ops.TensorArray(dtype=tf.float32, size=seq_len, dynamic_size=False,
                                                     infer_shape=True)
-    our_solution = False
 
     def _gen_recurrence(i, x_t, h_tm1, gen_o, gen_x, gen_x_onehot_adv):
         mem_o_t, h_t = gen_mem(x_t, h_tm1)  # hidden_memory_tuple, output della memoria che si potrebbe riutilizzare
         o_t = g_output_unit(mem_o_t)  # batch x vocab, logits not prob
 
         gumbel_t = add_gumbel(o_t)
-        if our_solution:
-            lambda_param = g_output_unit_lambda(mem_o_t)
-            topic_vector = tf.ones_like(gumbel_t)  # todo
-            assert gumbel_t.shape.as_list() == topic_vector.shape.as_list()
-            gumbel_t = (1 - lambda_param) * gumbel_t + lambda_param * topic_vector
-
         next_token = tf.cast(tf.argmax(gumbel_t, axis=1), tf.int32)
-        #  + lambda * topic_related
         x_onehot_appr = tf.nn.softmax(tf.multiply(gumbel_t, temperature, name="gumbel_x_temp"),
                                       name="softmax_gumbel_temp")  # one-hot-like, [batch_size x vocab_size]
         # x_tp1 = tf.matmul(x_onehot_appr, g_embeddings)  # approximated embeddings, [batch_size x emb_dim]
