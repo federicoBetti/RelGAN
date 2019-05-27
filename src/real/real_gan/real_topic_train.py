@@ -164,6 +164,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
 
         metrics = get_metrics(config, oracle_loader, test_file, gen_text_file, g_pretrain_loss, x_real, x_topic, sess)
 
+        gc.collect()
         # Check if there is a pretrained generator saved
         model_dir = "PretrainGenerator"
         model_path = resources_path(os.path.join("checkpoint_folder", model_dir))
@@ -183,6 +184,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
             # save_path = saver.save(sess, os.path.join(model_path, "model.ckpt"))
             # print("Up to Generator Pretrain saved in path: %s" % save_path)
 
+        gc.collect()
         # Check if there is a pretrained generator and a topic discriminator saved
         model_dir = "PretrainGeneratorAndTopicDiscriminator"
         model_path = resources_path(os.path.join("checkpoint_folder", model_dir))
@@ -206,6 +208,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
         print('Start adversarial training...')
         progress = tqdm(range(nadv_steps))
         for adv_epoch in progress:
+            gc.collect()
             niter = sess.run(global_step)
 
             t0 = time.time()
