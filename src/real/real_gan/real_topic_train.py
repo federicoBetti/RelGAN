@@ -3,6 +3,7 @@ import datetime
 import gc
 import random
 
+from tensorflow.python.saved_model.simple_save import simple_save
 from tqdm import tqdm
 
 from models import rmc_att_topic
@@ -276,12 +277,15 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
                 log.write('\n')
 
         sum_writer.close()
-        # model_dir = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-        # model_path = resources_path(os.path.join("trained_models", model_dir))
-        # if not os.path.exists(model_path):
-        #     os.makedirs(model_path)
+
+        model_dir = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        model_path = os.path.join(resources_path("trained_models"), model_dir)
+        simple_save(sess,
+                    model_path,
+                    inputs={"x_topic": x_topic},
+                    outputs={"gen_x": x_fake})
         # save_path = saver.save(sess, os.path.join(model_path, "model.ckpt"))
-        # print("Model saved in path: %s" % save_path)
+        print("Model saved in path: %s" % model_path)
 
 
 def generator_pretrain(npre_epochs, sess, g_pretrain_op, g_pretrain_loss, x_real, oracle_loader,
