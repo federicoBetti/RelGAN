@@ -6,9 +6,10 @@ import numpy as np
 import random
 
 # from gensim.utils import lemmatize
+from gensim.corpora import Dictionary
 
 from topic_modelling.lda_topic import train_lda, train_specific_LDA, LDA
-from topic_modelling.lda_utils import get_corpus, get_perc_sent_topic
+from topic_modelling.lda_utils import get_corpus, get_perc_sent_topic, process_texts
 
 
 class RealDataLoader:
@@ -81,6 +82,7 @@ class RealDataTopicLoader(RealDataLoader):
         self.topic_matrix = None
         self.batches_shape = None
         self.topic_num = 3
+        self.lda = None
 
     def create_batches(self, data_file):
         self.token_stream = []
@@ -107,6 +109,7 @@ class RealDataTopicLoader(RealDataLoader):
         self.topic_batches = np.split(np.array(self.sentence_topic_array), self.num_batch, axis=0)
 
         self.pointer = 0
+
     def next_batch(self, only_text=True):
         # with the parameter I can change only when needed
         ret_sent = self.sequence_batches[self.pointer]
@@ -148,14 +151,15 @@ class RealDataTopicLoader(RealDataLoader):
         # Create LDA model for the dataset, given parameters
         coco = True if "coco" in data_file else False  # Now it is just coco or not coco just for name saving reasons
         corpus_raw = get_corpus(coco, datapath=data_file)
-        lda = train_specific_LDA(corpus_raw, num_top=self.topic_num, passes=2, iterations=2, chunksize=2000, coco=coco)
+        self.lda = train_specific_LDA(corpus_raw, num_top=self.topic_num, passes=2, iterations=2, chunksize=2000,
+                                      coco=coco)
 
         # Get percentage of each topic in each sentence
-        df = get_perc_sent_topic(ldamodel=lda.lda_model, corpus=lda.corpus_bow, texts=lda.corpus_text, stops=lda.stops, topic_num=self.topic_num)
-        topic_matrix = lda.lda_model.get_topics()  # num_topic x num_words
-        self.topic_matrix = topic_matrix
+        df = get_perc_sent_topic(ldamodel=self.lda.lda_model, corpus=self.lda.corpus_bow, texts=self.lda.corpus_text,
+                                 stops=self.lda.stops, topic_num=self.topic_num)
+        self.topic_matrix = self.lda.lda_model.get_topics()  # num_topic x num_words
         topic_weights = df.values[:, 1:self.topic_num + 1]  # num_sentences x num_topic (each row sum to 1)
-        topic_sentences = np.dot(topic_weights, topic_matrix)  # num_sentences x num_word
+        topic_sentences = np.dot(topic_weights, self.topic_matrix)  # num_sentences x num_word
         topic_sentences = np.divide(topic_sentences,
                                     np.sum(topic_sentences, axis=1, keepdims=True))  # rowwise normalization
 
@@ -164,7 +168,7 @@ class RealDataTopicLoader(RealDataLoader):
         lemmatizer = WordNetLemmatizer()
 
         self.texts = [lemmatizer.lemmatize(word) for word in self.model_word_index_dict.keys()]
-        self.lda_index_word_dict = lda.dictionary.id2token
+        self.lda_index_word_dict = self.lda.dictionary.id2token
 
         # todo il +1 è stato aggiunto perchè anche nel modello lo fa, bisogna vedere se è da aggiungere sopra o sotto
         real_vector = np.zeros(
@@ -218,3 +222,64 @@ class RealDataTopicLoader(RealDataLoader):
             return [int(self.model_word_index_dict[word])] + from_lemmatize
         except KeyError:
             return from_lemmatize
+
+    def get_LDA(self, word_index_dict, index_word_dict, data_file):
+        self.model_word_index_dict = word_index_dict
+        self.model_index_word_dict = index_word_dict
+        self.vocab_size = len(self.model_index_word_dict)
+
+        print("Computation of topic model started...")
+        t = time.time()
+        from topic_modelling.lda_topic import train_specific_LDA, get_corpus, LDA
+
+        # Create LDA model for the dataset, given parameters
+        coco = True if "coco" in data_file else False  # Now it is just coco or not coco just for name saving reasons
+        corpus_raw = get_corpus(coco, datapath=data_file)
+        self.lda = train_specific_LDA(corpus_raw, num_top=self.topic_num, passes=2, iterations=2, chunksize=2000,
+                                      coco=coco)
+
+        # Get percentage of each topic in each sentence
+
+        self.topic_matrix = self.lda.lda_model.get_topics()  # num_topic x num_words
+
+        # get model lemmatized version of the words, it's needed because LDA does it and model processing doesn't
+        from nltk.stem import WordNetLemmatizer
+        lemmatizer = WordNetLemmatizer()
+
+        self.texts = [lemmatizer.lemmatize(word) for word in self.model_word_index_dict.keys()]
+        self.lda_index_word_dict = self.lda.dictionary.id2token
+
+        self.inverse_indexes = [self.get_model_index(i) for i in range(len(self.lda_index_word_dict))]
+        print("number of LDA words: {}".format(len(self.lda_index_word_dict)))
+
+        print("Topic model computed in {} sec!".format(time.time() - t))
+        gc.collect()
+
+    def get_topic(self, sentences):
+        t = time.time()
+        tmp = process_texts(sentences, self.lda.stops)
+        dictionary = Dictionary(tmp)
+        corpus_bow = [dictionary.doc2bow(i) for i in tmp]
+
+        df = get_perc_sent_topic(ldamodel=self.lda.lda_model, corpus=corpus_bow, texts=sentences,
+                                 stops=self.lda.stops, topic_num=self.topic_num)
+        topic_weights = df.values[:, 1:self.topic_num + 1]  # num_sentences x num_topic (each row sum to 1)
+        topic_sentences = np.dot(topic_weights, self.topic_matrix)  # num_sentences x num_word
+        topic_sentences = np.divide(topic_sentences,
+                                    np.sum(topic_sentences, axis=1, keepdims=True))  # rowwise normalization
+
+        # get model lemmatized version of the words, it's needed because LDA does it and model processing doesn't
+        from nltk.stem import WordNetLemmatizer
+        lemmatizer = WordNetLemmatizer()
+
+        real_vector = np.zeros(
+            (topic_sentences.shape[0], len(self.model_word_index_dict) + 1))  # sentence_number x vocab_size
+
+        for ind, invere_index in enumerate(self.inverse_indexes):
+            # more than one index in the model because of lemmatization
+            for x in invere_index:
+                real_vector[:, x] = topic_sentences[:, ind]
+
+        print("Topic model for new sentences computed in {} sec!".format(time.time() - t))
+        gc.collect()
+        return real_vector
