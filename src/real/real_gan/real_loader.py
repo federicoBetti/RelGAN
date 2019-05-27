@@ -153,10 +153,10 @@ class RealDataTopicLoader(RealDataLoader):
         corpus_raw = get_corpus(coco, datapath=data_file)
         self.lda = train_specific_LDA(corpus_raw, num_top=self.topic_num, passes=2, iterations=2, chunksize=2000,
                                       coco=coco)
-        df = self.lda.perc_topic_dict
+        df = self.lda.get_perc_topic_dict()
         # Get percentage of each topic in each sentence
-        df = get_perc_sent_topic(ldamodel=self.lda.lda_model, corpus=self.lda.corpus_bow, texts=self.lda.corpus_text,
-                                 stops=self.lda.stops, topic_num=self.topic_num)
+        # df = get_perc_sent_topic(ldamodel=self.lda.lda_model, corpus=self.lda.corpus_bow, texts=self.lda.corpus_text,
+        #                          stops=self.lda.stops, topic_num=self.topic_num)
         self.topic_matrix = self.lda.lda_model.get_topics()  # num_topic x num_words
         topic_weights = df.values[:, 1:self.topic_num + 1]  # num_sentences x num_topic (each row sum to 1)
         topic_sentences = np.dot(topic_weights, self.topic_matrix)  # num_sentences x num_word

@@ -24,8 +24,9 @@ class LDA:
 
     def get_perc_topic_dict(self):
         if self.perc_topic_dict is None:
-            csdc
-
+            self.perc_topic_dict = get_perc_sent_topic(ldamodel=self.lda_model, corpus=self.corpus_bow,
+                                                       texts=self.corpus_text, stops=self.stops, topic_num=self.topic_num)
+        return self.perc_topic_dict
 
 
 def create_LDA_model(texts, limit, chunksize, iterations, passes, random_state_lda, stops):
