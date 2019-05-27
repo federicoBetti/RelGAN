@@ -60,13 +60,13 @@ def generate_samples_topic(sess, gen_x, batch_size, generated_num, lambda_values
     codes_with_lambda = ""
     for sent, lambda_value_sent in zip(generated_samples, generated_samples_lambda):
         for x, y in zip(sent, lambda_value_sent):
-            codes_with_lambda += " {} ({:.4f})".format(x, y)
-            codes += " {}".format(x)
+            codes_with_lambda += "{} ({:.4f}) ".format(x, y)
+            codes += "{} ".format(x)
 
-        codes_with_lambda += '\n'
-        codes += '\n'
+        codes_with_lambda = codes_with_lambda[:-1] + '\n'
+        codes = codes[:-1] + '\n'
 
-    return codes_with_lambda[1:], sentence_generated_from, codes[1:]
+    return codes_with_lambda, sentence_generated_from, codes
 
 
 def init_sess():

@@ -248,7 +248,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
                                                                                            lambda_values=lambda_values_returned,
                                                                                            oracle_loader=oracle_loader,
                                                                                            x_topic=x_topic)
-                gen_real_test_file_not_file(codes, sentence_generated_from, gen_save_file, index_word_dict)
+                # gen_real_test_file_not_file(codes, sentence_generated_from, gen_save_file, index_word_dict)
                 gen_real_test_file_not_file(codes, sentence_generated_from, gen_text_file, index_word_dict)
                 gen_real_test_file_not_file(codes_with_lambda, sentence_generated_from, gen_text_file_print,
                                             index_word_dict, True)
@@ -304,7 +304,7 @@ def generator_pretrain(npre_epochs, sess, g_pretrain_op, g_pretrain_loss, x_real
                                                                                        lambda_values=lambda_values,
                                                                                        oracle_loader=oracle_loader,
                                                                                        x_topic=x_topic)
-            gen_real_test_file_not_file(codes, sentence_generated_from, gen_save_file, index_word_dict)
+            # gen_real_test_file_not_file(codes, sentence_generated_from, gen_save_file, index_word_dict)
             gen_real_test_file_not_file(codes, sentence_generated_from, gen_text_file, index_word_dict)
             gen_real_test_file_not_file(codes_with_lambda, sentence_generated_from, gen_text_file_print,
                                         index_word_dict, True)
