@@ -57,11 +57,16 @@ def generate_samples_topic(sess, gen_x, batch_size, generated_num, lambda_values
         generated_samples_lambda.extend(lambda_values_res)
     # print("Samples Generated")
     codes = ""
+    codes_with_lambda = ""
     for sent, lambda_value_sent in zip(generated_samples, generated_samples_lambda):
-        buffer = ' '.join(["{} ({:.4f})".format(x, y) for x, y in zip(sent, lambda_value_sent)]) + '\n'
-        codes += buffer
+        for x, y in zip(sent, lambda_value_sent):
+            codes_with_lambda += " {} ({:.4f})".format(x, y)
+            codes += " {}".format(x)
 
-    return codes, sentence_generated_from
+        codes_with_lambda += '\n'
+        codes += '\n'
+
+    return codes_with_lambda, sentence_generated_from, codes
 
 
 def init_sess():
@@ -170,6 +175,7 @@ def gen_real_test_file_not_file(codes: str, sentence_generated_from, file, iw_di
         for r, s in zip(raw, sentence_generated_from):
             outfile.write(code_to_text(codes=[r], dictionary=iw_dict))
             if generator_sentences:
+                outfile.write(code_to_text(codes=[r], dictionary=iw_dict))
                 outfile.write("\t ---- {}".format(code_to_text(codes=[s], dictionary=iw_dict)))
 
 

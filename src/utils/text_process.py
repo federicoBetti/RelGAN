@@ -29,7 +29,7 @@ def code_to_text(codes, dictionary):
             line = line.split(" ")
         for number in line:
             if isinstance(number, str) and ('(' in number or ')' in number):
-                paras += number
+                paras = paras + number + ' '
             else:
                 number = int(number)
                 if number == eof_code:

@@ -186,25 +186,29 @@ class RealDataTopicLoader(RealDataLoader):
     def random_topic(self):
         """
         It returns a random topic, it could be completely random or sampled randomly from the existing ones
-        :return:
+        :return: an array of batch size topic vectors taken randomly from the real one present in the system
         """
-        random_topic_weights = np.random.random((self.batch_size, self.topic_num))
-        random_topic_weights = np.divide(random_topic_weights, np.sum(random_topic_weights, axis=1, keepdims=True))
-
-        topic_sentences = np.dot(random_topic_weights, self.topic_matrix)
-        topic_sentences = np.divide(topic_sentences,
-                                    np.sum(topic_sentences, axis=1, keepdims=True))  # rowwise normalization
-
-        real_vector = np.zeros(
-            (topic_sentences.shape[0], len(self.model_word_index_dict) + 1))  # sentence_number x vocab_size
-
-        # since the parallelism is the same for each sentence, it is done word by word for all sentences all together.
-        # It is possible that a word in the LDA corresponds to more words in the model due to lemmatization procedure
-        for ind, invere_index in enumerate(self.inverse_indexes):
-            # more than one index in the model because of lemmatization
-            for x in invere_index:
-                real_vector[:, x] = topic_sentences[:, ind]
-
+        idx = np.random.randint(self.sentence_topic_array.shape[0], size=self.batch_size)
+        return self.sentence_topic_array[idx, :]
+        #
+        # random_topic_weights = np.random.random((self.batch_size, self.topic_num))
+        # random_topic_weights = np.divide(random_topic_weights, np.sum(random_topic_weights, axis=1, keepdims=True))
+        #
+        # topic_sentences = np.dot(random_topic_weights, self.topic_matrix)
+        # topic_sentences = np.divide(topic_sentences,
+        #                             np.sum(topic_sentences, axis=1, keepdims=True))  # rowwise normalization
+        #
+        # real_vector = np.zeros(
+        #     (topic_sentences.shape[0], len(self.model_word_index_dict) + 1))  # sentence_number x vocab_size
+        #
+        # # since the parallelism is the same for each sentence, it is done word by word for all sentences all together.
+        # # It is possible that a word in the LDA corresponds to more words in the model due to lemmatization procedure
+        # for ind, invere_index in enumerate(self.inverse_indexes):
+        #     # more than one index in the model because of lemmatization
+        #     for x in invere_index:
+        #         real_vector[:, x] = topic_sentences[:, ind]
+        #
+        # gc.collect()
         return real_vector
 
     def get_model_index(self, lda_index) -> List[int]:

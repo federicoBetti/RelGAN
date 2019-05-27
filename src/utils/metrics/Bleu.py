@@ -50,6 +50,7 @@ class Bleu(Metrics):
             return self.reference
 
     def get_bleu(self):
+        print("Start get_blue for {}".format(self.gram))
         ngram = self.gram
         bleu = list()
         reference = self.get_reference()
@@ -59,6 +60,7 @@ class Bleu(Metrics):
             for hypothesis in test_data:
                 if i >= self.sample_size:
                     break
+                print("Check for hypotesis: {}".format(hypothesis))
                 hypothesis = nltk.word_tokenize(hypothesis)
                 bleu.append(self.calc_bleu(reference, hypothesis, weight))
                 i += 1
