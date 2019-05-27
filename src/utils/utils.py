@@ -40,7 +40,6 @@ def generate_samples(sess, gen_x, batch_size, generated_num, output_file=None,
 
 def generate_samples_topic(sess, gen_x, batch_size, generated_num, lambda_values=None, oracle_loader=None,
                            gen_x_no_lambda=None, x_topic=None, get_code=True):
-
     generated_samples = []
     generated_samples_lambda = []
     sentence_generated_from = []
@@ -51,7 +50,8 @@ def generate_samples_topic(sess, gen_x, batch_size, generated_num, lambda_values
         text_batch, topic_batch = oracle_loader.random_batch(only_text=False)
         feed = {x_topic: topic_batch}
         sentence_generated_from.extend(text_batch)
-        gen_x_res, lambda_values_res, gen_x_no_lambda_res = sess.run([gen_x, lambda_values, gen_x_no_lambda], feed_dict=feed)
+        gen_x_res, lambda_values_res, gen_x_no_lambda_res = sess.run([gen_x, lambda_values, gen_x_no_lambda],
+                                                                     feed_dict=feed)
 
         assert len(gen_x_res) == len(lambda_values_res)
         assert len(gen_x_res[0]) == len(lambda_values_res[0])
@@ -61,7 +61,8 @@ def generate_samples_topic(sess, gen_x, batch_size, generated_num, lambda_values
 
     codes = ""
     codes_with_lambda = ""
-    for sent, lambda_value_sent, no_lambda_words in zip(generated_samples, generated_samples_lambda, generated_samples_no_lambda_words):
+    for sent, lambda_value_sent, no_lambda_words in zip(generated_samples, generated_samples_lambda,
+                                                        generated_samples_no_lambda_words):
         for x, y, z in zip(sent, lambda_value_sent, no_lambda_words):
             codes_with_lambda += "{} ({:.4f};{}) ".format(x, y, z)
             codes += "{} ".format(x)

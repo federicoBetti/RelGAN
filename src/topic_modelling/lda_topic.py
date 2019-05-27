@@ -10,16 +10,22 @@ import numpy as np
 
 
 class LDA:
-    def __init__(self, lda_train, corpus_text, corpus_bow, stops, topic_num=42, dictionary=None):
+    def __init__(self, lda_train, corpus_text, corpus_bow, stops, topic_num=42, dictionary=None, perc_topic_dict=None):
         self.lda_model = lda_train
         self.corpus_text = corpus_text
         self.corpus_bow = corpus_bow
         self.stops = stops
         self.topic_num = topic_num
         self.dictionary = dictionary
+        self.perc_topic_dict = perc_topic_dict
 
     def __str__(self):
         return "This is the class with this LDA model: {}".format(self.lda_model)
+
+    def get_perc_topic_dict(self):
+        if self.perc_topic_dict is None:
+            csdc
+
 
 
 def create_LDA_model(texts, limit, chunksize, iterations, passes, random_state_lda, stops):
@@ -113,8 +119,9 @@ def train_specific_LDA(corpus, num_top, passes, iterations, random_state_lda=3, 
     lda_train = LdaModel(corpus=corpus_bow, num_topics=num_top, id2word=dictionary,
                          eval_every=1, passes=passes, chunksize=chunksize,
                          iterations=iterations, random_state=random_state_lda, dtype=np.float32)
+    df = get_perc_sent_topic(ldamodel=lda_train, corpus=corpus_bow, texts=corpus, stops=stops, topic_num=num_top)
     lda = LDA(lda_train=lda_train, corpus_text=corpus, corpus_bow=corpus_bow, stops=stops, topic_num=num_top,
-              dictionary=dictionary)
+              dictionary=dictionary, perc_topic_dict=df)
 
     with open(resources_path("topic_models",
                              'lda_model_ntop_{}_iter_{}_pass_{}_chunk_{}_coco_{}.pkl'.format(num_top, iterations,

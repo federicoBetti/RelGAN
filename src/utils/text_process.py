@@ -31,7 +31,10 @@ def code_to_text(codes, dictionary):
         for number in line:
             if isinstance(number, str) and ('(' in number or ')' in number):
                 n = number.split(';')
-                paras = paras + n[0] + "; " + dictionary[n[1][:-1]] + ')' + ' '
+                if n[1][:-1] == str(eof_code):
+                    paras = paras + n[0] + "; " + '.' + ')' + ' '
+                else:
+                    paras = paras + n[0] + "; " + dictionary[n[1][:-1]] + ')' + ' '
             else:
                 number = int(number)
                 if number == eof_code:
