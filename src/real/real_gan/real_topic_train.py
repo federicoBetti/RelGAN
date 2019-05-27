@@ -76,9 +76,10 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
     assert x_real_onehot.get_shape().as_list() == [batch_size, seq_len, vocab_size]
 
     # generator and discriminator outputs
-    x_fake_onehot_appr, x_fake, g_pretrain_loss, gen_o, lambda_values_returned = generator(x_real=x_real,
-                                                                                           temperature=temperature,
-                                                                                           x_topic=x_topic)
+    x_fake_onehot_appr, x_fake, g_pretrain_loss, gen_o, \
+    lambda_values_returned, gen_x_no_lambda = generator(x_real=x_real,
+                                                        temperature=temperature,
+                                                        x_topic=x_topic)
     d_out_real = discriminator(x_onehot=x_real_onehot, with_out=False)
     d_out_fake = discriminator(x_onehot=x_fake_onehot_appr, with_out=False)
     d_topic_out_real_pos = topic_discriminator(x_onehot=x_real_onehot, x_topic=x_topic)
@@ -178,7 +179,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
             generator_pretrain(npre_epochs, sess, g_pretrain_op, g_pretrain_loss, x_real, oracle_loader,
                                gen_pretrain_loss_summary, sample_dir, x_fake, batch_size, num_sentences, x_topic,
                                gen_text_file, index_word_dict, gen_sentences_summary, metrics, metric_summary_op,
-                               metrics_pl, sum_writer, log, lambda_values_returned, gen_text_file_print)
+                               metrics_pl, sum_writer, log, lambda_values_returned, gen_text_file_print, gen_x_no_lambda)
 
             # if not os.path.exists(model_path):
             #     os.makedirs(model_path)
@@ -216,7 +217,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
             # Adversarial training
             for _ in range(config['gsteps']):
                 text_batch, topic_batch = oracle_loader.random_batch(only_text=False)
-                sess.run(g_train_op, feed_dict={x_real: text_batch, x_topic: topic_batch, })
+                sess.run(g_train_op, feed_dict={x_real: text_batch, x_topic: topic_batch})
             for _ in range(config['dsteps']):
                 # normal + topic discriminator together
                 text_batch, topic_batch = oracle_loader.random_batch(only_text=False)
@@ -248,6 +249,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
                                                                                            num_sentences,
                                                                                            lambda_values=lambda_values_returned,
                                                                                            oracle_loader=oracle_loader,
+                                                                                           gen_x_no_lambda=gen_x_no_lambda,
                                                                                            x_topic=x_topic)
                 # gen_real_test_file_not_file(codes, sentence_generated_from, gen_save_file, index_word_dict)
                 gen_real_test_file_not_file(codes, sentence_generated_from, gen_text_file, index_word_dict)
@@ -291,7 +293,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
 def generator_pretrain(npre_epochs, sess, g_pretrain_op, g_pretrain_loss, x_real, oracle_loader,
                        gen_pretrain_loss_summary, sample_dir, x_fake, batch_size, num_sentences, x_topic, gen_text_file,
                        index_word_dict, gen_sentences_summary, metrics, metric_summary_op, metrics_pl, sum_writer, log,
-                       lambda_values, gen_text_file_print):
+                       lambda_values, gen_text_file_print, gen_x_no_lambda):
     progress = tqdm(range(npre_epochs))
     for epoch in progress:
         # pre-training
@@ -300,13 +302,14 @@ def generator_pretrain(npre_epochs, sess, g_pretrain_op, g_pretrain_loss, x_real
 
         # Test
         ntest_pre = 30
-        if np.mod(epoch, ntest_pre) == 0 or epoch == 10:
+        if np.mod(epoch, ntest_pre) == 0:
             # generate fake data and create batches
             gen_save_file = os.path.join(sample_dir, 'pre_samples_{:05d}.txt'.format(epoch))
             codes_with_lambda, sentence_generated_from, codes = generate_samples_topic(sess, x_fake, batch_size,
                                                                                        num_sentences,
                                                                                        lambda_values=lambda_values,
                                                                                        oracle_loader=oracle_loader,
+                                                                                       gen_x_no_lambda=gen_x_no_lambda,
                                                                                        x_topic=x_topic)
             # gen_real_test_file_not_file(codes, sentence_generated_from, gen_save_file, index_word_dict)
             gen_real_test_file_not_file(codes, sentence_generated_from, gen_text_file, index_word_dict)

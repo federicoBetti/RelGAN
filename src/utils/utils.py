@@ -38,29 +38,32 @@ def generate_samples(sess, gen_x, batch_size, generated_num, output_file=None,
     return codes
 
 
-def generate_samples_topic(sess, gen_x, batch_size, generated_num, lambda_values=None, oracle_loader=None, x_topic=None,
-                           get_code=True):
-    # Generate Samples
-    # print("Generating Samples with Topic...", end="  ")
+def generate_samples_topic(sess, gen_x, batch_size, generated_num, lambda_values=None, oracle_loader=None,
+                           gen_x_no_lambda=None, x_topic=None, get_code=True):
+
     generated_samples = []
     generated_samples_lambda = []
     sentence_generated_from = []
+    generated_samples_no_lambda_words = []
+
     max_gen = int(generated_num / batch_size)  # - 155  # 156
     for ii in range(max_gen):
         text_batch, topic_batch = oracle_loader.random_batch(only_text=False)
         feed = {x_topic: topic_batch}
         sentence_generated_from.extend(text_batch)
-        gen_x_res, lambda_values_res = sess.run([gen_x, lambda_values], feed_dict=feed)
+        gen_x_res, lambda_values_res, gen_x_no_lambda_res = sess.run([gen_x, lambda_values, gen_x_no_lambda], feed_dict=feed)
+
         assert len(gen_x_res) == len(lambda_values_res)
         assert len(gen_x_res[0]) == len(lambda_values_res[0])
         generated_samples.extend(gen_x_res)
         generated_samples_lambda.extend(lambda_values_res)
-    # print("Samples Generated")
+        generated_samples_no_lambda_words.extend(gen_x_no_lambda_res)
+
     codes = ""
     codes_with_lambda = ""
-    for sent, lambda_value_sent in zip(generated_samples, generated_samples_lambda):
-        for x, y in zip(sent, lambda_value_sent):
-            codes_with_lambda += "{} ({:.4f}) ".format(x, y)
+    for sent, lambda_value_sent, no_lambda_words in zip(generated_samples, generated_samples_lambda, generated_samples_no_lambda_words):
+        for x, y, z in zip(sent, lambda_value_sent, no_lambda_words):
+            codes_with_lambda += "{} ({:.4f};{}) ".format(x, y, z)
             codes += "{} ".format(x)
 
         codes_with_lambda = codes_with_lambda[:-1] + '\n'
@@ -175,7 +178,6 @@ def gen_real_test_file_not_file(codes: str, sentence_generated_from, file, iw_di
         for r, s in zip(raw, sentence_generated_from):
             outfile.write(code_to_text(codes=[r], dictionary=iw_dict))
             if generator_sentences:
-                outfile.write(code_to_text(codes=[r], dictionary=iw_dict))
                 outfile.write("\t ---- {}".format(code_to_text(codes=[s], dictionary=iw_dict)))
 
 

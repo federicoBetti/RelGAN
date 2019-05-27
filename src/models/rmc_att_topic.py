@@ -28,8 +28,10 @@ def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen
                                                     infer_shape=True)
     topicness_values = tensor_array_ops.TensorArray(dtype=tf.float32, size=seq_len, dynamic_size=False,
                                                     infer_shape=True)
+    gen_x_no_lambda = tensor_array_ops.TensorArray(dtype=tf.int32, size=seq_len, dynamic_size=False,
+                                                    infer_shape=True)
 
-    def _gen_recurrence(i, x_t, h_tm1, gen_o, gen_x, gen_x_onehot_adv, lambda_values):
+    def _gen_recurrence(i, x_t, h_tm1, gen_o, gen_x, gen_x_onehot_adv, lambda_values, gen_x_no_lambda):
         mem_o_t, h_t = gen_mem(x_t, h_tm1)  # hidden_memory_tuple, output della memoria che si potrebbe riutilizzare
         o_t = g_output_unit(mem_o_t)  # batch x vocab, logits not prob
 
@@ -45,11 +47,11 @@ def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen
         assert gumbel_t.shape.as_list() == topic_vector.shape.as_list(), "Gumbel: {}, Topic vector: {}".format(
             gumbel_t.shape.as_list(), topic_vector.shape.as_list())
 
-        if use_lambda:
-            lambda_param = g_output_unit_lambda(mem_o_t)
-            print_op_lambda = tf.print("Lambda= iteration:", i, " shape: {}, values:".format(lambda_param.shape),
-                                       lambda_param)
-            gumbel_t = gumbel_t + lambda_param * topic_vector
+        lambda_param = g_output_unit_lambda(mem_o_t)
+        print_op_lambda = tf.print("Lambda= iteration:", i, " shape: {}, values:".format(lambda_param.shape),
+                                   lambda_param)
+        next_token_no_lambda = tf.cast(tf.argmax(gumbel_t, axis=1), tf.int32)
+        gumbel_t = gumbel_t + lambda_param * topic_vector
 
         next_token = tf.cast(tf.argmax(gumbel_t, axis=1), tf.int32)
 
@@ -67,13 +69,14 @@ def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen
         gen_x_onehot_adv = gen_x_onehot_adv.write(i, x_onehot_appr)
 
         lambda_values = lambda_values.write(i, tf.squeeze(lambda_param))
-        return i + 1, x_tp1, h_t, gen_o, gen_x, gen_x_onehot_adv, lambda_values
+        gen_x_no_lambda = gen_x_no_lambda.write(i, tf.squeeze(next_token_no_lambda))
+        return i + 1, x_tp1, h_t, gen_o, gen_x, gen_x_onehot_adv, lambda_values, gen_x_no_lambda
 
-    _, _, _, gen_o, gen_x, gen_x_onehot_adv, topicness_values = control_flow_ops.while_loop(
-        cond=lambda i, _1, _2, _3, _4, _5, _6: i < seq_len,
+    _, _, _, gen_o, gen_x, gen_x_onehot_adv, topicness_values, gen_x_no_lambda = control_flow_ops.while_loop(
+        cond=lambda i, _1, _2, _3, _4, _5, _6, _7: i < seq_len,
         body=_gen_recurrence,
         loop_vars=(tf.constant(0, dtype=tf.int32), tf.nn.embedding_lookup(g_embeddings, start_tokens),
-                   init_states, gen_o, gen_x, gen_x_onehot_adv, topicness_values), name="while_adv_recurrence")
+                   init_states, gen_o, gen_x, gen_x_onehot_adv, topicness_values, gen_x_no_lambda), name="while_adv_recurrence")
 
     gen_x = gen_x.stack()  # seq_len x batch_size
     gen_x = tf.transpose(gen_x, perm=[1, 0], name="gen_x_trans")  # batch_size x seq_len
@@ -87,6 +90,9 @@ def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen
 
     topicness_values = topicness_values.stack()  # seq_len x batch_size
     topicness_values = tf.transpose(topicness_values, perm=[1, 0], name="lambda_values_trans")  # batch_size x seq_len
+
+    gen_x_no_lambda = gen_x_no_lambda.stack()  # seq_len x batch_size
+    gen_x_no_lambda = tf.transpose(gen_x_no_lambda, perm=[1, 0], name="gen_x_no_lambda_trans")  # batch_size x seq_len
 
     # ----------- pre-training for generator -----------------
     x_emb = tf.transpose(tf.nn.embedding_lookup(g_embeddings, x_real), perm=[1, 0, 2],
@@ -123,7 +129,7 @@ def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen
             )
         ) / (seq_len * batch_size)
 
-    return gen_x_onehot_adv, gen_x, pretrain_loss, gen_o, topicness_values
+    return gen_x_onehot_adv, gen_x, pretrain_loss, gen_o, topicness_values, gen_x_no_lambda
 
 
 def discriminator(x_onehot, with_out, batch_size, seq_len, vocab_size, dis_emb_dim, num_rep, sn):

@@ -13,8 +13,6 @@ def generator(x_real, temperature, vocab_size, batch_size, seq_len, gen_emb_dim,
                                    initializer=create_linear_initializer(vocab_size))
     gen_mem = RelationalMemory(mem_slots=mem_slots, head_size=head_size, num_heads=num_heads)
     g_output_unit = create_output_unit(output_memory_size, vocab_size)
-    g_output_unit_lambda = create_output_unit_lambda(output_size=1, input_size=output_memory_size,
-                                                     additive_scope="_lambda")
 
     # initial states
     init_states = gen_mem.initial_state(batch_size)
