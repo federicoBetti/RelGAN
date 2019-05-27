@@ -98,23 +98,7 @@ def main():
         oracle_loader.topic_num = topic_number
         oracle_loader.get_LDA(word_index_dict, index_word_dict, data_file)
 
-        generator = models.get_generator("rmc_att_topic", vocab_size=vocab_size, batch_size=args.batch_size,
-                                         seq_len=seq_len, gen_emb_dim=args.gen_emb_dim, mem_slots=args.mem_slots,
-                                         head_size=args.head_size, num_heads=args.num_heads,
-                                         hidden_dim=args.hidden_dim,
-                                         start_token=args.start_token)
-
-        discriminator = models.get_discriminator("rmc_att_topic", batch_size=args.batch_size,
-                                                 seq_len=seq_len,
-                                                 vocab_size=vocab_size, dis_emb_dim=args.dis_emb_dim,
-                                                 num_rep=args.num_rep, sn=args.sn)
-
-        topic_discriminator = models.get_topic_discriminator(args.topic_architecture, batch_size=args.batch_size,
-                                                             seq_len=seq_len, vocab_size=vocab_size,
-                                                             dis_emb_dim=args.dis_emb_dim, num_rep=args.num_rep,
-                                                             sn=args.sn, discriminator=discriminator)
-        inference_main(generator, discriminator, topic_discriminator, oracle_loader, config, args, model_path,
-                       input_path)
+        inference_main(oracle_loader, config, model_path, input_path)
 
 
 if __name__ == '__main__':
