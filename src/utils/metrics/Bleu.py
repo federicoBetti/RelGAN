@@ -50,7 +50,6 @@ class Bleu(Metrics):
             return self.reference
 
     def get_bleu(self):
-        print("Start get_blue for {}".format(self.gram))
         ngram = self.gram
         bleu = list()
         reference = self.get_reference()
