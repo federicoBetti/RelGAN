@@ -25,8 +25,6 @@ def get_sentences(path):
 
 
 def fix_size(x_topic, batch_size):
-    print(x_topic)
-    print(x_topic.shape)
     x_topic_shape = x_topic.shape
     if x_topic_shape[0] > batch_size:
         return x_topic[:batch_size, :]
@@ -56,11 +54,14 @@ def inference_main(oracle_loader, config, model_path, input_path):
             x_topic = graph.get_tensor_by_name('x_topic:0')
             gen_x = graph.get_tensor_by_name("generator/gen_x_trans:0")
 
+            print(topic_sentences[0])
             topic_sentences = fix_size(topic_sentences, batch_size)
             res = sess.run(gen_x, feed_dict={x_topic: topic_sentences})
 
     print("FINITO!!")
     for index in range(sent_number):
-        print(code_to_text(codes=[res[index]], dictionary=oracle_loader.model_index_word_dict))
+        sent = res[index]
+        print(sent)
+        print(code_to_text(codes=[sent], dictionary=oracle_loader.model_index_word_dict))
 
 

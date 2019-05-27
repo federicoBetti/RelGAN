@@ -88,6 +88,7 @@ def main():
     sample_dir = resources_path(config['sample_dir'])
     oracle_file = os.path.join(sample_dir, 'oracle_{}.txt'.format(args.dataset))
     seq_len, vocab_size, word_index_dict, index_word_dict = text_precess(data_file, oracle_file=oracle_file)
+    print(index_word_dict)
     config['seq_len'] = seq_len
     config['vocab_size'] = vocab_size
     print('seq_len: %d, vocab_size: %d' % (seq_len, vocab_size))
@@ -97,7 +98,7 @@ def main():
         oracle_loader = RealDataTopicLoader(args.batch_size, args.seq_len)
         oracle_loader.topic_num = topic_number
         oracle_loader.get_LDA(word_index_dict, index_word_dict, data_file)
-
+        print(oracle_loader.model_index_word_dict)
         inference_main(oracle_loader, config, model_path, input_path)
 
 
