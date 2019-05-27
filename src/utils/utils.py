@@ -66,7 +66,7 @@ def generate_samples_topic(sess, gen_x, batch_size, generated_num, lambda_values
         codes_with_lambda += '\n'
         codes += '\n'
 
-    return codes_with_lambda, sentence_generated_from, codes
+    return codes_with_lambda[1:], sentence_generated_from, codes[1:]
 
 
 def init_sess():
