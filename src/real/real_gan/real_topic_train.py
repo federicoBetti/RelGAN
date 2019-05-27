@@ -45,6 +45,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
     oracle_file = os.path.join(sample_dir, 'oracle_{}.txt'.format(dataset))
     gen_file = os.path.join(sample_dir, 'generator.txt')
     gen_text_file = os.path.join(sample_dir, 'generator_text.txt')
+    gen_text_file_print = os.path.join(sample_dir, 'gen_text_file_print.txt')
     csv_file = os.path.join(log_dir, 'experiment-log-rmcgan.csv')
     data_file = os.path.join(data_dir, '{}.txt'.format(dataset))
     if dataset == 'image_coco':
@@ -175,7 +176,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
             generator_pretrain(npre_epochs, sess, g_pretrain_op, g_pretrain_loss, x_real, oracle_loader,
                                gen_pretrain_loss_summary, sample_dir, x_fake, batch_size, num_sentences, x_topic,
                                gen_text_file, index_word_dict, gen_sentences_summary, metrics, metric_summary_op,
-                               metrics_pl, sum_writer, log, lambda_values_returned)
+                               metrics_pl, sum_writer, log, lambda_values_returned, gen_text_file_print)
 
             # if not os.path.exists(model_path):
             #     os.makedirs(model_path)
@@ -242,11 +243,12 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
                 codes, sentence_generated_from = generate_samples_topic(sess, x_fake, batch_size, num_sentences,
                                                                         lambda_values=lambda_values_returned,
                                                                         oracle_loader=oracle_loader, x_topic=x_topic)
-                gen_real_test_file_not_file(codes, sentence_generated_from, gen_save_file, index_word_dict)
+                gen_real_test_file_not_file(codes, sentence_generated_from, gen_save_file, index_word_dict, True)
                 gen_real_test_file_not_file(codes, sentence_generated_from, gen_text_file, index_word_dict)
+                gen_real_test_file_not_file(codes, sentence_generated_from, gen_text_file_print, index_word_dict, True)
 
                 # take sentences from saved files
-                sent = take_sentences_topic(gen_text_file)
+                sent = take_sentences_topic(gen_text_file_print)
                 if adv_epoch < 3500:
                     sent_number = 8
                 else:
@@ -279,7 +281,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
 def generator_pretrain(npre_epochs, sess, g_pretrain_op, g_pretrain_loss, x_real, oracle_loader,
                        gen_pretrain_loss_summary, sample_dir, x_fake, batch_size, num_sentences, x_topic, gen_text_file,
                        index_word_dict, gen_sentences_summary, metrics, metric_summary_op, metrics_pl, sum_writer, log,
-                       lambda_values):
+                       lambda_values, gen_text_file_print):
     progress = tqdm(range(npre_epochs))
     for epoch in progress:
         # pre-training
@@ -294,11 +296,12 @@ def generator_pretrain(npre_epochs, sess, g_pretrain_op, g_pretrain_loss, x_real
             codes, sentence_generated_from = generate_samples_topic(sess, x_fake, batch_size, num_sentences,
                                                                     lambda_values=lambda_values,
                                                                     oracle_loader=oracle_loader, x_topic=x_topic)
-            gen_real_test_file_not_file(codes, sentence_generated_from, gen_save_file, index_word_dict)
+            gen_real_test_file_not_file(codes, sentence_generated_from, gen_save_file, index_word_dict, True)
             gen_real_test_file_not_file(codes, sentence_generated_from, gen_text_file, index_word_dict)
+            gen_real_test_file_not_file(codes, sentence_generated_from, gen_text_file_print, index_word_dict, True)
 
             # take sentences from saved files
-            sent = take_sentences_topic(gen_text_file)
+            sent = take_sentences_topic(gen_text_file_print)
             sent = random.sample(sent, 5)
             gen_sentences_summary.write_summary(sent, epoch)
 

@@ -147,7 +147,7 @@ def get_real_test_file(generator_file, gen_save_file, iw_dict):
         outfile.write(code_to_text(codes=codes, dictionary=iw_dict))
 
 
-def gen_real_test_file_not_file(codes: str, sentence_generated_from, file, iw_dict):
+def gen_real_test_file_not_file(codes: str, sentence_generated_from, file, iw_dict, generator_sentences=False):
     """
     Save in the file in this format:
     'sentence generated + Taken from: sentence from which the topic was taken' \n
@@ -169,7 +169,8 @@ def gen_real_test_file_not_file(codes: str, sentence_generated_from, file, iw_di
     with open(file, 'w') as outfile:
         for r, s in zip(raw, sentence_generated_from):
             outfile.write(code_to_text(codes=[r], dictionary=iw_dict))
-            outfile.write("\t ---- {}".format(code_to_text(codes=[s], dictionary=iw_dict)))
+            if generator_sentences:
+                outfile.write("\t ---- {}".format(code_to_text(codes=[s], dictionary=iw_dict)))
 
 
 def take_sentences(gen_text_file):

@@ -67,3 +67,5 @@ class Bleu(Metrics):
     def calc_bleu(self, reference, hypothesis, weight):
         return nltk.translate.bleu_score.sentence_bleu(reference, hypothesis, weight,
                                                        smoothing_function=SmoothingFunction().method1)
+
+
