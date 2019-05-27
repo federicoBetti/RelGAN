@@ -27,7 +27,7 @@ def code_to_text(codes, dictionary):
     for line in codes:
         if isinstance(line, str):
             line = line.split(" ")
-        print(line)
+
         for number in line:
             if isinstance(number, str) and ('(' in number or ')' in number):
                 paras = paras + number + ' '
