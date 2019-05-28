@@ -1,3 +1,5 @@
+import json
+
 import tensorflow as tf
 from utils.metrics.Bleu import Bleu
 from utils.metrics.DocEmbSim import DocEmbSim
@@ -210,7 +212,7 @@ def get_train_ops(config, g_pretrain_loss, g_loss, d_loss, d_topic_loss,
 
 
 # A function to get various evaluation metrics
-def get_metrics(config, oracle_loader, test_file, gen_file, g_pretrain_loss, x_real, x_topic, sess):
+def get_metrics(config, oracle_loader, test_file, gen_file, g_pretrain_loss, x_real, x_topic, sess, json_file):
     # set up evaluation metric
     metrics = []
     if config['nll_gen']:
@@ -228,7 +230,7 @@ def get_metrics(config, oracle_loader, test_file, gen_file, g_pretrain_loss, x_r
             selfbleu = SelfBleu(test_text=gen_file, gram=i, name='selfbleu' + str(i))
             metrics.append(selfbleu)
     if config['KL']:
-        KL_div = KL_divergence(oracle_loader, gen_file, name='doc_embsim')
+        KL_div = KL_divergence(oracle_loader, json_file, name='KL_divergence')
         metrics.append(KL_div)
 
     return metrics
@@ -310,3 +312,8 @@ def get_accuracy(d_topic_out_real_pos, d_topic_out_real_neg):
     correct = tf.equal(predicted_class, tf.equal(correct_answer, 1.0))
     accuracy = tf.reduce_mean(tf.cast(correct, 'float'))
     return accuracy
+
+
+def create_json_file(json_object, json_file):
+    with open(json_file, 'w') as outfile:
+        json.dump(json_object, outfile)

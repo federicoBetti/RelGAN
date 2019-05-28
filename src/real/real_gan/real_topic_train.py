@@ -1,17 +1,18 @@
 # In this file I will create the training for the model with topics
 import datetime
-import gc
 import random
 
+import gc
+from tensorflow.python.client import device_lib
 from tensorflow.python.saved_model.simple_save import simple_save
 from tqdm import tqdm
 
 from models import rmc_att_topic
 from path_resolution import resources_path
 from real.real_gan.real_loader import RealDataTopicLoader
-from real.real_gan.real_topic_train_utils import *
+from real.real_gan.real_topic_train_utils import get_accuracy, get_losses, get_train_ops, \
+    get_metric_summary_op, get_metrics, get_fixed_temperature, create_json_file
 from utils.utils import *
-from tensorflow.python.client import device_lib
 
 
 def get_available_gpus():
@@ -47,6 +48,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
     gen_file = os.path.join(sample_dir, 'generator.txt')
     gen_text_file = os.path.join(sample_dir, 'generator_text.txt')
     gen_text_file_print = os.path.join(sample_dir, 'gen_text_file_print.txt')
+    json_file = os.path.join(sample_dir, 'json_file.txt')
     csv_file = os.path.join(log_dir, 'experiment-log-rmcgan.csv')
     data_file = os.path.join(data_dir, '{}.txt'.format(dataset))
     if dataset == 'image_coco':
@@ -164,7 +166,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
         index_word_dict = oracle_loader.model_index_word_dict
         oracle_loader.create_batches(oracle_file)
 
-        metrics = get_metrics(config, oracle_loader, test_file, gen_text_file, g_pretrain_loss, x_real, x_topic, sess)
+        metrics = get_metrics(config, oracle_loader, test_file, gen_text_file, g_pretrain_loss, x_real, x_topic, sess, json_file)
 
         gc.collect()
         # Check if there is a pretrained generator saved
@@ -180,7 +182,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
                                gen_pretrain_loss_summary, sample_dir, x_fake, batch_size, num_sentences, x_topic,
                                gen_text_file, index_word_dict, gen_sentences_summary, metrics, metric_summary_op,
                                metrics_pl, sum_writer, log, lambda_values_returned, gen_text_file_print,
-                               gen_x_no_lambda)
+                               gen_x_no_lambda, json_file)
 
             # if not os.path.exists(model_path):
             #     os.makedirs(model_path)
@@ -246,16 +248,18 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
             if np.mod(adv_epoch, 500) == 0 or adv_epoch == nadv_steps - 1:
                 # generate fake data and create batches
                 gen_save_file = os.path.join(sample_dir, 'adv_samples_{:05d}.txt'.format(niter))
-                codes_with_lambda, sentence_generated_from, codes = generate_samples_topic(sess, x_fake, batch_size,
-                                                                                           num_sentences,
-                                                                                           lambda_values=lambda_values_returned,
-                                                                                           oracle_loader=oracle_loader,
-                                                                                           gen_x_no_lambda=gen_x_no_lambda,
-                                                                                           x_topic=x_topic)
+                codes_with_lambda, sentence_generated_from, codes, json_object = generate_samples_topic(sess, x_fake,
+                                                                                                        batch_size,
+                                                                                                        num_sentences,
+                                                                                                        lambda_values=lambda_values_returned,
+                                                                                                        oracle_loader=oracle_loader,
+                                                                                                        gen_x_no_lambda=gen_x_no_lambda,
+                                                                                                        x_topic=x_topic)
+                create_json_file(json_object, json_file)
                 # gen_real_test_file_not_file(codes, sentence_generated_from, gen_save_file, index_word_dict)
-                gen_real_test_file_not_file(codes, sentence_generated_from, gen_text_file, index_word_dict)
+                gen_real_test_file_not_file(codes, sentence_generated_from, gen_text_file, index_word_dict, json_object)
                 gen_real_test_file_not_file(codes_with_lambda, sentence_generated_from, gen_text_file_print,
-                                            index_word_dict, True)
+                                            index_word_dict, json_object, True)
 
                 # take sentences from saved files
                 sent = take_sentences_topic(gen_text_file_print)
@@ -294,7 +298,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
 def generator_pretrain(npre_epochs, sess, g_pretrain_op, g_pretrain_loss, x_real, oracle_loader,
                        gen_pretrain_loss_summary, sample_dir, x_fake, batch_size, num_sentences, x_topic, gen_text_file,
                        index_word_dict, gen_sentences_summary, metrics, metric_summary_op, metrics_pl, sum_writer, log,
-                       lambda_values, gen_text_file_print, gen_x_no_lambda):
+                       lambda_values, gen_text_file_print, gen_x_no_lambda, json_file):
     progress = tqdm(range(npre_epochs))
     for epoch in progress:
         # pre-training
@@ -306,6 +310,7 @@ def generator_pretrain(npre_epochs, sess, g_pretrain_op, g_pretrain_loss, x_real
         if np.mod(epoch, ntest_pre) == 0:
             # generate fake data and create batches
             gen_save_file = os.path.join(sample_dir, 'pre_samples_{:05d}.txt'.format(epoch))
+            print("first epoch done")
             codes_with_lambda, sentence_generated_from, codes, json_object = generate_samples_topic(sess, x_fake,
                                                                                                     batch_size,
                                                                                                     num_sentences,
@@ -313,6 +318,7 @@ def generator_pretrain(npre_epochs, sess, g_pretrain_op, g_pretrain_loss, x_real
                                                                                                     oracle_loader=oracle_loader,
                                                                                                     gen_x_no_lambda=gen_x_no_lambda,
                                                                                                     x_topic=x_topic)
+            create_json_file(json_object, json_file)
             # gen_real_test_file_not_file(codes, sentence_generated_from, gen_save_file, index_word_dict)
             gen_real_test_file_not_file(codes, sentence_generated_from, gen_text_file, index_word_dict, json_object)
             gen_real_test_file_not_file(codes_with_lambda, sentence_generated_from, gen_text_file_print,

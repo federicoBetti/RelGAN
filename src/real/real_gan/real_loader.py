@@ -186,16 +186,6 @@ class RealDataTopicLoader(RealDataLoader):
             for x in invere_index:
                 real_vector[:, x] = topic_sentences[:, ind]
         print("Topic model computed in {} sec!".format(time.time() - t))
-        r_v, t_s = [], []
-        for ind, invere_index in enumerate(self.inverse_indexes):  # todo make it faster
-            # more than one index in the model because of lemmatization
-            for x in invere_index:
-                r_v.append(x)
-                t_s.append(ind)
-        real_vector1[:, r_v] = topic_sentences[:, t_s]
-
-        print("Topic model computed in {} sec!".format(time.time() - t))
-        assert np.array_equal(real_vector, real_vector1)
         gc.collect()
         return real_vector
 
@@ -286,6 +276,5 @@ class RealDataTopicLoader(RealDataLoader):
             for x in invere_index:
                 real_vector[:, x] = topic_sentences[:, ind]
 
-        print("Topic model for new sentences computed in {} sec!".format(time.time() - t))
         gc.collect()
         return real_vector
