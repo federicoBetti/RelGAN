@@ -3,13 +3,13 @@ import os
 
 # Architecture Related
 architecture = ['rmc_att_topic', 'rmc_att_topic', 'rmc_att_topic', 'rmc_att_topic']
-topic_architecture = ['standard', 'standard', 'reuse_att_topic', 'standard']
+topic_architecture = ['reuse_att_topic', 'standard', 'reuse_att_topic', 'standard']
 gantype = ['standard', 'standard', 'standard', 'standard', 'standard']  # per ora funziona solo con questo il topic
 gsteps = ['1', '2', '2', '2']
 dsteps = ['5', '1', '2', '2']
-npre_epochs = ['200', '400', '250', '150']
+npre_epochs = ['250', '400', '250', '150']
 nadv_steps = ['5000', '6000', '5000', '5000']
-ntopic_pre_epochs = ['150', '500', '250', '50']
+ntopic_pre_epochs = ['200', '500', '250', '50']
 opt_type = ['adam', 'adam', 'adam', 'adam']
 temperature = ['1000', '1000', '1000', '100']
 d_lr = ['1e-4', '1e-4', '1e-4', '1e-4']
@@ -73,9 +73,10 @@ for job_id in range(job_number):
 
         # evaluation
         '--nll-gen',
-        '--bleu',
+        # '--bleu',
         # '--selfbleu',
         # '--doc-embsim',
+        '--KL',
 
         # relational memory
         '--mem-slots', mem_slots[job_id],
