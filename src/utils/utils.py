@@ -61,16 +61,31 @@ def generate_samples_topic(sess, gen_x, batch_size, generated_num, lambda_values
 
     codes = ""
     codes_with_lambda = ""
-    for sent, lambda_value_sent, no_lambda_words in zip(generated_samples, generated_samples_lambda,
-                                                        generated_samples_no_lambda_words):
+    json_file = {'sentences': []}
+    for sent, lambda_value_sent, no_lambda_words, start_sentence in zip(generated_samples, generated_samples_lambda,
+                                                                        generated_samples_no_lambda_words,
+                                                                        sentence_generated_from):
+        sent = []
         for x, y, z in zip(sent, lambda_value_sent, no_lambda_words):
+            sent.append({
+                'word_code': x,
+                'word_text': oracle_loader.model_index_word_dict[str(x)],
+                'lambda': y,
+                'no_lambda_word': z
+            })
             codes_with_lambda += "{} ({:.4f};{}) ".format(x, y, z)
             codes += "{} ".format(x)
+        json_file['sentences'].append({
+            'generated': sent,
+            'real_starting': start_sentence
+        })
 
         codes_with_lambda = codes_with_lambda[:-1] + '\n'
         codes = codes[:-1] + '\n'
+        print(codes_with_lambda)
+        print(json_file['sentences'][-1])
 
-    return codes_with_lambda, sentence_generated_from, codes
+    return codes_with_lambda, sentence_generated_from, codes, json_file
 
 
 def init_sess():

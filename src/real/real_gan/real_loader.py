@@ -170,6 +170,7 @@ class RealDataTopicLoader(RealDataLoader):
         self.texts = [lemmatizer.lemmatize(word) for word in self.model_word_index_dict.keys()]
         self.lda_index_word_dict = self.lda.dictionary.id2token
 
+        print("Before real vector computed in {} sec!".format(time.time() - t))
         # todo il +1 è stato aggiunto perchè anche nel modello lo fa, bisogna vedere se è da aggiungere sopra o sotto
         real_vector = np.zeros(
             (topic_sentences.shape[0], len(self.model_word_index_dict) + 1))  # sentence_number x vocab_size
@@ -257,13 +258,10 @@ class RealDataTopicLoader(RealDataLoader):
 
     def get_topic(self, sentences):
         t = time.time()
-        corpus_bow = []
         tmp = process_texts(sentences, self.lda.stops)
         corpus_bow = [self.lda.dictionary.doc2bow(i) for i in tmp]
-        print(corpus_bow)
         df = get_perc_sent_topic(ldamodel=self.lda.lda_model, corpus=corpus_bow, texts=sentences,
                                  stops=self.lda.stops, topic_num=self.topic_num)
-        print(df)
         topic_weights = df.values[:, 1:self.topic_num + 1]  # num_sentences x num_topic (each row sum to 1)
         topic_sentences = np.dot(topic_weights, self.topic_matrix)  # num_sentences x num_word
         topic_sentences = np.divide(topic_sentences,

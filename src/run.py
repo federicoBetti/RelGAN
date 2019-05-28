@@ -57,6 +57,7 @@ parser.add_argument('--nll-gen', default=False, action='store_true', help='if us
 parser.add_argument('--bleu', default=False, action='store_true', help='if using bleu metric, [2,3,4,5]')
 parser.add_argument('--selfbleu', default=False, action='store_true', help='if using selfbleu metric, [2,3,4,5]')
 parser.add_argument('--doc-embsim', default=False, action='store_true', help='if using DocEmbSim metric')
+parser.add_argument('--KL', default=False, action='store_true', help='if using KL divergence metric')
 
 # relational memory
 parser.add_argument('--mem-slots', default=1, type=int, help="memory size")

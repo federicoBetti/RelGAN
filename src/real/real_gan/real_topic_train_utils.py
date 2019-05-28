@@ -1,6 +1,7 @@
 import tensorflow as tf
 from utils.metrics.Bleu import Bleu
 from utils.metrics.DocEmbSim import DocEmbSim
+from utils.metrics.KLDivergence import KL_divergence
 from utils.metrics.Nll import Nll, NllTopic
 from utils.metrics.SelfBleu import SelfBleu
 from utils.ops import gradient_penalty
@@ -226,6 +227,9 @@ def get_metrics(config, oracle_loader, test_file, gen_file, g_pretrain_loss, x_r
         for i in range(2, 6):
             selfbleu = SelfBleu(test_text=gen_file, gram=i, name='selfbleu' + str(i))
             metrics.append(selfbleu)
+    if config['KL']:
+        KL_div = KL_divergence(oracle_loader, gen_file, name='doc_embsim')
+        metrics.append(KL_div)
 
     return metrics
 
@@ -256,6 +260,11 @@ def get_metric_summary_op(config):
             temp_pl = tf.placeholder(tf.float32, name='selfbleu{}'.format(i))
             metrics_pl.append(temp_pl)
             metrics_sum.append(tf.summary.scalar('metrics/selfbleu{}'.format(i), temp_pl))
+
+    if config['KL']:
+        KL_placeholder = tf.placeholder(tf.float32)
+        metrics_pl.append(KL_placeholder)
+        metrics_sum.append(tf.summary.scalar('metrics/KL_topic_divergence', KL_placeholder))
 
     metric_summary_op = tf.summary.merge(metrics_sum)
     return metrics_pl, metric_summary_op

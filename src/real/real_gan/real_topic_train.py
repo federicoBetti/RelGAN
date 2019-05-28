@@ -179,7 +179,8 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
             generator_pretrain(npre_epochs, sess, g_pretrain_op, g_pretrain_loss, x_real, oracle_loader,
                                gen_pretrain_loss_summary, sample_dir, x_fake, batch_size, num_sentences, x_topic,
                                gen_text_file, index_word_dict, gen_sentences_summary, metrics, metric_summary_op,
-                               metrics_pl, sum_writer, log, lambda_values_returned, gen_text_file_print, gen_x_no_lambda)
+                               metrics_pl, sum_writer, log, lambda_values_returned, gen_text_file_print,
+                               gen_x_no_lambda)
 
             # if not os.path.exists(model_path):
             #     os.makedirs(model_path)
@@ -305,12 +306,13 @@ def generator_pretrain(npre_epochs, sess, g_pretrain_op, g_pretrain_loss, x_real
         if np.mod(epoch, ntest_pre) == 0:
             # generate fake data and create batches
             gen_save_file = os.path.join(sample_dir, 'pre_samples_{:05d}.txt'.format(epoch))
-            codes_with_lambda, sentence_generated_from, codes = generate_samples_topic(sess, x_fake, batch_size,
-                                                                                       num_sentences,
-                                                                                       lambda_values=lambda_values,
-                                                                                       oracle_loader=oracle_loader,
-                                                                                       gen_x_no_lambda=gen_x_no_lambda,
-                                                                                       x_topic=x_topic)
+            codes_with_lambda, sentence_generated_from, codes, json_object = generate_samples_topic(sess, x_fake,
+                                                                                                    batch_size,
+                                                                                                    num_sentences,
+                                                                                                    lambda_values=lambda_values,
+                                                                                                    oracle_loader=oracle_loader,
+                                                                                                    gen_x_no_lambda=gen_x_no_lambda,
+                                                                                                    x_topic=x_topic)
             # gen_real_test_file_not_file(codes, sentence_generated_from, gen_save_file, index_word_dict)
             gen_real_test_file_not_file(codes, sentence_generated_from, gen_text_file, index_word_dict)
             gen_real_test_file_not_file(codes_with_lambda, sentence_generated_from, gen_text_file_print,
