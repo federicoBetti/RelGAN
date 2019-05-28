@@ -45,7 +45,7 @@ def generate_samples_topic(sess, gen_x, batch_size, generated_num, lambda_values
     sentence_generated_from = []
     generated_samples_no_lambda_words = []
 
-    max_gen = int(generated_num / batch_size)  # - 155  # 156
+    max_gen = int(generated_num / batch_size)  # 156
     for ii in range(max_gen):
         text_batch, topic_batch = oracle_loader.random_batch(only_text=False)
         feed = {x_topic: topic_batch}
@@ -65,25 +65,28 @@ def generate_samples_topic(sess, gen_x, batch_size, generated_num, lambda_values
     for sent, lambda_value_sent, no_lambda_words, start_sentence in zip(generated_samples, generated_samples_lambda,
                                                                         generated_samples_no_lambda_words,
                                                                         sentence_generated_from):
-        sent = []
+        sent_json = []
         for x, y, z in zip(sent, lambda_value_sent, no_lambda_words):
-            sent.append({
+            sent_json.append({
                 'word_code': x,
-                'word_text': oracle_loader.model_index_word_dict[str(x)],
+                'word_text': '' if x == len(oracle_loader.model_index_word_dict) else
+                oracle_loader.model_index_word_dict[str(x)],
                 'lambda': y,
                 'no_lambda_word': z
             })
             codes_with_lambda += "{} ({:.4f};{}) ".format(x, y, z)
             codes += "{} ".format(x)
         json_file['sentences'].append({
-            'generated': sent,
-            'real_starting': start_sentence
+            'generated': sent_json,
+            'real_starting': [
+                '' if el == len(oracle_loader.model_index_word_dict) else oracle_loader.model_index_word_dict[str(el)]
+                for el in start_sentence]
         })
 
         codes_with_lambda = codes_with_lambda[:-1] + '\n'
         codes = codes[:-1] + '\n'
-        print(codes_with_lambda)
-        print(json_file['sentences'][-1])
+        # print(codes_with_lambda)
+        # print(json_file['sentences'][-1])
 
     return codes_with_lambda, sentence_generated_from, codes, json_file
 
@@ -171,7 +174,7 @@ def get_real_test_file(generator_file, gen_save_file, iw_dict):
         outfile.write(code_to_text(codes=codes, dictionary=iw_dict))
 
 
-def gen_real_test_file_not_file(codes: str, sentence_generated_from, file, iw_dict, generator_sentences=False):
+def gen_real_test_file_not_file(codes: str, sentence_generated_from, file, iw_dict, json_file, generator_sentences=False):
     """
     Save in the file in this format:
     'sentence generated + Taken from: sentence from which the topic was taken' \n
@@ -191,10 +194,14 @@ def gen_real_test_file_not_file(codes: str, sentence_generated_from, file, iw_di
     #     "Codes and sentence generated from have different lengths: {} and {}".format(len(tokenized),
     #                                                                                  len(sentence_generated_from))
     with open(file, 'w') as outfile:
-        for r, s in zip(raw, sentence_generated_from):
-            outfile.write(code_to_text(codes=[r], dictionary=iw_dict))
+        for sent in json_file['sentences']:
+            outfile.write(" ".join([x['word_text'] for x in sent['generated']]) + "\n")
             if generator_sentences:
-                outfile.write("\t ---- {}".format(code_to_text(codes=[s], dictionary=iw_dict)))
+                outfile.write("\t ---- {}".format(" ".join(sent['real_starting'])) + "\n")
+        # for r, s in zip(raw, sentence_generated_from):
+        #     outfile.write(code_to_text(codes=[r], dictionary=iw_dict))
+        #     if generator_sentences:
+        #         outfile.write("\t ---- {}".format(code_to_text(codes=[s], dictionary=iw_dict)))
 
 
 def take_sentences(gen_text_file):

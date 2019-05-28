@@ -93,9 +93,7 @@ def text_precess(train_text_loc, test_text_loc=None, oracle_file=None) -> Tuple[
         test_tokens = list()
     else:
         test_tokens = get_tokenized(test_text_loc)
-    print(train_tokens[:20])
     word_set = get_word_list(train_tokens + test_tokens)
-    print(word_set[:20])
     [word_index_dict, index_word_dict] = get_dict(word_set)
 
     if test_text_loc is None:

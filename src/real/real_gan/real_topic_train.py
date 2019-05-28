@@ -314,9 +314,9 @@ def generator_pretrain(npre_epochs, sess, g_pretrain_op, g_pretrain_loss, x_real
                                                                                                     gen_x_no_lambda=gen_x_no_lambda,
                                                                                                     x_topic=x_topic)
             # gen_real_test_file_not_file(codes, sentence_generated_from, gen_save_file, index_word_dict)
-            gen_real_test_file_not_file(codes, sentence_generated_from, gen_text_file, index_word_dict)
+            gen_real_test_file_not_file(codes, sentence_generated_from, gen_text_file, index_word_dict, json_object)
             gen_real_test_file_not_file(codes_with_lambda, sentence_generated_from, gen_text_file_print,
-                                        index_word_dict, True)
+                                        index_word_dict, json_object, True)
 
             # take sentences from saved files
             sent = take_sentences_topic(gen_text_file_print)

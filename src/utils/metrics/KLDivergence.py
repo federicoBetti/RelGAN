@@ -8,7 +8,6 @@ from utils.metrics.Metrics import Metrics
 
 
 class KL_divergence(Metrics):
-
     def __init__(self, data_loader: RealDataTopicLoader, gen_file: str, name='doc_embsim'):
         super().__init__()
         self.name = name
@@ -22,6 +21,7 @@ class KL_divergence(Metrics):
         real_sentences, generated_sentences = self.get_sentences()
         real_sentences_topic = self.data_loader.get_topic(real_sentences)
         generated_sentences_topic = self.data_loader.get_topic(generated_sentences)
+
         result = []
         for real, generated in zip(real_sentences_topic, generated_sentences_topic):
             result.append(mutual_info_score(real, generated))
@@ -29,4 +29,4 @@ class KL_divergence(Metrics):
         return mean(result)
 
     def get_sentences(self) -> Union[List[str], List[str]]:
-        pass
+        raise NotImplementedError

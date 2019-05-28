@@ -174,17 +174,28 @@ class RealDataTopicLoader(RealDataLoader):
         # todo il +1 è stato aggiunto perchè anche nel modello lo fa, bisogna vedere se è da aggiungere sopra o sotto
         real_vector = np.zeros(
             (topic_sentences.shape[0], len(self.model_word_index_dict) + 1))  # sentence_number x vocab_size
+        real_vector1 = np.zeros(
+            (topic_sentences.shape[0], len(self.model_word_index_dict) + 1))  # sentence_number x vocab_size
         self.inverse_indexes = [self.get_model_index(i) for i in range(len(self.lda_index_word_dict))]
         print("number of LDA words: {}".format(len(self.lda_index_word_dict)))
 
         # since the parallelism is the same for each sentence, it is done word by word for all sentences all together.
         # It is possible that a word in the LDA corresponds to more words in the model due to lemmatization procedure
-        for ind, invere_index in enumerate(self.inverse_indexes):
+        for ind, invere_index in enumerate(self.inverse_indexes):  # todo make it faster
             # more than one index in the model because of lemmatization
             for x in invere_index:
                 real_vector[:, x] = topic_sentences[:, ind]
+        print("Topic model computed in {} sec!".format(time.time() - t))
+        r_v, t_s = [], []
+        for ind, invere_index in enumerate(self.inverse_indexes):  # todo make it faster
+            # more than one index in the model because of lemmatization
+            for x in invere_index:
+                r_v.append(x)
+                t_s.append(ind)
+        real_vector1[:, r_v] = topic_sentences[:, t_s]
 
         print("Topic model computed in {} sec!".format(time.time() - t))
+        assert np.array_equal(real_vector, real_vector1)
         gc.collect()
         return real_vector
 
