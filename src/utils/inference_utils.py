@@ -12,6 +12,12 @@ from googletrans import Translator
 import numpy as np
 
 
+def print_best_words(topic, oracle_loader):
+    for el in np.argsort(-topic)[:10]:
+        print(oracle_loader.model_index_word_dict[str(el)], end=", ")
+    print()
+
+
 def get_sentences(path):
     sentences = []
     with open(path, 'r') as outfile:
@@ -54,14 +60,13 @@ def inference_main(oracle_loader, config, model_path, input_path):
             x_topic = graph.get_tensor_by_name('x_topic:0')
             gen_x = graph.get_tensor_by_name("generator/gen_x_trans:0")
 
-            print(topic_sentences[0])
             topic_sentences = fix_size(topic_sentences, batch_size)
             res = sess.run(gen_x, feed_dict={x_topic: topic_sentences})
 
     print("FINITO!!")
     for index in range(sent_number):
         sent = res[index]
-        print(sent)
-        print(code_to_text(codes=[sent], dictionary=oracle_loader.model_index_word_dict))
-
-
+        # print(sent)
+        # print_best_words(topic_sentences[index], oracle_loader)
+        print("Starting sentence: {}".format(sentences[index]), end="")
+        print("Generated sentence:", code_to_text(codes=[sent], dictionary=oracle_loader.model_index_word_dict))

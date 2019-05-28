@@ -257,20 +257,17 @@ class RealDataTopicLoader(RealDataLoader):
 
     def get_topic(self, sentences):
         t = time.time()
+        corpus_bow = []
         tmp = process_texts(sentences, self.lda.stops)
-        dictionary = Dictionary(tmp)
-        corpus_bow = [dictionary.doc2bow(i) for i in tmp]
-
+        corpus_bow = [self.lda.dictionary.doc2bow(i) for i in tmp]
+        print(corpus_bow)
         df = get_perc_sent_topic(ldamodel=self.lda.lda_model, corpus=corpus_bow, texts=sentences,
                                  stops=self.lda.stops, topic_num=self.topic_num)
+        print(df)
         topic_weights = df.values[:, 1:self.topic_num + 1]  # num_sentences x num_topic (each row sum to 1)
         topic_sentences = np.dot(topic_weights, self.topic_matrix)  # num_sentences x num_word
         topic_sentences = np.divide(topic_sentences,
                                     np.sum(topic_sentences, axis=1, keepdims=True))  # rowwise normalization
-
-        # get model lemmatized version of the words, it's needed because LDA does it and model processing doesn't
-        from nltk.stem import WordNetLemmatizer
-        lemmatizer = WordNetLemmatizer()
 
         real_vector = np.zeros(
             (topic_sentences.shape[0], len(self.model_word_index_dict) + 1))  # sentence_number x vocab_size

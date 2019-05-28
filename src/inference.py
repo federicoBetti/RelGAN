@@ -18,7 +18,7 @@ parser.add_argument('--model-name', default="last_model", type=str,
 parser.add_argument('--input-name', default='input.txt', type=str,
                     help='Name of the file from which the starting sentences should be taken')
 parser.add_argument('--topic', default=True, action='store_true', help='If to use topic models or not')
-parser.add_argument('--topic_number', default=3, type=int, help='How many topic to use in the LDA')
+parser.add_argument('--topic-number', default=3, type=int, help='How many topic to use in the LDA')
 
 # Architecture
 parser.add_argument('--gf-dim', default=64, type=int, help='Number of filters to use for generator')
