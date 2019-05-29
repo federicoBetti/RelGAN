@@ -1,5 +1,6 @@
 import argparse
 import os
+import random
 
 import models
 from oracle.oracle_gan.oracle_loader import OracleDataLoader
@@ -76,6 +77,19 @@ parser.add_argument('--num-rep', default=64, type=int, help="number of discrimin
 parser.add_argument('--data-dir', default=os.path.join('.', 'data'), type=str, help='Where data data is stored')
 
 
+def create_subsample_data_file(data_file, train_size=10000):
+    print("Start of create subsample")
+    with open(data_file) as f:
+        sentences = [line.rstrip('\n') for line in f]
+    final_sentences = random.sample(sentences, train_size)
+    del sentences
+
+    train_file = data_file[:-3] * '_train.txt'
+    with open(train_file, 'w') as f:
+        f.writelines(final_sentences)
+    return train_file, data_file
+
+
 def main():
     args = parser.parse_args()
     pp.pprint(vars(args))
@@ -99,19 +113,36 @@ def main():
         oracle_train(generator, discriminator, oracle_model, oracle_loader, gen_loader, config)
 
     elif args.dataset in ['image_coco', 'emnlp_news']:
+        print("Ciao")
         data_file = resources_path(args.data_dir, '{}.txt'.format(args.dataset))
         sample_dir = resources_path(config['sample_dir'])
         oracle_file = os.path.join(sample_dir, 'oracle_{}.txt'.format(args.dataset))
-        seq_len, vocab_size, word_index_dict, index_word_dict = text_precess(data_file, oracle_file=oracle_file)
+
+        data_dir = resources_path(config['data_dir'])
+        if args.dataset == 'image_coco':
+            test_file = os.path.join(data_dir, 'testdata/test_coco.txt')
+        elif args.dataset == 'emnlp_news':
+            test_file = os.path.join(data_dir, 'testdata/test_emnlp.txt')
+        else:
+            raise NotImplementedError('Unknown dataset!')
+        # todo make something to save this
+        seq_len, vocab_size, word_index_dict, index_word_dict = text_precess(data_file, test_file, oracle_file=oracle_file)
+        print("Ciao")
         config['seq_len'] = seq_len
         config['vocab_size'] = vocab_size
         print('seq_len: %d, vocab_size: %d' % (seq_len, vocab_size))
 
+        if args.dataset == 'emnlp_news':
+            data_file, lda_file = create_subsample_data_file(data_file)
+        else:
+            lda_file = data_file
+
         if config['topic']:
             topic_number = config['topic_number']
             oracle_loader = RealDataTopicLoader(args.batch_size, args.seq_len)
+            oracle_loader.set_files(data_file, lda_file)
             oracle_loader.topic_num = topic_number
-            oracle_loader.set_dictionaries(word_index_dict, index_word_dict, data_file)
+            oracle_loader.set_dictionaries(word_index_dict, index_word_dict)
 
             generator = models.get_generator("rmc_att_topic", vocab_size=vocab_size, batch_size=args.batch_size,
                                              seq_len=seq_len, gen_emb_dim=args.gen_emb_dim, mem_slots=args.mem_slots,

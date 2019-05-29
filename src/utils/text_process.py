@@ -53,10 +53,13 @@ def get_tokenized(file):
     :return:
     """
     tokenized = list()
+    i = 0
     with open(file) as raw:
         for text in raw:
+            print(i)
             text = nltk.word_tokenize(text.lower())
             tokenized.append(text)
+            i += 1
     return tokenized
 
 
@@ -102,6 +105,7 @@ def text_precess(train_text_loc, test_text_loc=None, oracle_file=None) -> Tuple[
         sequence_len = max(len(max(train_tokens, key=len)), len(max(test_tokens, key=len)))
 
     if oracle_file:
+        # todo fare che non lo riscriva se c'è gia!!
         with open(oracle_file, 'w') as outfile:
             outfile.write(text_to_code(train_tokens + test_tokens, word_index_dict, sequence_len))
 
