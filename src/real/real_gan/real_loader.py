@@ -187,6 +187,7 @@ class RealDataTopicLoader(RealDataLoader):
                 real_vector[:, x] = topic_sentences[:, ind]
         print("Topic model computed in {} sec!".format(time.time() - t))
         gc.collect()
+        real_vector = np.divide(real_vector, np.sum(real_vector, axis=1, keepdims=True))
         return real_vector
 
     def random_topic(self):
@@ -275,6 +276,6 @@ class RealDataTopicLoader(RealDataLoader):
             # more than one index in the model because of lemmatization
             for x in invere_index:
                 real_vector[:, x] = topic_sentences[:, ind]
-
         gc.collect()
+        real_vector = np.divide(real_vector, np.sum(real_vector, axis=1, keepdims=True))
         return real_vector

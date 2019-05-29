@@ -102,6 +102,7 @@ def train_specific_LDA(corpus, num_top, passes, iterations, random_state_lda=3, 
     :return:
     '''
     try:
+        raise FileNotFoundError
         with open(resources_path("topic_models",
                                  'lda_model_ntop_{}_iter_{}_pass_{}_chunk_{}_coco_{}.pkl'.format(num_top, iterations,
                                                                                                  passes,
