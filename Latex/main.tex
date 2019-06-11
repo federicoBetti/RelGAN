@@ -1,0 +1,46 @@
+\documentclass[11pt]{article}
+
+\input{Utils/packages}
+
+\begin{document}
+\input{Utils/commands}
+
+\include{Sections/titlePage}
+
+% per ora niente indice, vediamo come viene dopo (forse è un po corto per indice)
+\tableofcontents
+\clearpage
+
+\null\vfill
+\begin{abstract}
+	\textit{Nowadays Deep Learning Networks are used in every field of Artificial Intelligence because they have proved to be very high performance methods on complex tasks when a huge amount of data is available. However, while there are many areas in which this technology is considered complete and applicable, researchers are very active to discover new techniques that may in the future give rise to incredible applications. \\
+	This work aims to give an in-depth survey on modern Deep Learning methods used in the Natural Language Processing with a deeper focus on text generation. There will be a comparison on different promising technologies, namely LSTM-based models, adversarial architectures and transformer-based systems. Some of these new cutting-edge technologies will be present before proposing a new architecture for text generation that leverage on very recent state-of-the-art works. The proposal consists in enhancing the generation procedure with a guidance on the topic that the generated text should talk about in order not have unconditioned generated text anymore. The goal is to insert the human inside the generation process giving it the possibility to force the generation using simple sentences as input. \\
+	In order to carry out the work, it was necessary to combine techniques and skills of Natural Language Processing and Deep Learning to understand and make the contribution in an ever-changing sector where every month ameliorative results are published. }
+\end{abstract}
+\vfill\vfill\null
+\clearpage
+
+
+\section{Introduction}
+\label{sect:Introduction}
+\input{Sections/Introduction}
+\clearpage
+
+\section{Theoretical Description}
+\label{sect:TheoreticalDescription}
+\input{Sections/TheoreticalDescription}
+\clearpage
+
+\section{Related Works}
+\label{sect:RelatedWorks}
+\input{Sections/RelatedWorks}
+\clearpage
+
+\section{Topic-Guided GANs}
+\label{sect:TopicGuidedGANs}
+\input{Sections/TopicGuidedGANs}
+\clearpage
+
+\bibliographystyle{IEEEtran}
+\bibliography{IEEEabrv,Sections/biblio}
+\end{document}

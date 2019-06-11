@@ -1,0 +1,40 @@
+\textit{This will take lot of pages because even if I don't want to speak about NN from the beginning since I think it has been done many times, I need to go into the detail to make someone who read the thesis understand 1) which are the techniques than applied and 2)that the work was done on something really deep tech. Secondo me da qui possono facilmente venire fuori 30 pagine di tesi, questo perchè non solo devo 'spiegare' le reti neurali ma devo andare nel dettaglio con tecniche moderne e complesse.} \\
+This part must be very clear with images to explain concepts and some mathematical formulas.
+
+\subsection{Natural Language Processing}
+Here the should be some pages of introduction on NLP concpets that will be useful during the thesis. I think that there are lot of interesting things to write here. When we started the thesis we already have a good background on that, thanks to courses and other projects I did.
+\subsubsection{Grammars}
+Qui è interessante parlare delle grammatiche usate storicamente in NLP e dei Language model probabilistici basati su un corpus e sulle occorrenze
+
+\subsubsection{Topic Models}
+\textit{In questo capitolo verranno analizzati nel dettaglio i Topic Model con particolare concetrazioe su LDA che per ora è quello che usaimo}
+
+\subsubsection{Neural Language Models}
+\textit{Questo capitolo sarà abbastanza importante perchè bisogna presentare tecniche come quelle di Word2Vec che hanno creato un modello embedding della parola stessa 'concettuale'. Questo ha reso possible l'avvento di tutti i modelli futuri che quindi si basano su questa differente rappresentazione delle parole e non più utilizzando la parola semplicemente come un numero all'interno di un vocabolario.
+}
+
+\subsubsection{Metrics}
+\begin{itemize}
+	\item \textbf{BLEU metric}: the idea is to measure the diversity between a human translation and machine one, however it’s wildly used also in the NLG field. It is a modified version of the precision that takes into account how much a sample appears at maximum in the target text. It can also use bigram or n-gram and in that case it would measure how many times a specific sequence of n words appears also in the dataset. Using big n will decrease the overall score but it would be better from the result view point. However this metric is usually not so fast to compute and introduce bias into the model.
+	\item \textbf{SelfBleu}: lower the better, it measures the diversity in the sentences produced. This is a very important metrics because used together with the normal Bleu score it is possible to know if the model has also new generation capabilities. Having a good Bleu score could mean that the model found a specific sentence or set of words that, if repeated, allow the Bleu score to grow. However SelfBleu would be much worse in that case. For this reason it is really important the combined metric that measures both \textit{quality and diversity} in the generation process.
+\end{itemize}
+
+
+
+
+\subsection{Neural Networks}
+Here in my opinion there should be an introduction on NN, quite fast since I think everybody will do it. \\
+\textit{è importante presentare le Convolutional Neural Network sopratutto e come viene costruita in generale una rete profonda. Poi è importante andare nel dettaglio della Backpropagation in quanto avrà un ruolo importante successivamente. è importante specificare la funzione delle loss function e di come sono fatte normalmente le reti neurali per poi chiarificare la diversità con le GAN.}
+\subsubsection{Memory Network}
+Than I would go in the direction of presenting new techniques: at the beginning simple 'Memory Network' such RNN, LSTM, Relational Memory with Self-Attention and Transformer. \\
+\subsubsection{GAN Architecture}
+Than there should be a focus on the type of components that were used during the developing of the thesis. So in principle I would speak about GAN Architecture. I've attended to a talk by Goodfellow (GAN inventors) back un 2016 and I have also its slides. \\
+Mode Collapse problem:
+\subsubsection{GAN for text generation}
+Also here I think that there will be presented some of the ideas behind the GAN architecture used for text and why these are different from images \textbf{(due to the 'discrete' nature of text)}. \\
+A big and important paragraph saying which are the main challenges in applying these technologies to text and what is the community doing to solve this. 
+There are many different things to speak about:
+\begin{itemize}
+	\item RL Based GAN:
+	\item RL Free architecture:
+\end{itemize}

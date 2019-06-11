@@ -1,0 +1,55 @@
+\usepackage{graphicx}
+
+\usepackage[a4paper, total={6in, 9in}]{geometry} % for margins
+
+\usepackage[utf8]{inputenc} % Required for inputting international characters
+\usepackage[T1]{fontenc} % Output font encoding for international characters
+
+\usepackage{mathpazo} % Palatino font
+
+
+\usepackage{datetime} % for new date formats
+
+\usepackage{url}
+\usepackage{hyperref} %for references
+\hypersetup{
+	colorlinks,
+	citecolor=black,
+	filecolor=black,
+	linkcolor=black,
+	urlcolor=black
+}
+
+\usepackage{tocloft} % for dots in the table of contents
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+
+% for abstract
+\makeatletter
+\renewenvironment{abstract}{%
+	\if@twocolumn
+	\section*{\abstractname}%
+	\else %% <- here I've removed \small
+	\thispagestyle{empty} % not to have header, footer and page number
+	\begin{center}%
+		{\bfseries \Large\abstractname\vspace{\z@}}% 
+	\end{center}%
+	\quotation
+	\fi}
+{\if@twocolumn\else\endquotation\fi}
+\makeatother
+
+% for header and footer
+\usepackage{fancyhdr}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{Federico Betti}
+\lhead{Topic-Guided Text Generation with Adversarial Learning}
+\cfoot{\thepage}
+
+
+% for list customization
+\usepackage[shortlabels]{enumitem}
+
+% interlinea
+\linespread{1.5}

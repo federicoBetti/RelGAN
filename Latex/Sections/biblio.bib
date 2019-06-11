@@ -1,0 +1,416 @@
+
+@article{RelGAN,
+	author = {Weili Nie},
+	file = {:C$\backslash$:/Users/Fede/Downloads/RelGAN.pdf:pdf},
+	pages = {1--20},
+	title = {{RELGAN: RELATIONAL GENERATIVE ADVERSARIAL
+	NETWORKS FOR TEXT GENERATION}},
+	year = {2019}
+}
+
+@techreport{Chen,
+	abstract = {Generative adversarial networks (GANs) have achieved significant success in generating real-valued data. However, the discrete nature of text hinders the application of GAN to text-generation tasks. Instead of using the standard GAN objective, we propose to improve text-generation GAN via a novel approach inspired by optimal transport. Specifically, we consider matching the latent feature distributions of real and synthetic sentences using a novel metric, termed the feature-mover's distance (FMD). This formulation leads to a highly discriminative critic and easy-to-optimize objective, overcoming the mode-collapsing and brittle-training problems in existing methods. Extensive experiments are conducted on a variety of tasks to evaluate the proposed model empirically, including unconditional text generation, style transfer from non-parallel text, and unsupervised cipher cracking. The proposed model yields superior performance, demonstrating wide applicability and effectiveness.},
+	archivePrefix = {arXiv},
+	arxivId = {1809.06297v1},
+	author = {Chen, Liqun and Dai, Shuyang and Tao, Chenyang and Shen, Dinghan and Gan, Zhe and Zhang, Haichao and Zhang, Yizhe and Carin, Lawrence},
+	eprint = {1809.06297v1},
+	file = {:C$\backslash$:/Users/Fede/AppData/Local/Mendeley Ltd./Mendeley Desktop/Downloaded/Chen et al. - Unknown - Adversarial Text Generation via Feature-Mover's Distance.pdf:pdf},
+	title = {{Adversarial Text Generation via Feature-Mover's Distance}},
+	url = {https://arxiv.org/pdf/1809.06297.pdf}
+}
+@techreport{Radford,
+	abstract = {We explore the properties of byte-level recurrent language models. When given sufficient amounts of capacity, training data, and compute time, the representations learned by these models include disentangled features corresponding to high-level concepts. Specifically, we find a single unit which performs sentiment analysis. These representations, learned in an unsupervised manner , achieve state of the art on the binary subset of the Stanford Sentiment Treebank. They are also very data efficient. When using only a handful of labeled examples, our approach matches the performance of strong baselines trained on full datasets. We also demonstrate the sentiment unit has a direct influence on the generative process of the model. Simply fixing its value to be positive or negative generates samples with the corresponding positive or negative sentiment.},
+	archivePrefix = {arXiv},
+	arxivId = {1704.01444v2},
+	author = {Radford, Alec and Jozefowicz, Rafal and Sutskever, Ilya},
+	eprint = {1704.01444v2},
+	file = {::},
+	title = {{Learning to Generate Reviews and Discovering Sentiment}},
+	url = {https://arxiv.org/pdf/1704.01444.pdf}
+}
+@techreport{Srivastava2015,
+	abstract = {There is plenty of theoretical and empirical evidence that depth of neural networks is a crucial ingredient for their success. However, network training becomes more difficult with increasing depth and training of very deep networks remains an open problem. In this extended abstract, we introduce a new architecture designed to ease gradient-based training of very deep networks. We refer to networks with this architecture as highway networks, since they allow unimpeded information flow across several layers on information highways. The architecture is characterized by the use of gating units which learn to regulate the flow of information through a network. Highway networks with hundreds of layers can be trained directly using stochastic gradient descent and with a variety of activation functions, opening up the possibility of studying extremely deep and efficient architectures. Note: A full paper extending this study is available at http://arxiv.org/abs/1507.06228, with additional references, experiments and analysis.},
+	archivePrefix = {arXiv},
+	arxivId = {1505.00387v2},
+	author = {Srivastava, Rupesh Kumar and Greff, Klaus and Ch, Klaus@idsia and {Urgen Schmidhuber}, J ¨},
+	eprint = {1505.00387v2},
+	file = {::},
+	title = {{Highway Networks The Swiss AI Lab IDSIA Istituto Dalle Molle di Studi sull'Intelligenza Artificiale Universit{\`{a}} della Svizzera italiana (USI) Scuola universitaria professionale della Svizzera italiana (SUPSI)}},
+	url = {http://arxiv.org/abs/1507.06228,},
+	year = {2015}
+}
+@techreport{Hu2018,
+	abstract = {We introduce Texar, an open-source toolkit aiming to support the broad set of text generation tasks. Different from many existing toolkits that are specialized for specific applications (e.g., neural machine translation), Texar is designed to be highly flexible and versatile. This is achieved by abstracting the common patterns underlying the diverse tasks and methodolo-gies, creating a library of highly reusable modules and functionalities, and enabling arbitrary model architectures and various algorithmic paradigms. The features make Texar particularly suitable for technique sharing and generalization across different text generation applications. The toolkit emphasizes heavily on extensibil-ity and modularized system design, so that components can be freely plugged in or swapped out. We conduct extensive experiments and case studies to demonstrate the use and advantage of the toolkit.},
+	author = {Hu, Zhiting and Yang, Zichao and Shi, Haoran and Tan, Bowen and Zhao, Tiancheng and He, Junxian and Liang, Xiaodan and Wang, Wentao and Yu, Xingjiang and Wang, Di and Qin, Lianhui and Ma, Xuezhe and Liu, Hector and Singh, Devendra and Zhu, Wangrong and Xing, Eric P},
+	file = {::},
+	pages = {13--22},
+	title = {{Texar: A Modularized, Versatile, and Extensible Toolbox for Text Generation}},
+	url = {https://www.tensorflow.org},
+	year = {2018}
+}
+@misc{NeuralTextMedium,
+	title = {{Neural text generation – Phrasee – Medium}},
+	url = {https://medium.com/phrasee/neural-text-generation-generating-text-using-conditional-language-models-a37b69c7cd4b},
+	urldate = {2019-02-25}
+}
+@techreport{Bengio2003,
+	abstract = {A goal of statistical language modeling is to learn the joint probability function of sequences of words in a language. This is intrinsically difficult because of the curse of dimensionality: a word sequence on which the model will be tested is likely to be different from all the word sequences seen during training. Traditional but very successful approaches based on n-grams obtain generalization by concatenating very short overlapping sequences seen in the training set. We propose to fight the curse of dimensionality by learning a distributed representation for words which allows each training sentence to inform the model about an exponential number of semantically neighboring sentences. The model learns simultaneously (1) a distributed representation for each word along with (2) the probability function for word sequences, expressed in terms of these representations. Generalization is obtained because a sequence of words that has never been seen before gets high probability if it is made of words that are similar (in the sense of having a nearby representation) to words forming an already seen sentence. Training such large models (with millions of parameters) within a reasonable time is itself a significant challenge. We report on experiments using neural networks for the probability function, showing on two text corpora that the proposed approach significantly improves on state-of-the-art n-gram models, and that the proposed approach allows to take advantage of longer contexts.},
+	author = {Bengio, Yoshua and Ducharme, R{\'{e}}jean and Vincent, Pascal and Jauvin, Christian and Ca, Jauvinc@iro Umontreal and Kandola, Jaz and Hofmann, Thomas and Poggio, Tomaso and Shawe-Taylor, John},
+	booktitle = {Journal of Machine Learning Research},
+	file = {:C$\backslash$:/Users/Fede/AppData/Local/Mendeley Ltd./Mendeley Desktop/Downloaded/Bengio et al. - 2003 - A Neural Probabilistic Language Model.pdf:pdf},
+	keywords = {Statistical language modeling,artificial neural networks,curse of dimensionality,distributed representation},
+	pages = {1137--1155},
+	title = {{A Neural Probabilistic Language Model}},
+	url = {http://www.jmlr.org/papers/volume3/bengio03a/bengio03a.pdf},
+	volume = {3},
+	year = {2003}
+}
+@techreport{DeMasson,
+	abstract = {Generative Adversarial Networks (GANs) enjoy great success at image generation , but have proven difficult to train in the domain of natural language. Challenges with gradient estimation, optimization instability, and mode collapse have lead practitioners to resort to maximum likelihood pre-training, followed by small amounts of adversarial fine-tuning. The benefits of GAN fine-tuning for language generation are unclear, as the resulting models produce comparable or worse samples than traditional language models. We show it is in fact possible to train a language GAN from scratch-without maximum likelihood pre-training. We combine existing techniques such as large batch sizes, dense rewards and dis-criminator regularization to stabilize and improve language GANs. The resulting model, ScratchGAN, performs comparably to maximum likelihood training on EMNLP2017 News and WikiText-103 corpora according to quality and diversity metrics.},
+	archivePrefix = {arXiv},
+	arxivId = {1905.09922v1},
+	author = {de Masson, Cyprien and Rosca, Mihaela and {Rae Shakir Mohamed DeepMind}, Jack},
+	eprint = {1905.09922v1},
+	file = {:C$\backslash$:/Users/Fede/AppData/Local/Mendeley Ltd./Mendeley Desktop/Downloaded/de Masson, Rosca, Rae Shakir Mohamed DeepMind - Unknown - Training Language GANs from Scratch.pdf:pdf},
+	title = {{Training Language GANs from Scratch}},
+	url = {https://arxiv.org/pdf/1905.09922.pdf}
+}
+@techreport{Chena,
+	abstract = {Generative adversarial networks (GANs) have achieved significant success in generating real-valued data. However, the discrete nature of text hinders the application of GAN to text-generation tasks. Instead of using the standard GAN objective, we propose to improve text-generation GAN via a novel approach inspired by optimal transport. Specifically, we consider matching the latent feature distributions of real and synthetic sentences using a novel metric, termed the feature-mover's distance (FMD). This formulation leads to a highly discriminative critic and easy-to-optimize objective, overcoming the mode-collapsing and brittle-training problems in existing methods. Extensive experiments are conducted on a variety of tasks to evaluate the proposed model empirically, including unconditional text generation, style transfer from non-parallel text, and unsupervised cipher cracking. The proposed model yields superior performance, demonstrating wide applicability and effectiveness.},
+	archivePrefix = {arXiv},
+	arxivId = {1809.06297v1},
+	author = {Chen, Liqun and Dai, Shuyang and Tao, Chenyang and Shen, Dinghan and Gan, Zhe and Zhang, Haichao and Zhang, Yizhe and Carin, Lawrence},
+	eprint = {1809.06297v1},
+	file = {:C$\backslash$:/Users/Fede/AppData/Local/Mendeley Ltd./Mendeley Desktop/Downloaded/Chen et al. - Unknown - Adversarial Text Generation via Feature-Mover's Distance(2).pdf:pdf},
+	title = {{Adversarial Text Generation via Feature-Mover's Distance}},
+	url = {https://arxiv.org/pdf/1809.06297.pdf}
+}
+@techreport{Wang,
+	abstract = {We propose a topic-guided variational au-toencoder (TGVAE) model for text generation. Distinct from existing variational au-toencoder (VAE) based approaches, which assume a simple Gaussian prior for the latent code, our model specifies the prior as a Gaus-sian mixture model (GMM) parametrized by a neural topic module. Each mixture component corresponds to a latent topic, which provides guidance to generate sentences under the topic. The neural topic module and the VAE-based neural sequence module in our model are learned jointly. In particular, a sequence of invertible Householder transformations is applied to endow the approximate posterior of the latent code with high flexibility during model inference. Experimental results show that our TGVAE outperforms alternative approaches on both unconditional and conditional text generation, which can generate semantically-meaningful sentences with various topics.},
+	archivePrefix = {arXiv},
+	arxivId = {1903.07137v1},
+	author = {Wang, Wenlin and Gan, Zhe and Xu, Hongteng and Zhang, Ruiyi and Wang, Guoyin and Shen, Dinghan and Chen, Changyou and Carin, Lawrence},
+	eprint = {1903.07137v1},
+	file = {:C$\backslash$:/Users/Fede/AppData/Local/Mendeley Ltd./Mendeley Desktop/Downloaded/Wang et al. - Unknown - Topic-Guided Variational Autoencoders for Text Generation.pdf:pdf},
+	title = {{Topic-Guided Variational Autoencoders for Text Generation}},
+	url = {https://arxiv.org/pdf/1903.07137.pdf}
+}
+@techreport{Guo,
+	abstract = {Automatically generating coherent and semantically meaningful text has many applications in machine translation, dialogue systems, image captioning, etc. Recently, by combining with policy gradient, Generative Adversarial Nets (GAN) that use a discriminative model to guide the training of the generative model as a reinforcement learning policy has shown promising results in text generation. However, the scalar guiding signal is only available after the entire text has been generated and lacks intermediate information about text structure during the generative process. As such, it limits its success when the length of the generated text samples is long (more than 20 words). In this paper, we propose a new framework, called LeakGAN, to address the problem for long text generation. We allow the discriminative net to leak its own high-level extracted features to the generative net to further help the guidance. The generator incorporates such informative signals into all generation steps through an additional MANAGER module, which takes the extracted features of current generated words and outputs a latent vector to guide the WORKER module for next-word generation. Our extensive experiments on synthetic data and various real-world tasks with Turing test demonstrate that LeakGAN is highly effective in long text generation and also improves the performance in short text generation scenarios. More importantly , without any supervision, LeakGAN would be able to implicitly learn sentence structures only through the interaction between MANAGER and WORKER.},
+	archivePrefix = {arXiv},
+	arxivId = {1709.08624v2},
+	author = {Guo, Jiaxian and Lu, Sidi and Cai, Han and Zhang, Weinan and Yu, Yong and Wang, Jun},
+	eprint = {1709.08624v2},
+	file = {:C$\backslash$:/Users/Fede/AppData/Local/Mendeley Ltd./Mendeley Desktop/Downloaded/Guo et al. - Unknown - Long Text Generation via Adversarial Training with Leaked Information.pdf:pdf},
+	title = {{Long Text Generation via Adversarial Training with Leaked Information}},
+	url = {www.aaai.org}
+}
+@techreport{Wang2018,
+	abstract = {We propose a Topic Compositional Neural Language Model (TCNLM), a novel method designed to simultaneously capture both the global semantic meaning and the local word-ordering structure in a document. The TC-NLM learns the global semantic coherence of a document via a neural topic model, and the probability of each learned latent topic is further used to build a Mixture-of-Experts (MoE) language model, where each expert (corresponding to one topic) is a recurrent neural network (RNN) that accounts for learning the local structure of a word sequence. In order to train the MoE model efficiently , a matrix factorization method is applied , by extending each weight matrix of the RNN to be an ensemble of topic-dependent weight matrices. The degree to which each member of the ensemble is used is tied to the document-dependent probability of the corresponding topics. Experimental results on several corpora show that the proposed approach outperforms both a pure RNN-based model and other topic-guided language models. Further, our model yields sensible topics, and also has the capacity to generate meaningful sentences conditioned on given topics.},
+	archivePrefix = {arXiv},
+	arxivId = {1712.09783v3},
+	author = {Wang, Wenlin and Gan, Zhe and Wang, Wenqi and Shen, Dinghan and Huang, Jiaji and Ping, Wei and Satheesh, Sanjeev and Carin, Lawrence},
+	eprint = {1712.09783v3},
+	file = {:C$\backslash$:/Users/Fede/AppData/Local/Mendeley Ltd./Mendeley Desktop/Downloaded/Wang et al. - 2018 - Topic Compositional Neural Language Model(2).pdf:pdf},
+	title = {{Topic Compositional Neural Language Model}},
+	url = {https://arxiv.org/pdf/1712.09783.pdf},
+	year = {2018}
+}
+@techreport{Lu,
+	abstract = {This paper presents a systematic survey on recent development of neural text generation models. Specifically, we start from recurrent neural network language models with the traditional maximum likelihood estimation training scheme and point out its shortcoming for text generation. We thus introduce the recently proposed methods for text generation based on reinforcement learning, re-parametrization tricks and generative adversar-ial nets (GAN) techniques. We compare different properties of these models and the corresponding techniques to handle their common problems such as gradient vanishing and generation diversity. Finally , we conduct a benchmarking experiment with different types of neural text generation models on two well-known datasets and discuss the empirical results along with the aforementioned model properties .},
+	archivePrefix = {arXiv},
+	arxivId = {1803.07133v1},
+	author = {Lu, Sidi and Zhu, Yaoming and Zhang, Weinan and Wang, Jun and Yu, Yong},
+	eprint = {1803.07133v1},
+	file = {:C$\backslash$:/Users/Fede/AppData/Local/Mendeley Ltd./Mendeley Desktop/Downloaded/Lu et al. - Unknown - Neural Text Generation Past, Present and Beyond.pdf:pdf},
+	title = {{Neural Text Generation: Past, Present and Beyond}},
+	url = {https://arxiv.org/pdf/1803.07133.pdf}
+}
+@techreport{Vezhnevets,
+	abstract = {We introduce FeUdal Networks (FuNs): a novel architecture for hierarchical reinforcement learning. Our approach is inspired by the feudal reinforcement learning proposal of Dayan and Hin-ton, and gains power and efficacy by decou-pling end-to-end learning across multiple levels-allowing it to utilise different resolutions of time. Our framework employs a Manager module and a Worker module. The Manager operates at a lower temporal resolution and sets abstract goals which are conveyed to and enacted by the Worker. The Worker generates primitive actions at every tick of the environment. The decoupled structure of FuN conveys several benefits-in addition to facilitating very long timescale credit assignment it also encourages the emergence of sub-policies associated with different goals set by the Manager. These properties allow FuN to dramatically outperform a strong baseline agent on tasks that involve long-term credit assignment or memorisation. We demonstrate the performance of our proposed system on a range of tasks from the ATARI suite and also from a 3D Deep-Mind Lab environment.},
+	archivePrefix = {arXiv},
+	arxivId = {1703.01161v2},
+	author = {Vezhnevets, Alexander Sasha and Osindero, Simon and Schaul, Tom and Heess, Nicolas and Jaderberg, Max and Silver, David and Deepmind, Korayk@google Com},
+	eprint = {1703.01161v2},
+	file = {:C$\backslash$:/Users/Fede/AppData/Local/Mendeley Ltd./Mendeley Desktop/Downloaded/Vezhnevets et al. - Unknown - FeUdal Networks for Hierarchical Reinforcement Learning Koray Kavukcuoglu.pdf:pdf},
+	title = {{FeUdal Networks for Hierarchical Reinforcement Learning Koray Kavukcuoglu}},
+	url = {https://arxiv.org/pdf/1703.01161.pdf}
+}
+@techreport{Dieng,
+	abstract = {In this paper, we propose TopicRNN, a recurrent neural network (RNN)-based language model designed to directly capture the global semantic meaning relating words in a document via latent topics. Because of their sequential nature, RNNs are good at capturing the local structure of a word sequence-both semantic and syntactic-but might face difficulty remembering long-range dependencies. Intuitively , these long-range dependencies are of semantic nature. In contrast, latent topic models are able to capture the global semantic structure of a document but do not account for word ordering. The proposed TopicRNN model integrates the merits of RNNs and latent topic models: it captures local (syntactic) dependencies using an RNN and global (semantic) dependencies using latent topics. Unlike previous work on contextual RNN language modeling, our model is learned end-to-end. Empirical results on word prediction show that TopicRNN outperforms existing contextual RNN baselines. In addition, TopicRNN can be used as an un-supervised feature extractor for documents. We do this for sentiment analysis on the IMDB movie review dataset and report an error rate of 6.28{\%}. This is comparable to the state-of-the-art 5.91{\%} resulting from a semi-supervised approach. Finally, TopicRNN also yields sensible topics, making it a useful alternative to document models such as latent Dirichlet allocation.},
+	archivePrefix = {arXiv},
+	arxivId = {1611.01702v2},
+	author = {Dieng, Adji B and Wang, Chong and Gao, Jianfeng and Paisley, John},
+	eprint = {1611.01702v2},
+	file = {:C$\backslash$:/Users/Fede/AppData/Local/Mendeley Ltd./Mendeley Desktop/Downloaded/Dieng et al. - Unknown - TOPICRNN A RECURRENT NEURAL NETWORK WITH LONG-RANGE SEMANTIC DEPENDENCY.pdf:pdf},
+	title = {{TOPICRNN: A RECURRENT NEURAL NETWORK WITH LONG-RANGE SEMANTIC DEPENDENCY}},
+	url = {https://arxiv.org/pdf/1611.01702.pdf}
+}
+@techreport{Zhang2017,
+	abstract = {The Generative Adversarial Network (GAN) has achieved great success in generating realistic (real-valued) synthetic data. However, convergence issues and difficulties dealing with discrete data hinder the applicability of GAN to text. We propose a framework for generating realistic text via adversarial training. We employ a long short-term memory network as generator, and a con-volutional network as discriminator. Instead of using the standard objective of GAN, we propose matching the high-dimensional latent feature distributions of real and synthetic sentences, via a kernelized discrepancy metric. This eases adver-sarial training by alleviating the mode-collapsing problem. Our experiments show superior performance in quantitative evaluation, and demonstrate that our model can generate realistic-looking sentences .},
+	archivePrefix = {arXiv},
+	arxivId = {1706.03850v3},
+	author = {Zhang, Yizhe and Gan, Zhe and Fan, Kai and Chen, Zhi and Henao, Ricardo and Shen, Dinghan and Carin, Lawrence},
+	eprint = {1706.03850v3},
+	file = {:C$\backslash$:/Users/Fede/AppData/Local/Mendeley Ltd./Mendeley Desktop/Downloaded/Zhang et al. - 2017 - Adversarial Feature Matching for Text Generation.pdf:pdf},
+	title = {{Adversarial Feature Matching for Text Generation}},
+	url = {https://arxiv.org/pdf/1706.03850.pdf},
+	year = {2017}
+}
+@techreport{Miao,
+	abstract = {Topic models have been widely explored as prob-abilistic generative models of documents. Traditional inference methods have sought closed-form derivations for updating the models, however as the expressiveness of these models grows, so does the difficulty of performing fast and accurate inference over their parameters. This paper presents alternative neural approaches to topic modelling by providing parameterisable distributions over topics which permit training by backpropagation in the framework of neu-ral variational inference. In addition, with the help of a stick-breaking construction, we propose a recurrent network that is able to discover a notionally unbounded number of topics , analogous to Bayesian non-parametric topic models. Experimental results on the MXM Song Lyrics, 20NewsGroups and Reuters News datasets demonstrate the effectiveness and efficiency of these neural topic models.},
+	archivePrefix = {arXiv},
+	arxivId = {1706.00359v2},
+	author = {Miao, Yishu and Grefenstette, Edward and Blunsom, Phil},
+	eprint = {1706.00359v2},
+	file = {:C$\backslash$:/Users/Fede/AppData/Local/Mendeley Ltd./Mendeley Desktop/Downloaded/Miao, Grefenstette, Blunsom - Unknown - Discovering Discrete Latent Topics with Neural Variational Inference.pdf:pdf},
+	title = {{Discovering Discrete Latent Topics with Neural Variational Inference}},
+	url = {https://arxiv.org/pdf/1706.00359.pdf}
+}
+@article{Yu2016,
+	abstract = {As a new way of training generative models, Generative Adversarial Nets (GAN) that uses a discriminative model to guide the training of the generative model has enjoyed considerable success in generating real-valued data. However, it has limitations when the goal is for generating sequences of discrete tokens. A major reason lies in that the discrete outputs from the generative model make it difficult to pass the gradient update from the discriminative model to the generative model. Also, the discriminative model can only assess a complete sequence, while for a partially generated sequence, it is non-trivial to balance its current score and the future one once the entire sequence has been generated. In this paper, we propose a sequence generation framework, called SeqGAN, to solve the problems. Modeling the data generator as a stochastic policy in reinforcement learning (RL), SeqGAN bypasses the generator differentiation problem by directly performing gradient policy update. The RL reward signal comes from the GAN discriminator judged on a complete sequence, and is passed back to the intermediate state-action steps using Monte Carlo search. Extensive experiments on synthetic data and real-world tasks demonstrate significant improvements over strong baselines.},
+	archivePrefix = {arXiv},
+	arxivId = {1609.05473},
+	author = {Yu, Lantao and Zhang, Weinan and Wang, Jun and Yu, Yong},
+	doi = {10.1177/1525822X10374798},
+	eprint = {1609.05473},
+	file = {:C$\backslash$:/Users/Fede/AppData/Local/Mendeley Ltd./Mendeley Desktop/Downloaded/Yu et al. - 2016 - SeqGAN Sequence Generative Adversarial Nets with Policy Gradient.pdf:pdf},
+	isbn = {1581138285},
+	pmid = {15040217},
+	title = {{SeqGAN: Sequence Generative Adversarial Nets with Policy Gradient}},
+	year = {2016}
+}
+@techreport{Gulrajani,
+	abstract = {Generative Adversarial Networks (GANs) are powerful generative models, but suffer from training instability. The recently proposed Wasserstein GAN (WGAN) makes progress toward stable training of GANs, but sometimes can still generate only poor samples or fail to converge. We find that these problems are often due to the use of weight clipping in WGAN to enforce a Lipschitz constraint on the critic, which can lead to undesired behavior. We propose an alternative to clipping weights: penalize the norm of gradient of the critic with respect to its input. Our proposed method performs better than standard WGAN and enables stable training of a wide variety of GAN architectures with almost no hyperparameter tuning, including 101-layer ResNets and language models with continuous generators. We also achieve high quality generations on CIFAR-10 and LSUN bedrooms. †},
+	archivePrefix = {arXiv},
+	arxivId = {1704.00028v3},
+	author = {Gulrajani, Ishaan and Ahmed, Faruk and Arjovsky, Martin and Dumoulin, Vincent and Courville, Aaron},
+	eprint = {1704.00028v3},
+	file = {:C$\backslash$:/Users/Fede/AppData/Local/Mendeley Ltd./Mendeley Desktop/Downloaded/Gulrajani et al. - Unknown - Improved Training of Wasserstein GANs Montreal Institute for Learning Algorithms.pdf:pdf},
+	title = {{Improved Training of Wasserstein GANs Montreal Institute for Learning Algorithms}},
+	url = {https://github.com/igul222/improved{\_}wgan{\_}training.}
+}
+@article{Fedus2018,
+	abstract = {Neural text generation models are often autoregressive language models or seq2seq models. These models generate text by sampling words sequentially, with each word conditioned on the previous word, and are state-of-the-art for several machine translation and summarization benchmarks. These benchmarks are often defined by validation perplexity even though this is not a direct measure of the quality of the generated text. Additionally, these models are typically trained via maxi- mum likelihood and teacher forcing. These methods are well-suited to optimizing perplexity but can result in poor sample quality since generating text requires conditioning on sequences of words that may have never been observed at training time. We propose to improve sample quality using Generative Adversarial Networks (GANs), which explicitly train the generator to produce high quality samples and have shown a lot of success in image generation. GANs were originally designed to output differentiable values, so discrete language generation is challenging for them. We claim that validation perplexity alone is not indicative of the quality of text generated by a model. We introduce an actor-critic conditional GAN that fills in missing text conditioned on the surrounding context. We show qualitatively and quantitatively, evidence that this produces more realistic conditional and unconditional text samples compared to a maximum likelihood trained model.},
+	archivePrefix = {arXiv},
+	arxivId = {1801.07736},
+	author = {Fedus, William and Goodfellow, Ian and Dai, Andrew M.},
+	doi = {10.1111/j.1752-0606.2009.00108.x},
+	eprint = {1801.07736},
+	file = {:C$\backslash$:/Users/Fede/AppData/Local/Mendeley Ltd./Mendeley Desktop/Downloaded/Fedus, Goodfellow, Dai - 2018 - MaskGAN Better Text Generation via Filling in the{\_}{\_}{\_}{\_}{\_}{\_}.pdf:pdf},
+	isbn = {9085591708},
+	issn = {0194472X},
+	title = {{MaskGAN: Better Text Generation via Filling in the{\_}{\_}{\_}{\_}{\_}{\_}}},
+	year = {2018}
+}
+@techreport{Lin2018,
+	abstract = {Generative adversarial networks (GANs) have great successes on synthesizing data. However, the existing GANs restrict the discriminator to be a binary clas-sifier, and thus limit their learning capacity for tasks that need to synthesize output with rich structures such as natural language descriptions. In this paper, we propose a novel generative adversarial network, RankGAN, for generating high-quality language descriptions. Rather than training the discriminator to learn and assign absolute binary predicate for individual data sample, the proposed RankGAN is able to analyze and rank a collection of human-written and machine-written sentences by giving a reference group. By viewing a set of data samples collectively and evaluating their quality through relative ranking scores, the dis-criminator is able to make better assessment which in turn helps to learn a better generator. The proposed RankGAN is optimized through the policy gradient technique. Experimental results on multiple public datasets clearly demonstrate the effectiveness of the proposed approach.},
+	archivePrefix = {arXiv},
+	arxivId = {1705.11001v3},
+	author = {Lin, Kevin and Li, Dianqi and He, Xiaodong and Zhang, Zhengyou and Sun, Ming-Ting},
+	eprint = {1705.11001v3},
+	file = {:C$\backslash$:/Users/Fede/AppData/Local/Mendeley Ltd./Mendeley Desktop/Downloaded/Lin et al. - 2018 - Adversarial Ranking for Language Generation.pdf:pdf},
+	title = {{Adversarial Ranking for Language Generation}},
+	url = {https://arxiv.org/pdf/1705.11001.pdf},
+	year = {2018}
+}
+@techreport{Subramanian,
+	abstract = {Recent progress in deep generative models has been fueled by two paradigms-au-toregressive and adversarial models. We propose a combination of both approaches with the goal of learning generative models of text. Our method first produces a high-level sentence outline and then generates words sequentially, conditioning on both the outline and the previous outputs. We generate outlines with an adversarial model trained to approximate the distribution of sentences in a latent space induced by general-purpose sentence encoders. This provides strong, informative conditioning for the autoregressive stage. Our quantitative evaluations suggests that conditioning information from generated outlines is able to guide the autoregressive model to produce realistic samples, comparable to maximum-likelihood trained language models, even at high temperatures with multinomial sampling. Qualitative results also demonstrate that this generative procedure yields natural-looking sentences and interpolations.},
+	author = {Subramanian, Sandeep and Rajeswar, Sai and Sordoni, Alessandro and Trischler, Adam and Courville, Aaron and Pal, Christopher},
+	file = {:C$\backslash$:/Users/Fede/AppData/Local/Mendeley Ltd./Mendeley Desktop/Downloaded/Subramanian et al. - Unknown - Towards Text Generation with Adversarially Learned Neural Outlines.pdf:pdf},
+	title = {{Towards Text Generation with Adversarially Learned Neural Outlines}},
+	url = {http://papers.nips.cc/paper/7983-towards-text-generation-with-adversarially-learned-neural-outlines.pdf}
+}
+@misc{,
+	file = {:C$\backslash$:/Users/Fede/Downloads/Tesi WebPages/How to generate text using conditional language models.pdf:pdf},
+	title = {{How to generate text using conditional language models.pdf}}
+}
+@techreport{Yang,
+	abstract = {Binary classifiers are often employed as discriminators in GAN-based unsupervised style transfer systems to ensure that transferred sentences are similar to sentences in the target domain. One difficulty with this approach is that the error signal provided by the discriminator can be unstable and is sometimes insufficient to train the generator to produce fluent language. In this paper, we propose a new technique that uses a target domain language model as the discriminator, providing richer and more stable token-level feedback during the learning process. We train the generator to minimize the negative log likelihood (NLL) of generated sentences, evaluated by the language model. By using a continuous approximation of discrete sampling under the generator, our model can be trained using back-propagation in an end-to-end fashion. Moreover, our empirical results show that when using a language model as a structured discriminator, it is possible to forgo adversarial steps during training, making the process more stable. We compare our model with previous work that uses convolutional networks (CNNs) as discriminators, as well as a broad set of other approaches. Results show that the proposed method achieves improved performance on three tasks: word substitution decipherment, sentiment modification, and related language translation.},
+	archivePrefix = {arXiv},
+	arxivId = {1805.11749v2},
+	author = {Yang, Zichao and Hu, Zhiting and Dyer, Chris and Xing, Eric P and Berg-Kirkpatrick, Taylor},
+	eprint = {1805.11749v2},
+	file = {:C$\backslash$:/Users/Fede/AppData/Local/Mendeley Ltd./Mendeley Desktop/Downloaded/Yang et al. - Unknown - Unsupervised Text Style Transfer using Language Models as Discriminators.pdf:pdf},
+	title = {{Unsupervised Text Style Transfer using Language Models as Discriminators}},
+	url = {https://arxiv.org/pdf/1805.11749.pdf}
+}
+
+@techreport{Mikolov2010,
+	abstract = {A new recurrent neural network based language model (RNN LM) with applications to speech recognition is presented. Results indicate that it is possible to obtain around 50{\%} reduction of perplexity by using mixture of several RNN LMs, compared to a state of the art backoff language model. Speech recognition experiments show around 18{\%} reduction of word error rate on the Wall Street Journal task when comparing models trained on the same amount of data, and around 5{\%} on the much harder NIST RT05 task, even when the backoff model is trained on much more data than the RNN LM. We provide ample empirical evidence to suggest that connectionist language models are superior to standard n-gram techniques, except their high computational (training) complexity.},
+	author = {Mikolov, Tom and Karafit, Martin and Burget, Lukas and Honza, Jan, and Khudanpur, Sanjeev},
+	file = {::},
+	keywords = {Index Terms: language modeling,recurrent neural networks,speech recognition},
+	title = {{Recurrent neural network based language model}},
+	url = {https://www.fit.vutbr.cz/research/groups/speech/publi/2010/mikolov{\_}interspeech2010{\_}IS100722.pdf},
+	year = {2010}
+}
+
+@techreport{Dieng,
+	abstract = {In this paper, we propose TopicRNN, a recurrent neural network (RNN)-based language model designed to directly capture the global semantic meaning relating words in a document via latent topics. Because of their sequential nature, RNNs are good at capturing the local structure of a word sequence-both semantic and syntactic-but might face difficulty remembering long-range dependencies. Intuitively , these long-range dependencies are of semantic nature. In contrast, latent topic models are able to capture the global semantic structure of a document but do not account for word ordering. The proposed TopicRNN model integrates the merits of RNNs and latent topic models: it captures local (syntactic) dependencies using an RNN and global (semantic) dependencies using latent topics. Unlike previous work on contextual RNN language modeling, our model is learned end-to-end. Empirical results on word prediction show that TopicRNN outperforms existing contextual RNN baselines. In addition, TopicRNN can be used as an un-supervised feature extractor for documents. We do this for sentiment analysis on the IMDB movie review dataset and report an error rate of 6.28{\%}. This is comparable to the state-of-the-art 5.91{\%} resulting from a semi-supervised approach. Finally, TopicRNN also yields sensible topics, making it a useful alternative to document models such as latent Dirichlet allocation.},
+	archivePrefix = {arXiv},
+	arxivId = {1611.01702v2},
+	author = {Dieng, Adji B and Wang, Chong and Gao, Jianfeng and Paisley, John},
+	eprint = {1611.01702v2},
+	file = {:C$\backslash$:/Users/Fede/AppData/Local/Mendeley Ltd./Mendeley Desktop/Downloaded/Dieng et al. - Unknown - TOPICRNN A RECURRENT NEURAL NETWORK WITH LONG-RANGE SEMANTIC DEPENDENCY.pdf:pdf},
+	title = {{TOPICRNN: A RECURRENT NEURAL NETWORK WITH LONG-RANGE SEMANTIC DEPENDENCY}},
+	url = {https://arxiv.org/pdf/1611.01702.pdf}
+}
+@techreport{Sutskever2011,
+	abstract = {Recurrent Neural Networks (RNNs) are very powerful sequence models that do not enjoy widespread use because it is extremely difficult to train them properly. Fortunately, recent advances in Hessian-free optimization have been able to overcome the difficulties associated with training RNNs, making it possible to apply them successfully to challenging sequence problems. In this paper we demonstrate the power of RNNs trained with the new Hessian-Free op-timizer (HF) by applying them to character-level language modeling tasks. The standard RNN architecture , while effective, is not ideally suited for such tasks, so we introduce a new RNN variant that uses multiplicative (or "gated") connections which allow the current input character to determine the transition matrix from one hidden state vector to the next. After training the multiplicative RNN with the HF optimizer for five days on 8 high-end Graphics Processing Units, we were able to surpass the performance of the best previous single method for character-level language modeling-a hierarchical non-parametric sequence model. To our knowledge this represents the largest recurrent neural network application to date.},
+	author = {Sutskever, Ilya and Martens, James and Hinton, Geoffrey},
+	file = {::},
+	title = {{Generating Text with Recurrent Neural Networks}},
+	url = {https://www.cs.utoronto.ca/{~}ilya/pubs/2011/LANG-RNN.pdf},
+	year = {2011}
+}
+@techreport{Mnih2012,
+	abstract = {In spite of their superior performance, neural probabilistic language models (NPLMs) remain far less widely used than n-gram models due to their notoriously long training times, which are measured in weeks even for moderately-sized datasets. Training NPLMs is computationally expensive because they are explicitly normalized, which leads to having to consider all words in the vocabulary when computing the log-likelihood gradients. We propose a fast and simple algorithm for training NPLMs based on noise-contrastive estimation, a newly introduced procedure for estimating unnormalized continuous distributions. We investigate the behaviour of the algorithm on the Penn Treebank corpus and show that it reduces the training times by more than an order of magnitude without affecting the quality of the resulting models. The algorithm is also more efficient and much more stable than importance sampling because it requires far fewer noise samples to perform well. We demonstrate the scalability of the proposed approach by training several neural language models on a 47M-word corpus with a 80K-word vocabulary, obtaining state-of-the-art results on the Microsoft Research Sentence Completion Challenge dataset.},
+	author = {Mnih, Andriy},
+	file = {::},
+	title = {{A fast and simple algorithm for training neural probabilistic language models}},
+	url = {https://arxiv.org/ftp/arxiv/papers/1206/1206.6426.pdf},
+	year = {2012}
+}
+@techreport{Sundermeyer,
+	abstract = {Neural networks have become increasingly popular for the task of language modeling. Whereas feed-forward networks only exploit a fixed context length to predict the next word of a sequence , conceptually, standard recurrent neural networks can take into account all of the predecessor words. On the other hand, it is well known that recurrent networks are difficult to train and therefore are unlikely to show the full potential of recurrent models. These problems are addressed by a the Long Short-Term Memory neural network architecture. In this work, we analyze this type of network on an English and a large French language modeling task. Experiments show improvements of about 8 {\%} relative in perplexity over standard recurrent neural network LMs. In addition, we gain considerable improvements in WER on top of a state-of-the-art speech recognition system.},
+	author = {Sundermeyer, Martin and Schl{\"{u}}ter, Ralf and Ney, Hermann},
+	file = {::},
+	keywords = {Index Terms: language modeling,LSTM neural networks,recurrent neural networks},
+	title = {{LSTM Neural Networks for Language Modeling}},
+	url = {http://www.isca-speech.org/archive}
+}
+@misc{,
+	title = {{IEEE Xplore Full-Text PDF:}},
+	url = {https://ieeexplore.ieee.org/stamp/stamp.jsp?tp={\&}arnumber=5947611},
+	urldate = {2019-06-11}
+}
+@techreport{Hermans,
+	abstract = {Time series often have a temporal hierarchy, with information that is spread out over multiple time scales. Common recurrent neural networks, however, do not explicitly accommodate such a hierarchy, and most research on them has been focusing on training algorithms rather than on their basic architecture. In this paper we study the effect of a hierarchy of recurrent neural networks on processing time series. Here, each layer is a recurrent network which receives the hidden state of the previous layer as input. This architecture allows us to perform hierarchical processing on difficult temporal tasks, and more naturally capture the structure of time series. We show that they reach state-of-the-art performance for recurrent networks in character-level language modeling when trained with simple stochastic gradient descent. We also offer an analysis of the different emergent time scales.},
+	author = {Hermans, Michiel and Schrauwen, Benjamin},
+	file = {::},
+	title = {{Training and Analyzing Deep Recurrent Neural Networks}},
+	url = {http://papers.nips.cc/paper/5166-training-and-analysing-deep-recurrent-neural-networks.pdf}
+}
+@techreport{Graves,
+	abstract = {This paper shows how Long Short-term Memory recurrent neural networks can be used to generate complex sequences with long-range structure , simply by predicting one data point at a time. The approach is demonstrated for text (where the data are discrete) and online handwriting (where the data are real-valued). It is then extended to handwriting synthesis by allowing the network to condition its predictions on a text sequence. The resulting system is able to generate highly realistic cursive handwriting in a wide variety of styles.},
+	archivePrefix = {arXiv},
+	arxivId = {1308.0850v5},
+	author = {Graves, Alex},
+	eprint = {1308.0850v5},
+	file = {::},
+	title = {{Generating Sequences With Recurrent Neural Networks}},
+	url = {https://arxiv.org/pdf/1308.0850.pdf}
+}
+@techreport{LambTF,
+	abstract = {The Teacher Forcing algorithm trains recurrent networks by supplying observed sequence values as inputs during training and using the network's own one-step-ahead predictions to do multi-step sampling. We introduce the Professor Forcing algorithm, which uses adversarial domain adaptation to encourage the dynamics of the recurrent network to be the same when training the network and when sampling from the network over multiple time steps. We apply Professor Forcing to language modeling, vocal synthesis on raw waveforms, handwriting generation, and image generation. Empirically we find that Professor Forcing acts as a regularizer, improving test likelihood on character level Penn Treebank and sequential MNIST. We also find that the model qualitatively improves samples, especially when sampling for a large number of time steps. This is supported by human evaluation of sample quality. Trade-offs between Professor Forcing and Scheduled Sampling are discussed. We produce T-SNEs showing that Professor Forcing successfully makes the dynamics of the network during training and sampling more similar.},
+	archivePrefix = {arXiv},
+	arxivId = {1610.09038v1},
+	author = {Lamb, Alex and Goyal, Anirudh and Zhang, Ying and Zhang, Saizheng and Courville, Aaron and Bengio, Yoshua},
+	eprint = {1610.09038v1},
+	file = {::},
+	isbn = {1610.09038v1},
+	title = {{Professor Forcing: A New Algorithm for Training Recurrent Networks}},
+	url = {https://arxiv.org/pdf/1610.09038.pdf}
+}
+@techreport{Huszar,
+	abstract = {Modern applications and progress in deep learning research have created renewed interest for generative models of text and of images. However, even today it is unclear what objective functions one should use to train and evaluate these models. In this paper we present two contributions. Firstly, we present a critique of scheduled sampling, a state-of-the-art training method that contributed to the winning entry to the MSCOCO image captioning benchmark in 2015. Here we show that despite this impressive empirical performance , the objective function underlying scheduled sampling is improper and leads to an inconsistent learning algorithm. Secondly, we revisit the problems that scheduled sampling was meant to address, and present an alternative interpretation. We argue that maximum likelihood is an inappropriate training objective when the end-goal is to generate natural-looking samples. We go on to derive an ideal objective function to use in this situation instead. We introduce a generalisation of adversarial training, and show how such method can interpolate between maximum likelihood training and our ideal training objective. To our knowledge this is the first theoretical analysis that explains why adversarial training tends to produce samples with higher perceived quality.},
+	archivePrefix = {arXiv},
+	arxivId = {1511.05101v1},
+	author = {Husz{\'{a}}r, Ferenc},
+	eprint = {1511.05101v1},
+	file = {::},
+	title = {{HOW (NOT) TO TRAIN YOUR GENERATIVE MODEL: SCHEDULED SAMPLING, LIKELIHOOD, ADVERSARY?}},
+	url = {https://arxiv.org/pdf/1511.05101.pdf}
+}
+@techreport{BengioSS,
+	abstract = {Recurrent Neural Networks can be trained to produce sequences of tokens given some input, as exemplified by recent results in machine translation and image captioning. The current approach to training them consists of maximizing the likelihood of each token in the sequence given the current (recurrent) state and the previous token. At inference, the unknown previous token is then replaced by a token generated by the model itself. This discrepancy between training and inference can yield errors that can accumulate quickly along the generated sequence. We propose a curriculum learning strategy to gently change the training process from a fully guided scheme using the true previous token, towards a less guided scheme which mostly uses the generated token instead. Experiments on several sequence prediction tasks show that this approach yields significant improvements. Moreover, it was used succesfully in our winning entry to the MSCOCO image captioning challenge, 2015.},
+	author = {Bengio, Samy and Vinyals, Oriol and Jaitly, Navdeep and Shazeer, Noam},
+	file = {::},
+	title = {{Scheduled Sampling for Sequence Prediction with Recurrent Neural Networks}},
+	url = {https://papers.nips.cc/paper/5956-scheduled-sampling-for-sequence-prediction-with-recurrent-neural-networks.pdf}
+}
+@techreport{Cho,
+	abstract = {In this paper, we propose a novel neu-ral network model called RNN Encoder-Decoder that consists of two recurrent neural networks (RNN). One RNN encodes a sequence of symbols into a fixed-length vector representation, and the other decodes the representation into another sequence of symbols. The encoder and de-coder of the proposed model are jointly trained to maximize the conditional probability of a target sequence given a source sequence. The performance of a statistical machine translation system is empirically found to improve by using the conditional probabilities of phrase pairs computed by the RNN Encoder-Decoder as an additional feature in the existing log-linear model. Qualitatively, we show that the proposed model learns a semantically and syntactically meaningful representation of linguistic phrases.},
+	archivePrefix = {arXiv},
+	arxivId = {1406.1078v3},
+	author = {Cho, Kyunghyun and {Van Merri{\"{e}}nboer}, Bart and Gulcehre, Caglar and Bahdanau, Dzmitry and Bougares, Fethi and Schwenk, Holger and Bengio, Yoshua},
+	eprint = {1406.1078v3},
+	file = {::},
+	title = {{Learning Phrase Representations using RNN Encoder-Decoder for Statistical Machine Translation}},
+	url = {https://arxiv.org/pdf/1406.1078.pdf}
+}
+
+@techreport{Vaswani,
+	abstract = {The dominant sequence transduction models are based on complex recurrent or convolutional neural networks that include an encoder and a decoder. The best performing models also connect the encoder and decoder through an attention mechanism. We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely. Experiments on two machine translation tasks show these models to be superior in quality while being more parallelizable and requiring significantly less time to train. Our model achieves 28.4 BLEU on the WMT 2014 English-to-German translation task, improving over the existing best results, including ensembles, by over 2 BLEU. On the WMT 2014 English-to-French translation task, our model establishes a new single-model state-of-the-art BLEU score of 41.8 after training for 3.5 days on eight GPUs, a small fraction of the training costs of the best models from the literature. We show that the Transformer generalizes well to other tasks by applying it successfully to English constituency parsing both with large and limited training data.},
+	archivePrefix = {arXiv},
+	arxivId = {1706.03762v5},
+	author = {Vaswani, Ashish and Brain, Google and Shazeer, Noam and Parmar, Niki and Uszkoreit, Jakob and Jones, Llion and Gomez, Aidan N and Kaiser, {\L}ukasz and Polosukhin, Illia},
+	eprint = {1706.03762v5},
+	file = {::},
+	title = {{Attention Is All You Need}},
+	url = {https://arxiv.org/pdf/1706.03762.pdf}
+}
+@techreport{Santoro,
+	abstract = {Memory-based neural networks model temporal data by leveraging an ability to remember information for long periods. It is unclear, however, whether they also have an ability to perform complex relational reasoning with the information they remember. Here, we first confirm our intuitions that standard memory architectures may struggle at tasks that heavily involve an understanding of the ways in which entities are connected-i.e., tasks involving relational reasoning. We then improve upon these deficits by using a new memory module-a Relational Memory Core (RMC)-which employs multi-head dot product attention to allow memories to interact. Finally, we test the RMC on a suite of tasks that may profit from more capable relational reasoning across sequential information, and show large gains in RL domains (e.g. Mini PacMan), program evaluation, and language modeling, achieving state-of-the-art results on the WikiText-103, Project Gutenberg, and GigaWord datasets.},
+	archivePrefix = {arXiv},
+	arxivId = {1806.01822v2},
+	author = {Santoro, Adam and Faulkner, Ryan and Raposo, David and {Rae $\alpha$$\beta$}, Jack and {Chrzanowski $\alpha$}, Mike and {Weber $\alpha$}, Th{\'{e}}ophane and {Wierstra $\alpha$}, Daan and {Vinyals $\alpha$}, Oriol and {Pascanu $\alpha$}, Razvan and {Lillicrap $\alpha$$\beta$}, Timothy},
+	eprint = {1806.01822v2},
+	file = {::},
+	title = {{Relational recurrent neural networks}},
+	url = {https://arxiv.org/pdf/1806.01822.pdf}
+}
+
+@techreport{GoodfellowGAN,
+	abstract = {We propose a new framework for estimating generative models via an adversar-ial process, in which we simultaneously train two models: a generative model G that captures the data distribution, and a discriminative model D that estimates the probability that a sample came from the training data rather than G. The training procedure for G is to maximize the probability of D making a mistake. This framework corresponds to a minimax two-player game. In the space of arbitrary functions G and D, a unique solution exists, with G recovering the training data distribution and D equal to 1 2 everywhere. In the case where G and D are defined by multilayer perceptrons, the entire system can be trained with backpropagation. There is no need for any Markov chains or unrolled approximate inference networks during either training or generation of samples. Experiments demonstrate the potential of the framework through qualitative and quantitative evaluation of the generated samples.},
+	archivePrefix = {arXiv},
+	arxivId = {1406.2661v1},
+	author = {Goodfellow, Ian J and Pouget-Abadie, Jean and Mirza, Mehdi and Xu, Bing and Warde-Farley, David and Ozair, Sherjil and Courville, Aaron and Bengio, Yoshua},
+	eprint = {1406.2661v1},
+	file = {::},
+	title = {{Generative Adversarial Nets}},
+	url = {http://www.github.com/goodfeli/adversarial}
+}
+
+@techreport{ChenAutonomousDriving,
+	abstract = {Today, there are two major paradigms for vision-based autonomous driving systems: mediated perception approaches that parse an entire scene to make a driving decision , and behavior reflex approaches that directly map an input image to a driving action by a regressor. In this paper, we propose a third paradigm: a direct perception approach to estimate the affordance for driving. We propose to map an input image to a small number of key perception indicators that directly relate to the affordance of a road/traffic state for driving. Our representation provides a set of compact yet complete descriptions of the scene to enable a simple controller to drive autonomously. Falling in between the two extremes of mediated perception and behavior reflex, we argue that our direct perception representation provides the right level of abstraction. To demonstrate this, we train a deep Convolutional Neural Network using recording from 12 hours of human driving in a video game and show that our model can work well to drive a car in a very diverse set of virtual environments. We also train a model for car distance estimation on the KITTI dataset. Results show that our direct perception approach can generalize well to real driving images. Source code and data are available on our project website.},
+	author = {Chen, Chenyi and Seff, Ari and Kornhauser, Alain and Xiao, Jianxiong},
+	file = {::},
+	title = {{DeepDriving: Learning Affordance for Direct Perception in Autonomous Driving}},
+	url = {http://deepdriving.cs.princeton.edu}
+}
+
+@inproceedings{AutonomousDriving2,
+	author = {Tian, Yuchi and Pei, Kexin and Jana, Suman and Ray, Baishakhi},
+	title = {DeepTest: Automated Testing of Deep-neural-network-driven Autonomous Cars},
+	booktitle = {Proceedings of the 40th International Conference on Software Engineering},
+	series = {ICSE '18},
+	year = {2018},
+	isbn = {978-1-4503-5638-1},
+	location = {Gothenburg, Sweden},
+	pages = {303--314},
+	numpages = {12},
+	url = {http://doi.acm.org/10.1145/3180155.3180220},
+	doi = {10.1145/3180155.3180220},
+	acmid = {3180220},
+	publisher = {ACM},
+	address = {New York, NY, USA},
+	keywords = {autonomous vehicle, deep learning, deep neural networks, neuron coverage, self-driving cars, testing},
+} 
+
+@online{Medicine,
+url = {https://emerj.com/ai-sector-overviews/machine-learning-medical-diagnostics-4-current-applications/}
+}
+
+@techreport{Lillicrap,
+	abstract = {We adapt the ideas underlying the success of Deep Q-Learning to the continuous action domain. We present an actor-critic, model-free algorithm based on the de-terministic policy gradient that can operate over continuous action spaces. Using the same learning algorithm, network architecture and hyper-parameters, our algorithm robustly solves more than 20 simulated physics tasks, including classic problems such as cartpole swing-up, dexterous manipulation, legged locomotion and car driving. Our algorithm is able to find policies whose performance is competitive with those found by a planning algorithm with full access to the dynamics of the domain and its derivatives. We further demonstrate that for many of the tasks the algorithm can learn policies "end-to-end": directly from raw pixel inputs .},
+	archivePrefix = {arXiv},
+	arxivId = {1509.02971v5},
+	author = {Lillicrap, Timothy P and Hunt, Jonathan J and Pritzel, Alexander and Heess, Nicolas and Erez, Tom and Tassa, Yuval and Silver, David and Wierstra, Daan},
+	eprint = {1509.02971v5},
+	file = {::},
+	title = {{CONTINUOUS CONTROL WITH DEEP REINFORCEMENT LEARNING}},
+	url = {https://goo.gl/J4PIAz}
+}
+
