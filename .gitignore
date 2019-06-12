@@ -15,3 +15,8 @@ resources/topic_models/*.pkl
 **/oracle/logs/summary/
 **/oracle/samples/
 **/oracle/logs/
+Latex/main.toc
+Latex/main.synctex.gz
+Latex/main.pdf
+Latex/main.log
+Latex/main.aux
