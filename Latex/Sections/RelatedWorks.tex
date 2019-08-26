@@ -8,16 +8,20 @@ There are lot of related works and I think it would be interesting to start from
 These models suffer of \textit{exposure bias}: this problem was presented by Bengio\cite{BengioSS} in 2015. This consists in the problem that training and inference are substantially different if in the training procedure you use the true token as input to generate just the next one, while in the inference you use the previously generated token to infer the next one and all the following ones. This is a big difference because in training is like you’re starting always from zero instead in the inference there is an error that increases over time due to the usage of predicted words and not real ones (that trivially you don’t have). Scheduled Sampling is a technique to solve it that uses a random variable in the train that states if to use a generated token or the true one, in order to make train and inference similar. Although it often increases performances, it was proved to be inconsistent by Huszar in 2015.\cite{Huszar} Also Professor Forcing \cite{LambTF} technique was proposed to solve this problem.
 
 \subsubsection[TopicRNN]{TopicRNN \cite{Dieng}}
+\label{sect:TopicRNN}
+\textit{Anche questo modello verrà analizzato nel dettaglio visto che è rilevante all'interno del nostro modello}
 
 \subsection{GAN Based}
 The adversarial training has been used in a comprehensive manner in numerous research and applications of Computer Vision. Also in the field of Natural Language Processing many of these techniques have been developed in recent years. \\
 Two of the main solutions are presented in detail below:
 \subsubsection[SeqGAN]{SeqGAN \cite{Yu2016}}
+\label{sect:SeqGAN}
 This is an important paper inside the context of text generation using adversarial training because it introduces efficiently the usage of REINFORCE algorithm inside the generation process. \\
-It will be analyzed more in detail.
+\textit{It will be analyzed more in detail.}
 
 \subsubsection[RelGAN]{RelGAN \cite{RelGAN}}
-Relational Generative Adversarial Netowrks for Text Generation: this paper, published at the conference ICLR 2019, introduces many novelties inside this research field and achieved state of the art results. These novelties can be summerized in three points:
+\label{sect:RelGAN}
+Relational Generative Adversarial Networks for Text Generation: this paper, published at the conference ICLR 2019, introduces many novelties inside this research field and achieved state of the art results. These novelties can be summerized in three points:
 \begin{enumerate}
 	\item \textit{Relational Memory Based Generator}: differently for many other models RelGAN does not use the typical RNN-based generator but authors has decided to use a Relational Memory \cite{Santoro}. The basic idea is to consider a steady set of memory slots and interact with these slots with a self-attention mechanism \cite{Vaswani}. The latter [Fig \ref{img:RelationalMemory}] has achieved remarkably results in many application for its ability to learn which is the best part of the memory to take information from for the following tasks.
 	
@@ -27,6 +31,8 @@ Relational Generative Adversarial Netowrks for Text Generation: this paper, publ
 		\caption{Relational Memory with Self-Attention Model}
 		\label{img:RelationalMemory}
 	\end{figure}
+	
+	\textit{Qua secondo me bisogna andare più nel dettaglio di cosa si fa effetivamente dentro una Relational Memory con anche formule etc perchè servono dopo per spiegare l'output del modello.}
 	
 	\item \textit{Gumbel-Softmax Relaxation}: This is the method that RelGAN uses to sample from the output distribution of the generator. As stated before in this discrete data environment it is important to have a one-hot like vector as output and many techniques were invented to deal with this problem. \textit{qui ci metto le formule perchè poi si possono paragonare con quello che facciamo noi}\\
 	It should also be consider the parameter $\beta$ that is called \textit{temperature} and it can control sample diversity and quality. Larger $\beta$ encourages more exploration to improve the diversity of the output instead smaller values of $\beta$ push to more exploitation, increasing the quality, therefore the Bleu score, conceding something on diversity. 

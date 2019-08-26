@@ -1,15 +1,15 @@
-import gc
+import random
 import time
 from typing import Dict, List
 
+import gc
 import numpy as np
-import random
+
+from topic_modelling.lda_utils import get_perc_sent_topic, process_texts
+from topic_modelling.lda_topic import train_specific_LDA, get_corpus
+
 
 # from gensim.utils import lemmatize
-from gensim.corpora import Dictionary
-
-from topic_modelling.lda_topic import train_lda, train_specific_LDA, LDA
-from topic_modelling.lda_utils import get_corpus, get_perc_sent_topic, process_texts
 
 
 class RealDataLoader:
@@ -85,6 +85,7 @@ class RealDataTopicLoader(RealDataLoader):
         self.lda = None
         self.lda_model_file = None
         self.data_file = None
+        self.dataset = None
 
     def create_batches(self, data_file):
         self.token_stream = []
@@ -149,12 +150,11 @@ class RealDataTopicLoader(RealDataLoader):
         """
         print("Computation of topic model started...")
         t = time.time()
-        from topic_modelling.lda_topic import train_specific_LDA, get_corpus, LDA
 
         # Create LDA model for the dataset, given parameters
         corpus_raw = get_corpus(datapath=self.lda_model_file)
         self.lda = train_specific_LDA(corpus_raw, num_top=self.topic_num, passes=2, iterations=2, chunksize=2000,
-                                      coco=True if 'coco' in self.lda_model_file else False)
+                                      dataset_name=self.dataset)
 
         self.topic_matrix = self.lda.lda_model.get_topics()  # num_topic x num_words
 
@@ -256,13 +256,12 @@ class RealDataTopicLoader(RealDataLoader):
 
         print("Computation of topic model started...")
         t = time.time()
-        from topic_modelling.lda_topic import train_specific_LDA, get_corpus, LDA
 
         # Create LDA model for the dataset, given parameters
         coco = True if "coco" in data_file else False  # Now it is just coco or not coco just for name saving reasons
         corpus_raw = get_corpus(coco, datapath=data_file)
         self.lda = train_specific_LDA(corpus_raw, num_top=self.topic_num, passes=2, iterations=2, chunksize=2000,
-                                      coco=coco)
+                                      dataset_name=self.dataset)
 
         # Get percentage of each topic in each sentence
 
@@ -306,3 +305,6 @@ class RealDataTopicLoader(RealDataLoader):
     def set_files(self, data_file, lda_file):
         self.lda_model_file = lda_file
         self.data_file = data_file
+
+    def set_dataset(self, dataset_name):
+        self.dataset = dataset_name

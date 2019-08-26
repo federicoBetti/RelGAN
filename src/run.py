@@ -84,7 +84,7 @@ def create_subsample_data_file(data_file, train_size=10000):
     final_sentences = random.sample(sentences, train_size)
     del sentences
 
-    train_file = data_file[:-3] * '_train.txt'
+    train_file = data_file[:-4] + '_train.txt'
     with open(train_file, 'w') as f:
         f.writelines(final_sentences)
     return train_file, data_file
@@ -113,7 +113,7 @@ def main():
         oracle_train(generator, discriminator, oracle_model, oracle_loader, gen_loader, config)
 
     elif args.dataset in ['image_coco', 'emnlp_news']:
-        print("Ciao")
+        # custom dataset selected
         data_file = resources_path(args.data_dir, '{}.txt'.format(args.dataset))
         sample_dir = resources_path(config['sample_dir'])
         oracle_file = os.path.join(sample_dir, 'oracle_{}.txt'.format(args.dataset))
@@ -125,9 +125,8 @@ def main():
             test_file = os.path.join(data_dir, 'testdata/test_emnlp.txt')
         else:
             raise NotImplementedError('Unknown dataset!')
-        # todo make something to save this
+
         seq_len, vocab_size, word_index_dict, index_word_dict = text_precess(data_file, test_file, oracle_file=oracle_file)
-        print("Ciao")
         config['seq_len'] = seq_len
         config['vocab_size'] = vocab_size
         print('seq_len: %d, vocab_size: %d' % (seq_len, vocab_size))
@@ -143,6 +142,7 @@ def main():
             oracle_loader.set_files(data_file, lda_file)
             oracle_loader.topic_num = topic_number
             oracle_loader.set_dictionaries(word_index_dict, index_word_dict)
+            oracle_loader.set_dataset = args.dataset
 
             generator = models.get_generator("rmc_att_topic", vocab_size=vocab_size, batch_size=args.batch_size,
                                              seq_len=seq_len, gen_emb_dim=args.gen_emb_dim, mem_slots=args.mem_slots,

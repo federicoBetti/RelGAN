@@ -1,15 +1,9 @@
-import os
-
+# from translate import Translator
+import numpy as np
 import tensorflow as tf
 from tensorflow.python.saved_model import tag_constants
 
-from path_resolution import resources_path
-from real.real_gan.real_topic_train_utils import get_accuracy, get_train_ops, get_metric_summary_op, get_losses
 from utils.text_process import code_to_text
-from utils.utils import CustomSummary
-# from translate import Translator
-from googletrans import Translator
-import numpy as np
 
 
 def print_best_words(topic, oracle_loader):

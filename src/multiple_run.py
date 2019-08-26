@@ -28,7 +28,7 @@ bs = '64'
 gpre_lr = '1e-2'
 hidden_dim = '32'
 seq_len = '20'
-dataset = 'image_coco'
+dataset = 'emnlp_news'
 
 gen_emb_dim = '32'
 dis_emb_dim = '64'

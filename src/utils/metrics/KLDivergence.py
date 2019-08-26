@@ -9,8 +9,11 @@ from utils.metrics.Metrics import Metrics
 
 
 def read_json_file(json_file):
-    with open(json_file) as json_file:
-        data = json.load(json_file)
+    try:
+        with open(json_file) as json_file:
+            data = json.load(json_file)
+    except FileNotFoundError:
+        data = None
     return data
 
 

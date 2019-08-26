@@ -151,6 +151,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
 
     # ------------- initial the graph --------------
     with init_sess() as sess:
+        print("Total paramter number: {}".format(np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()])))
         log = open(csv_file, 'w')
         # file_suffix = "date: {}, normal RelGAN, pretrain epochs: {}, adv epochs: {}".format(datetime.datetime.now(),
         #                                                                                     npre_epochs, nadv_steps)

@@ -1,11 +1,12 @@
 import os
-import pickle
+
 from multiprocessing.spawn import freeze_support
 
 from gensim.corpora import Dictionary
 from nltk.corpus import stopwords
 
 from topic_modelling.lda_utils import *
+from utils.static_file_manage import *
 import numpy as np
 
 
@@ -25,7 +26,8 @@ class LDA:
     def get_perc_topic_dict(self):
         if self.perc_topic_dict is None:
             self.perc_topic_dict = get_perc_sent_topic(ldamodel=self.lda_model, corpus=self.corpus_bow,
-                                                       texts=self.corpus_text, stops=self.stops, topic_num=self.topic_num)
+                                                       texts=self.corpus_text, stops=self.stops,
+                                                       topic_num=self.topic_num)
         return self.perc_topic_dict
 
 
@@ -74,23 +76,20 @@ def train_lda(coco=True, datapath=None):
 
     print("Computation finished")
 
-    with open(resources_path("topic_models",
-                             'lda_model_ntop_{}_iter_{}_pass_{}_chunk_{}_coco_{}.pkl'.format(lda_train.topic_num, 2,
-                                                                                             2, 2, coco)),
-              'wb') as handle:
-        pickle.dump(lda_train, handle, protocol=pickle.HIGHEST_PROTOCOL)
-        print("New model saved")
+    file_path = resources_path("topic_models",
+                               'lda_model_ntop_{}_iter_{}_pass_{}_chunk_{}_coco_{}.pkl'.format(lda_train.topic_num, 2,
+                                                                                               2, 2, coco))
+    write_pickle(file_path, lda_train)
+    print("New model saved")
     return lda_train
 
 
 def use_lda(model_name='lda_model.pkl'):
-    with open(os.path.join("topic_models", model_name), 'rb') as handle:
-        lda_train = pickle.load(handle)
-
+    lda_train = load_pickle(os.path.join("topic_models", model_name))
     return lda_train
 
 
-def train_specific_LDA(corpus, num_top, passes, iterations, random_state_lda=3, chunksize=2000, coco=True) -> LDA:
+def train_specific_LDA(corpus, num_top, passes, iterations, random_state_lda=3, chunksize=2000, dataset_name="NO") -> LDA:
     '''
     create an LDA model if needed, if it has been already computed and saved, use that one \n
     :param corpus: corpus (plain text)
@@ -102,18 +101,17 @@ def train_specific_LDA(corpus, num_top, passes, iterations, random_state_lda=3, 
     :return:
     '''
     try:
-        raise FileNotFoundError
-        with open(resources_path("topic_models",
-                                 'lda_model_ntop_{}_iter_{}_pass_{}_chunk_{}_coco_{}.pkl'.format(num_top, iterations,
-                                                                                                 passes,
-                                                                                                 chunksize, coco)),
-                  'rb') as handle:
-            lda = pickle.load(handle)
-            print("Model loaded")
+        file_path = resources_path("topic_models",
+                                   'lda_model_ntop_{}_iter_{}_pass_{}_chunk_{}_ds_{}.pkl'.format(num_top, iterations,
+                                                                                                   passes, chunksize,
+                                                                                                   dataset_name))
+        lda = load_pickle(file_path)
+        print("Model loaded")
         return lda
     except FileNotFoundError:
         print("No model found")
     t = time.time()
+    print("Start training a specific LDA model for dataset {} and number of topic {}".format(dataset_name, num_top))
     stops = set(stopwords.words('english'))
     tmp = process_texts(corpus, stops)
     dictionary = Dictionary(tmp)
@@ -125,12 +123,12 @@ def train_specific_LDA(corpus, num_top, passes, iterations, random_state_lda=3, 
     lda = LDA(lda_train=lda_train, corpus_text=corpus, corpus_bow=corpus_bow, stops=stops, topic_num=num_top,
               dictionary=dictionary, perc_topic_dict=df)
 
-    with open(resources_path("topic_models",
-                             'lda_model_ntop_{}_iter_{}_pass_{}_chunk_{}_coco_{}.pkl'.format(num_top, iterations,
-                                                                                             passes, chunksize, coco)),
-              'wb') as handle:
-        pickle.dump(lda, handle, protocol=pickle.HIGHEST_PROTOCOL)
-        print("New model saved in {} sec".format(time.time() - t))
+    file_path = resources_path("topic_models",
+                               'lda_model_ntop_{}_iter_{}_pass_{}_chunk_{}_ds_{}.pkl'.format(num_top, iterations,
+                                                                                               passes, chunksize, dataset_name))
+    write_pickle(file_path, lda)
+
+    print("New model saved in {} sec".format(time.time() - t))
     return lda
 
 
@@ -158,7 +156,7 @@ def get_most_representative_sentence_per_topic(lda: LDA):
     sent_topics_sorteddf_mallet.columns = ['Topic_Num', "Topic_Perc_Contrib", "Keywords", "Representative Text"]
 
     # Show
-    return sent_topics_sorteddf_mallet.head(42)
+    return sent_topics_sorteddf_mallet.head(lda.topic_num)
 
 
 if __name__ == '__main__':

@@ -1,9 +1,18 @@
 \textit{Here there is the big part on the work that we have done during the thesis. \\
 I think this should go through all the steps, the difficulties and the change we did in order to get to the result we'll have at the end. \\
 It is important to give a meaning to the whole thesis
-}
+\\ \\}
+Many of the works presented above (\nameref{sect:TopicRNN}, \nameref{sect:SeqGAN}, \nameref{sect:RelGAN}) are for sure interesting development for what concern pure text generation. However, if you want to take these models to a real world where there is a clear need to integrate the potential of these solutions with humans, it is mandatory to improve these architectures in order to consider a human input and then be able to manipulate the automatic generation of text according to the will of the user. With this in mind, the work aims to move away from the pure text generation towards a model of \textit{conditioned text generation}. This is the idea on which the proposed new architecture is based.
+
 \subsection{Methods}
-Here there are the things we have added and all the process that has been followed
+The most promising paper, at the moment of the beginning of the work, was the \nameref{sect:RelGAN} architecture published at one of the most famous and prestigious conference of Language Representation. For this reason the model is based on that solution. However it was a challenge to understand how to force the generation to create topic specific utterances. \\
+The output of the generator at each step is a vector that represent a distribution over the number of words: assuming that the vocabulary size is $V$, the output logits of the generator is $o_{t} \in \R ^{V}$. This output logits come from the relational memory output that was passed through a Linear Layer:
+\begin{equation}
+o_{t} = f_{\theta_{1}}(M_{t})
+\end{equation}
+
+
+The topic vector model, namely \nameref{sect:LDA}
 
 \subsection{Results}
 Here there are the results in which it is compared also with other approaches

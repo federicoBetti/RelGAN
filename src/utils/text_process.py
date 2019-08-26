@@ -1,10 +1,12 @@
 # coding=utf-8
-from typing import Tuple, Dict, Any
+from typing import Tuple, Dict
 
 import nltk
 
-
 # text tokens to code strings
+from utils.static_file_manage import load_json, load_pickle, write_json, write_pickle
+
+
 def text_to_code(tokens, dictionary, seq_len):
     code_str = ""
     eof_code = len(dictionary)  # used to filled in the blank to make up a sentence with seq_len
@@ -56,7 +58,6 @@ def get_tokenized(file):
     i = 0
     with open(file) as raw:
         for text in raw:
-            print(i)
             text = nltk.word_tokenize(text.lower())
             tokenized.append(text)
             i += 1
@@ -86,18 +87,34 @@ def get_dict(word_set: list) -> Tuple[Dict, Dict]:
 
 def text_precess(train_text_loc, test_text_loc=None, oracle_file=None) -> Tuple[int, int, dict, dict]:
     """
-    Get sequence length and dict size \n
+    Get sequence length and dict size plus word_index dict and index_word.
+    This is done because it is long to compute it in large corpora \n
     :param train_text_loc: train file
     :param test_text_loc: test file
     :return: sequence length of the longest sentences, dict size (how many different words), dict from word to index
     """
-    train_tokens = get_tokenized(train_text_loc)
-    if test_text_loc is None:
-        test_tokens = list()
-    else:
-        test_tokens = get_tokenized(test_text_loc)
-    word_set = get_word_list(train_tokens + test_tokens)
-    [word_index_dict, index_word_dict] = get_dict(word_set)
+
+    json_dict_wi_file = train_text_loc[:-4] + "_json_dict_wi.txt"
+    json_dict_iw_file = train_text_loc[:-4] + "_json_dict_iw.txt"
+    tokens_file = train_text_loc[:-4] + "_toekns.txt"
+
+    try:
+        word_index_dict = load_json(json_dict_wi_file)
+        index_word_dict = load_json(json_dict_iw_file)
+        (train_tokens, test_tokens) = load_pickle(tokens_file)
+
+    except FileNotFoundError:
+        # compute dictionaries and save them
+        train_tokens = get_tokenized(train_text_loc)
+        if test_text_loc is None:
+            test_tokens = list()
+        else:
+            test_tokens = get_tokenized(test_text_loc)
+        word_set = get_word_list(train_tokens + test_tokens)
+        [word_index_dict, index_word_dict] = get_dict(word_set)
+        write_json(json_dict_wi_file, word_index_dict)
+        write_json(json_dict_iw_file, index_word_dict)
+        write_pickle(tokens_file, train_tokens, test_tokens)
 
     if test_text_loc is None:
         sequence_len = len(max(train_tokens, key=len))
@@ -105,8 +122,11 @@ def text_precess(train_text_loc, test_text_loc=None, oracle_file=None) -> Tuple[
         sequence_len = max(len(max(train_tokens, key=len)), len(max(test_tokens, key=len)))
 
     if oracle_file:
-        # todo fare che non lo riscriva se c'è gia!!
-        with open(oracle_file, 'w') as outfile:
-            outfile.write(text_to_code(train_tokens + test_tokens, word_index_dict, sequence_len))
+        try:
+            fh = open(oracle_file, 'r')
+            # Store configuration file values
+        except FileNotFoundError:
+            with open(oracle_file, 'w') as outfile:
+                outfile.write(text_to_code(train_tokens + test_tokens, word_index_dict, sequence_len))
 
     return sequence_len, len(word_index_dict) + 1, word_index_dict, index_word_dict
