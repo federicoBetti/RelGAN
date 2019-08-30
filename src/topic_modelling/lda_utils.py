@@ -12,6 +12,8 @@ import numpy as np
 
 from path_resolution import resources_path
 
+from tqdm import tqdm
+
 
 def get_wordnet_pos(word):
     """Map POS tag to first character lemmatize() accepts"""
@@ -25,24 +27,33 @@ def get_wordnet_pos(word):
 
 
 def process_texts(input_texts, stops):
+    """
+    This function is processing the input text, removing stop words and lemmatizing it \n
+    :param input_texts:
+    :param stops: stop words that must be delated
+    :return:
+    """
     from nltk.stem import WordNetLemmatizer
     lemmatizer = WordNetLemmatizer()
     final = []
-    for i in input_texts:
-        texts = (re.sub(r"http\S+", "", i))
+    for i in tqdm(input_texts):
+        # remove http and lower case
+        texts = (re.sub(r"http\S+", "", i)).lower()
         # tokenize
-        texts = simple_tokenize(texts)
-        # lower case
-        texts = [word.lower() for word in texts]
-        # remove stopwords
-        texts = [word for word in texts if word not in stops]
+        texts = nltk.word_tokenize(texts)
 
-        # automatically detect common phrases
-        sentence = ' '.join(texts)
-        texts = [lemmatizer.lemmatize(w, get_wordnet_pos(w)) for w in nltk.word_tokenize(sentence)]
-        # texts = [str(word).split('/')[0].split('b\'')[1] for word in lemmatizer.lemmatize(sentence)]  # , allowed_tags=re.compile('(NN)'), min_length=2)]
+        # remove stopwords and lemmatize the sentence
+        texts = [lemmatizer.lemmatize(word) for word in texts if word not in stops]
+
+        # this is another version considering also postag, must be revised in case
+        # final_t = []
+        # for word, pos in nltk.pos_tag(texts):
+        #     if word not in stops:
+        #         final_t.append(lemmatizer.lemmatize(word, pos=pos))
+        # texts = [lemmatizer.lemmatize(
 
         final.append(texts)
+
     return final
 
 
@@ -154,12 +165,11 @@ def word_cloud(lda):
 def get_perc_sent_topic(ldamodel, corpus, texts, stops, topic_num):
     # Init output
     sent_topics_df = pd.DataFrame()
-    texts = process_texts(texts, stops)
 
     # Get main topic in each document
     for i, row_list in enumerate(ldamodel[corpus]):
         row = row_list[0] if ldamodel.per_word_topics else row_list
-        #print(row)
+        # print(row)
         # row = sorted(row, key=lambda x: (x[1]), reverse=True) # sort list to get dominant topic
         # Get the Dominant topic, Perc Contribution and Keywords for each document
         to_append = np.zeros(topic_num)

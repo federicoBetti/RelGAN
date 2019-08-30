@@ -303,6 +303,12 @@ class RealDataTopicLoader(RealDataLoader):
         return real_vector
 
     def set_files(self, data_file, lda_file):
+        """
+        set different files to train lda model and GAN model \n
+        :param data_file: file with sentences used to train GAN
+        :param lda_file: file with sentences used to train LDA
+        :return: None
+        """
         self.lda_model_file = lda_file
         self.data_file = data_file
 

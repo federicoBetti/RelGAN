@@ -127,6 +127,7 @@ def text_precess(train_text_loc, test_text_loc=None, oracle_file=None) -> Tuple[
             # Store configuration file values
         except FileNotFoundError:
             with open(oracle_file, 'w') as outfile:
-                outfile.write(text_to_code(train_tokens + test_tokens, word_index_dict, sequence_len))
+                outfile.write(text_to_code(train_tokens# + test_tokens
+                                           , word_index_dict, sequence_len))
 
     return sequence_len, len(word_index_dict) + 1, word_index_dict, index_word_dict

@@ -119,7 +119,7 @@ def train_specific_LDA(corpus, num_top, passes, iterations, random_state_lda=3, 
     lda_train = LdaModel(corpus=corpus_bow, num_topics=num_top, id2word=dictionary,
                          eval_every=1, passes=passes, chunksize=chunksize,
                          iterations=iterations, random_state=random_state_lda, dtype=np.float32)
-    df = get_perc_sent_topic(ldamodel=lda_train, corpus=corpus_bow, texts=corpus, stops=stops, topic_num=num_top)
+    df = get_perc_sent_topic(ldamodel=lda_train, corpus=corpus_bow, texts=tmp, stops=stops, topic_num=num_top)
     lda = LDA(lda_train=lda_train, corpus_text=corpus, corpus_bow=corpus_bow, stops=stops, topic_num=num_top,
               dictionary=dictionary, perc_topic_dict=df)
 

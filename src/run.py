@@ -79,14 +79,22 @@ parser.add_argument('--data-dir', default=os.path.join('.', 'data'), type=str, h
 
 def create_subsample_data_file(data_file, train_size=10000):
     print("Start of create subsample")
+    train_file = data_file[:-4] + '_train.txt'
+    if os.path.isfile(data_file) and os.path.isfile(train_file):
+        return train_file, data_file
+
+    sentences = []
     with open(data_file) as f:
-        sentences = [line.rstrip('\n') for line in f]
+        for line in f:
+            sentences.append(line.rstrip())
     final_sentences = random.sample(sentences, train_size)
     del sentences
 
-    train_file = data_file[:-4] + '_train.txt'
     with open(train_file, 'w') as f:
-        f.writelines(final_sentences)
+        for item in final_sentences:
+            f.write("%s\n" % item)
+
+    print("Files written")
     return train_file, data_file
 
 
@@ -126,15 +134,16 @@ def main():
         else:
             raise NotImplementedError('Unknown dataset!')
 
-        seq_len, vocab_size, word_index_dict, index_word_dict = text_precess(data_file, test_file, oracle_file=oracle_file)
-        config['seq_len'] = seq_len
-        config['vocab_size'] = vocab_size
-        print('seq_len: %d, vocab_size: %d' % (seq_len, vocab_size))
-
         if args.dataset == 'emnlp_news':
             data_file, lda_file = create_subsample_data_file(data_file)
         else:
             lda_file = data_file
+
+        seq_len, vocab_size, word_index_dict, index_word_dict = text_precess(data_file, test_file,
+                                                                             oracle_file=oracle_file)
+        config['seq_len'] = seq_len
+        config['vocab_size'] = vocab_size
+        print('seq_len: %d, vocab_size: %d' % (seq_len, vocab_size))
 
         if config['topic']:
             topic_number = config['topic_number']

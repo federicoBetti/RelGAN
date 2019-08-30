@@ -390,9 +390,6 @@ def get_train_ops(config, g_pretrain_loss, g_loss, d_loss, log_pg, temperature, 
                                         name="g_adv_clipping")
     g_train_op = g_optimizer.apply_gradients(zip(g_grads, g_vars))
 
-    print('len of g_grads without None: {}'.format(len([i for i in g_grads if i is not None])))
-    print('len of g_grads: {}'.format(len(g_grads)))
-
     # gradient clipping
     d_grads, _ = tf.clip_by_global_norm(tf.gradients(d_loss, d_vars, name="gradients_d_adv"), grad_clip,
                                         name="d_adv_clipping")
