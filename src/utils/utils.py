@@ -229,9 +229,9 @@ def take_sentences_topic(gen_text_file):
     with open(gen_text_file, 'r') as outfile:
         for line in outfile:
             all_strings.append(line)
-    #for line, taken_from_line in zip(all_strings[0::2], all_strings[1::2]):
-    #    strings.append(line + taken_from_line)
-    return all_strings
+    for line, taken_from_line in zip(all_strings[0::2], all_strings[1::2]):
+        strings.append(line + taken_from_line)
+    return strings
 
 
 class CustomSummary(object):

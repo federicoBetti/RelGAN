@@ -7,11 +7,11 @@ topic_architecture = ['standard', 'standard', 'reuse_att_topic', 'standard']
 gantype = ['standard', 'standard', 'standard', 'standard', 'standard']  # per ora funziona solo con questo il topic
 gsteps = ['1', '2', '2', '2']
 dsteps = ['5', '1', '2', '2']
-npre_epochs = ['150', '400', '250', '150']
+npre_epochs = ['100', '400', '250', '150']
 nadv_steps = ['5000', '6000', '5000', '5000']
 ntopic_pre_epochs = ['500', '500', '250', '50']
 opt_type = ['adam', 'adam', 'adam', 'adam']
-temperature = ['100', '1000', '1000', '100']
+temperature = ['1000', '1000', '1000', '100']
 d_lr = ['1e-4', '1e-4', '1e-4', '1e-4']
 gadv_lr = ['1e-4', '1e-4', '1e-4', '1e-4']
 
@@ -73,8 +73,8 @@ for job_id in range(job_number):
 
         # evaluation
         '--nll-gen',
-        # '--bleu',
-        # '--selfbleu',
+        '--bleu',
+        '--selfbleu',
         # '--doc-embsim',
         '--KL',
 
