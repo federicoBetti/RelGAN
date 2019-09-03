@@ -187,8 +187,9 @@ def gen_real_test_file_not_file(codes: str, sentence_generated_from, file, iw_di
     :param sentence_generated_from: sentences from which the topic was taken
     :param file: file where to save things
     :param iw_dict: index to word dictionary to convert from codes to words
+    :param generator_sentences: boolean, if to write the generator sentence from which the topic was taken
     """
-    raw = codes.split('\n')[:-1]
+    # raw = codes.split('\n')[:-1]
     # This was useless because it only arrives "int (float) int (float) ... "
     # tokenized = []
     # for text in raw:
@@ -202,11 +203,13 @@ def gen_real_test_file_not_file(codes: str, sentence_generated_from, file, iw_di
         for sent in json_file['sentences']:
             outfile.write(sent['generated_sentence'] + "\n")
             if generator_sentences:
-                outfile.write("\t ---- {}".format(sent['real_starting']) + "\n")
-        # for r, s in zip(raw, sentence_generated_from):
-        #     outfile.write(code_to_text(codes=[r], dictionary=iw_dict))
-        #     if generator_sentences:
-        #         outfile.write("\t ---- {}".format(code_to_text(codes=[s], dictionary=iw_dict)))
+                word_with_no_lambda = []
+                for letter in sent['generated']:
+                    generated_word, real_word = letter['word_text'], letter['no_lambda_word']
+                    if generated_word:
+                        word_with_no_lambda.append("{} ({}, {})".format(generated_word, letter['lambda'], real_word))
+                word_with_no_lambda = " ".join(word_with_no_lambda)
+                outfile.write("\t ---- {} ---- {}".format(word_with_no_lambda, sent['real_starting']) + "\n")
 
 
 def take_sentences(gen_text_file):
@@ -226,9 +229,9 @@ def take_sentences_topic(gen_text_file):
     with open(gen_text_file, 'r') as outfile:
         for line in outfile:
             all_strings.append(line)
-    for line, taken_from_line in zip(all_strings[0::2], all_strings[1::2]):
-        strings.append(line + taken_from_line)
-    return strings
+    #for line, taken_from_line in zip(all_strings[0::2], all_strings[1::2]):
+    #    strings.append(line + taken_from_line)
+    return all_strings
 
 
 class CustomSummary(object):

@@ -36,7 +36,7 @@ def process_texts(input_texts, stops):
     from nltk.stem import WordNetLemmatizer
     lemmatizer = WordNetLemmatizer()
     final = []
-    for i in tqdm(input_texts):
+    for i in input_texts:
         # remove http and lower case
         texts = (re.sub(r"http\S+", "", i)).lower()
         # tokenize

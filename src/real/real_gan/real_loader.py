@@ -231,6 +231,7 @@ class RealDataTopicLoader(RealDataLoader):
 
         real_vector = np.divide(real_vector, np.sum(real_vector, axis=1, keepdims=True))
         gc.collect()
+        print("Compute real vector time: {}".format(time.time() - t))
         return real_vector
 
     def random_topic(self):
