@@ -73,8 +73,8 @@ for job_id in range(job_number):
 
         # evaluation
         '--nll-gen',
-        '--bleu',
-        '--selfbleu',
+        #'--bleu',
+        #'--selfbleu',
         # '--doc-embsim',
         '--KL',
 
