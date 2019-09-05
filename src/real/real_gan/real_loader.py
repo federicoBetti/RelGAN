@@ -113,6 +113,7 @@ class RealDataTopicLoader(RealDataLoader):
         self.topic_batches = np.split(np.array(self.sentence_topic_array), self.num_batch, axis=0)
 
         self.pointer = 0
+        del self.lda
 
     def next_batch(self, only_text=True):
         # with the parameter I can change only when needed
