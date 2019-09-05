@@ -5,13 +5,13 @@ import os
 architecture = ['rmc_att_topic', 'rmc_att_topic', 'rmc_att_topic', 'rmc_att_topic']
 topic_architecture = ['standard', 'standard', 'reuse_att_topic', 'standard']
 gantype = ['standard', 'standard', 'standard', 'standard', 'standard']  # per ora funziona solo con questo il topic
-gsteps = ['1', '2', '2', '2']
-dsteps = ['5', '1', '2', '2']
-npre_epochs = ['200', '400', '250', '150']
-nadv_steps = ['5000', '6000', '5000', '5000']
+gsteps = ['2', '2', '2', '2']
+dsteps = ['1', '1', '2', '2']
+npre_epochs = ['350', '400', '250', '150']
+nadv_steps = ['6000', '6000', '5000', '5000']
 ntopic_pre_epochs = ['500', '500', '250', '50']
 opt_type = ['adam', 'adam', 'adam', 'adam']
-temperature = ['1000', '100', '1000', '100']
+temperature = ['100', '100', '1000', '100']
 d_lr = ['1e-4', '1e-4', '1e-4', '1e-4']
 gadv_lr = ['1e-4', '1e-4', '1e-4', '1e-4']
 
@@ -38,7 +38,7 @@ decay = False
 adapt = 'exp'
 ntest = '20'
 
-job_number = 3
+job_number = 1
 configurations = []
 for job_id in range(job_number):
     configurations.append([
