@@ -73,10 +73,10 @@ for job_id in range(job_number):
 
         # evaluation
         '--nll-gen',
-        #'--bleu',
+        '--bleu',
         #'--selfbleu',
         # '--doc-embsim',
-        '--KL',
+        # '--KL',
 
         # relational memory
         '--mem-slots', mem_slots[job_id],
