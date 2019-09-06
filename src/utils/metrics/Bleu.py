@@ -2,6 +2,7 @@ import random
 
 import nltk
 from nltk.translate.bleu_score import SmoothingFunction
+from tqdm import tqdm
 
 from utils.metrics.Metrics import Metrics
 

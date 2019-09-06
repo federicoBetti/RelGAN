@@ -309,9 +309,10 @@ def generator_pretrain(npre_epochs, sess, g_pretrain_op, g_pretrain_loss, x_real
         gen_pretrain_loss_summary.write_summary(g_pretrain_loss_np, epoch)
 
         # Test
-        ntest_pre = 30
+        ntest_pre = 40
         if np.mod(epoch, ntest_pre) == 0:
             # generate fake data and create batches
+            tqdm.write("Epoch: {}; Computing Metrics and writing summaries".format(epoch), end=" ")
             t = time.time()
             codes_with_lambda, sentence_generated_from, codes, json_object = generate_samples_topic(sess, x_fake,
                                                                                                     batch_size,
@@ -332,8 +333,6 @@ def generator_pretrain(npre_epochs, sess, g_pretrain_op, g_pretrain_loss, x_real
             gen_sentences_summary.write_summary(sent, epoch)
 
             # write summaries
-            tqdm.write("Epoch: {}; Computing Metrics and writing summaries".format(epoch), end=" ")
-            t = time.time()
             scores = [metric.get_score() for metric in metrics]
             metrics_summary_str = sess.run(metric_summary_op, feed_dict=dict(zip(metrics_pl, scores)))
             sum_writer.add_summary(metrics_summary_str, epoch)
