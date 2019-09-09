@@ -78,24 +78,25 @@ parser.add_argument('--data-dir', default=os.path.join('.', 'data'), type=str, h
 
 
 def create_subsample_data_file(data_file, train_size=10000):
+    lda_file = data_file
     print("Start of create subsample")
-    train_file = data_file[:-4] + '_train.txt'
-    if os.path.isfile(data_file) and os.path.isfile(train_file):
-        return train_file, data_file
+    new_data_file = lda_file[:-4] + '_train.txt'
+    if os.path.isfile(lda_file) and os.path.isfile(new_data_file):
+        return new_data_file, lda_file
 
     sentences = []
-    with open(data_file) as f:
+    with open(lda_file) as f:
         for line in f:
             sentences.append(line.rstrip())
     final_sentences = random.sample(sentences, train_size)
     del sentences
 
-    with open(train_file, 'w') as f:
+    with open(new_data_file, 'w') as f:
         for item in final_sentences:
             f.write("%s\n" % item)
 
     print("Files written")
-    return train_file, data_file
+    return new_data_file, lda_file
 
 
 def main():
@@ -134,7 +135,7 @@ def main():
         else:
             raise NotImplementedError('Unknown dataset!')
 
-        if args.dataset == 'emnlp_news':
+        if args.dataset == 'emnlp_news' and False:
             data_file, lda_file = create_subsample_data_file(data_file)
         else:
             lda_file = data_file
