@@ -234,7 +234,7 @@ class RelationalMemory(object):
 
         batch_size = memory.get_shape().as_list()[0]
         inputs = tf.reshape(inputs, [batch_size, -1])  # [B, In_size]
-        inputs = linear(inputs, self._mem_size, use_bias=True, scope='input_for_cancat')  # [B, V * H]
+        inputs = linear(inputs, self._mem_size, use_bias=True, scope='input_for_concat')  # [B, V * H]
         inputs_reshape = tf.expand_dims(inputs, 1)  # [B, 1, V * H]
 
         memory_plus_input = tf.concat([memory, inputs_reshape], axis=1)  # [B, N + 1, V * H]

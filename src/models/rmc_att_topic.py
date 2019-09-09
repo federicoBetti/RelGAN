@@ -42,7 +42,8 @@ def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen
         print_op_lambda = tf.print("Lambda= iteration:", i, " shape: {}, values:".format(lambda_param.shape),
                                    lambda_param)
         next_token_no_lambda = tf.cast(tf.argmax(o_t, axis=1), tf.int32)
-        o_t = o_t + lambda_param * topic_vector
+        o_t = add_gumbel(o_t)
+        o_t = (1 - lambda_param) * o_t + lambda_param * topic_vector
 
         gumbel_t = add_gumbel(o_t)
         # gumbel_t = tf.divide(gumbel_t, tf.reduce_sum(gumbel_t, axis=1, keepdims=True))
