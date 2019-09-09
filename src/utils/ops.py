@@ -202,7 +202,7 @@ def create_output_unit(output_size, vocab_size):
     def unit(hidden_mem_o):
         with tf.variable_scope("output_unit"):
             logits = tf.matmul(hidden_mem_o, Wo) + bo
-            logits = tf.nn.softmax(logits)  # so that they are positive todo fare qualcosa qua nel caso
+            # logits = tf.nn.softmax(logits)  # so that they are positive todo fare qualcosa qua nel caso
         return logits
 
     return unit
