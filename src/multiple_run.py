@@ -7,7 +7,7 @@ topic_architecture = ['standard', 'standard', 'reuse_att_topic', 'standard']
 gantype = ['standard', 'standard', 'standard', 'standard', 'standard']  # per ora funziona solo con questo il topic
 gsteps = ['2', '2', '2', '2']
 dsteps = ['5', '1', '2', '2']
-npre_epochs = ['350', '400', '250', '150']
+npre_epochs = ['350', '250', '250', '150']
 nadv_steps = ['6000', '6000', '5000', '5000']
 ntopic_pre_epochs = ['500', '500', '250', '50']
 opt_type = ['adam', 'adam', 'adam', 'adam']
@@ -19,7 +19,7 @@ gadv_lr = ['1e-4', '1e-4', '1e-4', '1e-4']
 topic_number = ['9', '15', '9', '6']
 
 # Memory Related
-mem_slots = ['1', '1', '1', '1', '1', '1', '1', '1']
+mem_slots = ['1', '2', '1', '1', '1', '1', '1', '1']
 head_size = ['256', '256', '256', '256', '256', '256', '256', '256']
 num_heads = ['2', '2', '2', '2', '2', '2', '2', '2']
 seed = ['171', '172', '173', '174', '175', '176', '177', '178']
@@ -38,7 +38,7 @@ decay = False
 adapt = 'exp'
 ntest = '20'
 
-job_number = 1
+job_number = 2
 configurations = []
 for job_id in range(job_number):
     configurations.append([
