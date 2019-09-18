@@ -135,7 +135,7 @@ def main():
         else:
             raise NotImplementedError('Unknown dataset!')
 
-        if args.dataset == 'emnlp_news' and False:
+        if args.dataset == 'emnlp_news':
             data_file, lda_file = create_subsample_data_file(data_file)
         else:
             lda_file = data_file
@@ -160,7 +160,7 @@ def main():
                                              hidden_dim=args.hidden_dim,
                                              start_token=args.start_token)
 
-            discriminator = models.get_discriminator("rmc_att_topic", batch_size=args.batch_size,
+            discriminator = models.get_discriminator("rmc_vanilla", batch_size=args.batch_size,
                                                      seq_len=seq_len,
                                                      vocab_size=vocab_size, dis_emb_dim=args.dis_emb_dim,
                                                      num_rep=args.num_rep, sn=args.sn)

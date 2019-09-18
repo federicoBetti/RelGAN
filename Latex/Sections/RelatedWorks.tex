@@ -34,9 +34,24 @@ Relational Generative Adversarial Networks for Text Generation: this paper, publ
 	
 	\textit{Qua secondo me bisogna andare più nel dettaglio di cosa si fa effetivamente dentro una Relational Memory con anche formule etc perchè servono dopo per spiegare l'output del modello.}
 	
-	\item \textit{Gumbel-Softmax Relaxation}: This is the method that RelGAN uses to sample from the output distribution of the generator. As stated before in this discrete data environment it is important to have a one-hot like vector as output and many techniques were invented to deal with this problem. \textit{qui ci metto le formule perchè poi si possono paragonare con quello che facciamo noi}\\
+	\item \textit{Gumbel-Softmax Relaxation}: This is the method that RelGAN uses to sample from the output distribution of the generator. As stated before in this discrete data environment it is important to have a one-hot like vector as output and many techniques were invented to deal with this problem. This is a technique used to sample from a distribution. The problem is that sampling from a multinomial distribution can be done using \myeqref{eq:ArgmaxSampling}.
+	
+	\begin{equation} \label{eq:ArgmaxSampling}
+	y_{t} = one\_hot(arg max(o_{t})) 
+	\end{equation}
+	
+	However, it is not possible to pass the gradient through the operation of argmax because it is not drivable. For this reason some techniques, such as Gumbel-softmax relaxation, have been invented.
+	\begin{equation}
+	\begin{split}
+	\label{eq:gumbel}
+	y_{t} = \sigma(\beta(o_{t} + g_{t})) \\
+	g_{t} = -log(-log \; U_{t}) \\
+	U_{t} \sim Uniform(0,1)
+	\end{split}
+	\end{equation}
+	where $\sigma(\cdot)$ is a softmax function which is done element-wisely on its argument. \\
 	It should also be consider the parameter $\beta$ that is called \textit{temperature} and it can control sample diversity and quality. Larger $\beta$ encourages more exploration to improve the diversity of the output instead smaller values of $\beta$ push to more exploitation, increasing the quality, therefore the Bleu score, conceding something on diversity. 
-	\item \textit{Multiple Representation in Discriminator}: A common used discriminator in such cases is a CNN-based classifier for its ability, thanks to filters of different sizes, of collecting information from different relations between elements in the input. In this case the input is a series of one-hot vector (formula del one-hot vecotr con le dimensioni corrette) and, as proposed in previous chapter, it is important to have an embedding matrix to capture different concepts around the input sequence. It often happens that the embedding matrix is learnt through gradient propagation by the system in order to have the best possible embedded representation. In this work they propose not have one such structure but many of them in parallel, as show in [Fig \ref{img:MultipleDiscriminator}], in order to allow the network to learn different representation of the words in input. Thanks to the ablation study done at the end of the paper it is clear how this procedure is effective to push the generation forward keeping important information on the context and on the syntax situation of the sentence ($e.g.$ if a comma or a preposition is needed)
+	\item \textit{Multiple Representation in Discriminator}: A common used discriminator in such cases is a CNN-based classifier for its ability, thanks to filters of different sizes, of collecting information from different relations between elements in the input. In this case the input is a series of one-hot vector $[r_{1} : ... : r_{T}]$ and, as proposed in previous chapter, it is important to have an embedding matrix to capture different concepts around the input sequence. It often happens that the embedding matrix is learnt through gradient propagation by the system in order to have the best possible embedded representation. In this work they propose not have one such structure but many of them in parallel, as show in [Fig \ref{img:MultipleDiscriminator}], in order to allow the network to learn different representation of the words in input. Thanks to the ablation study done at the end of the paper it is clear how this procedure is effective to push the generation forward keeping important information on the context and on the syntax situation of the sentence ($e.g.$ if a comma or a preposition is needed)
 		
 	\begin{figure}[h!]
 		\centering

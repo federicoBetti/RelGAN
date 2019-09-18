@@ -21,13 +21,12 @@ class LDA:
         self.perc_topic_dict = perc_topic_dict
 
     def __str__(self):
-        return "This is the class with this LDA model: {}".format(self.lda_model)
+        return "{}".format(self.lda_model)
 
     def get_perc_topic_dict(self):
         if self.perc_topic_dict is None:
             self.perc_topic_dict = get_perc_sent_topic(ldamodel=self.lda_model, corpus=self.corpus_bow,
-                                                       texts=self.corpus_text, stops=self.stops,
-                                                       topic_num=self.topic_num)
+                                                       texts=self.corpus_text, topic_num=self.topic_num)
         return self.perc_topic_dict
 
 
@@ -119,7 +118,7 @@ def train_specific_LDA(corpus, num_top, passes, iterations, random_state_lda=3, 
     lda_train = LdaModel(corpus=corpus_bow, num_topics=num_top, id2word=dictionary,
                          eval_every=1, passes=passes, chunksize=chunksize,
                          iterations=iterations, random_state=random_state_lda, dtype=np.float32)
-    df = get_perc_sent_topic(ldamodel=lda_train, corpus=corpus_bow, texts=tmp, stops=stops, topic_num=num_top)
+    df = get_perc_sent_topic(ldamodel=lda_train, corpus=corpus_bow, texts=tmp, topic_num=num_top)
     lda = LDA(lda_train=lda_train, corpus_text=corpus, corpus_bow=corpus_bow, stops=stops, topic_num=num_top,
               dictionary=dictionary, perc_topic_dict=df)
 

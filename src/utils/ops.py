@@ -208,7 +208,7 @@ def create_output_unit(output_size, vocab_size):
     return unit
 
 
-def create_output_unit_lambda(output_size, input_size, additive_scope="_lambda"):
+def create_output_unit_lambda(output_size, input_size, additive_scope="_lambda", min_value=0.01):
     """
     create a one-layer MLP with sigmoid in the end
     :param output_size: if lambda is a scalar it is one

@@ -82,8 +82,8 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
     lambda_values_returned, gen_x_no_lambda = generator(x_real=x_real,
                                                         temperature=temperature,
                                                         x_topic=x_topic)
-    d_out_real = discriminator(x_onehot=x_real_onehot, with_out=False)
-    d_out_fake = discriminator(x_onehot=x_fake_onehot_appr, with_out=False)
+    d_out_real = discriminator(x_onehot=x_real_onehot)#, with_out=False)
+    d_out_fake = discriminator(x_onehot=x_fake_onehot_appr)#, with_out=False)
     d_topic_out_real_pos = topic_discriminator(x_onehot=x_real_onehot, x_topic=x_topic)
     d_topic_out_real_neg = topic_discriminator(x_onehot=x_real_onehot, x_topic=x_topic_random)
     d_topic_out_fake = topic_discriminator(x_onehot=x_fake_onehot_appr, x_topic=x_topic)

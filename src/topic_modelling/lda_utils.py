@@ -14,6 +14,8 @@ from path_resolution import resources_path
 
 from tqdm import tqdm
 
+from utils.static_file_manage import load_pickle, write_pickle
+
 
 def get_wordnet_pos(word):
     """Map POS tag to first character lemmatize() accepts"""
@@ -36,7 +38,7 @@ def process_texts(input_texts, stops):
     from nltk.stem import WordNetLemmatizer
     lemmatizer = WordNetLemmatizer()
     final = []
-    for i in input_texts:
+    for i in tqdm(input_texts):
         # remove http and lower case
         texts = (re.sub(r"http\S+", "", i)).lower()
         # tokenize
@@ -162,25 +164,40 @@ def word_cloud(lda):
     plt.show()
 
 
-def get_perc_sent_topic(ldamodel, corpus, texts, stops, topic_num):
-    # Init output
-    sent_topics_df = pd.DataFrame()
+def get_perc_sent_topic(lda, topic_num, data_file):
 
-    # Get main topic in each document
-    for i, row_list in enumerate(ldamodel[corpus]):
-        row = row_list[0] if ldamodel.per_word_topics else row_list
-        # print(row)
-        # row = sorted(row, key=lambda x: (x[1]), reverse=True) # sort list to get dominant topic
-        # Get the Dominant topic, Perc Contribution and Keywords for each document
-        to_append = np.zeros(topic_num)
-        for j, (topic_n, prop_topic) in enumerate(row):
-            to_append[topic_n] = prop_topic
-        sent_topics_df = sent_topics_df.append(pd.Series(to_append), ignore_index=True)
+    file_path = "{}-{}-{}".format(lda.lda_model, topic_num, data_file[-10:])
+    file_path = resources_path("topic_models", file_path)
+    try:
+        sent_topics_df = load_pickle(file_path)
+    except FileNotFoundError:
+        ldamodel = lda.lda_model
+        with open(data_file) as f:
+            sentences = [line.rstrip('\n') for line in f]
 
-    sent_topics_df.columns = ["Topic {}".format(topic_number) for topic_number in range(len(to_append))]
+        tmp = process_texts(sentences, lda.stops)
+        corpus_bow = [lda.dictionary.doc2bow(i) for i in tmp]
+        # Init output
+        sent_topics_df = pd.DataFrame()
 
-    # Add original text to the end of the output
-    contents = pd.Series(texts)
-    sent_topics_df = pd.concat([sent_topics_df, contents], axis=1)
-    sent_topics_df = sent_topics_df.reset_index()
+        # Get main topic in each document
+        for i, row_list in enumerate(tqdm(ldamodel[corpus_bow])):
+            row = row_list[0] if ldamodel.per_word_topics else row_list
+            # print(row)
+            # row = sorted(row, key=lambda x: (x[1]), reverse=True) # sort list to get dominant topic
+            # Get the Dominant topic, Perc Contribution and Keywords for each document
+            to_append = np.zeros(topic_num)
+            for j, (topic_n, prop_topic) in enumerate(row):
+                to_append[topic_n] = prop_topic
+            sent_topics_df = sent_topics_df.append(pd.Series(to_append), ignore_index=True)
+
+        sent_topics_df.columns = ["Topic {}".format(topic_number) for topic_number in range(len(to_append))]
+
+        # Add original text to the end of the output
+        contents = pd.Series(sentences)
+        sent_topics_df = pd.concat([sent_topics_df, contents], axis=1)
+        sent_topics_df = sent_topics_df.reset_index()
+
+        write_pickle(file_path, sent_topics_df)
+
     return sent_topics_df

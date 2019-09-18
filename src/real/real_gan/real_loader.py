@@ -5,6 +5,7 @@ from typing import Dict, List
 import gc
 import numpy as np
 
+from path_resolution import resources_path
 from topic_modelling.lda_utils import get_perc_sent_topic, process_texts
 from topic_modelling.lda_topic import train_specific_LDA, get_corpus
 
@@ -173,50 +174,10 @@ class RealDataTopicLoader(RealDataLoader):
         gc.collect()
 
         return self.compute_real_vector()
-        # df = self.lda.get_perc_topic_dict()
-        # # Get percentage of each topic in each sentence
-        # # df = get_perc_sent_topic(ldamodel=self.lda.lda_model, corpus=self.lda.corpus_bow, texts=self.lda.corpus_text,
-        # #                          stops=self.lda.stops, topic_num=self.topic_num)
-        # self.topic_matrix = self.lda.lda_model.get_topics()  # num_topic x num_words
-        # topic_weights = df.values[:, 1:self.topic_num + 1]  # num_sentences x num_topic (each row sum to 1)
-        # topic_sentences = np.dot(topic_weights, self.topic_matrix)  # num_sentences x num_word
-        # topic_sentences = np.divide(topic_sentences,
-        #                             np.sum(topic_sentences, axis=1, keepdims=True))  # rowwise normalization
-        #
-        # # get model lemmatized version of the words, it's needed because LDA does it and model processing doesn't
-        # from nltk.stem import WordNetLemmatizer
-        # lemmatizer = WordNetLemmatizer()
-        #
-        # self.texts = [lemmatizer.lemmatize(word) for word in self.model_word_index_dict.keys()]
-        # self.lda_index_word_dict = self.lda.dictionary.id2token
-        #
-        # print("Before real vector computed in {} sec!".format(time.time() - t))
-        # # todo il +1 è stato aggiunto perchè anche nel modello lo fa, bisogna vedere se è da aggiungere sopra o sotto
-        # real_vector = np.zeros(
-        #     (topic_sentences.shape[0], len(self.model_word_index_dict) + 1))  # sentence_number x vocab_size
-        # self.inverse_indexes = [self.get_model_index(i) for i in range(len(self.lda_index_word_dict))]
-        # print("number of LDA words: {}".format(len(self.lda_index_word_dict)))
-        #
-        # # since the parallelism is the same for each sentence, it is done word by word for all sentences all together.
-        # # It is possible that a word in the LDA corresponds to more words in the model due to lemmatization procedure
-        # for ind, invere_index in enumerate(self.inverse_indexes):  # todo make it faster
-        #     # more than one index in the model because of lemmatization
-        #     for x in invere_index:
-        #         real_vector[:, x] = topic_sentences[:, ind]
-        # print("Topic model computed in {} sec!".format(time.time() - t))
-        # gc.collect()
-        # real_vector = np.divide(real_vector, np.sum(real_vector, axis=1, keepdims=True))
-        # return real_vector
 
     def compute_real_vector(self):
         t = time.time()
-        with open(self.data_file) as f:
-            sentences = [line.rstrip('\n') for line in f]
-
-        tmp = process_texts(sentences, self.lda.stops)
-        corpus_bow = [self.lda.dictionary.doc2bow(i) for i in tmp]
-        df = get_perc_sent_topic(ldamodel=self.lda.lda_model, corpus=corpus_bow, texts=sentences,
-                                 stops=self.lda.stops, topic_num=self.topic_num)
+        df = get_perc_sent_topic(lda=self.lda, topic_num=self.topic_num, data_file=self.data_file)
         topic_weights = df.values[:, 1:self.topic_num + 1]  # num_sentences x num_topic (each row sum to 1)
         topic_sentences = np.dot(topic_weights, self.topic_matrix)  # num_sentences x num_word
         topic_sentences = np.divide(topic_sentences,
@@ -252,8 +213,6 @@ class RealDataTopicLoader(RealDataLoader):
             return from_lemmatize
 
     def get_LDA(self, word_index_dict, index_word_dict, data_file):
-        self.model_word_index_dict = word_index_dict
-        self.model_index_word_dict = index_word_dict
         self.vocab_size = len(self.model_index_word_dict)
 
         print("Computation of topic model started...")
@@ -287,7 +246,7 @@ class RealDataTopicLoader(RealDataLoader):
         tmp = process_texts(sentences, self.lda.stops)
         corpus_bow = [self.lda.dictionary.doc2bow(i) for i in tmp]
         df = get_perc_sent_topic(ldamodel=self.lda.lda_model, corpus=corpus_bow, texts=sentences,
-                                 stops=self.lda.stops, topic_num=self.topic_num)
+                                 topic_num=self.topic_num)
         topic_weights = df.values[:, 1:self.topic_num + 1]  # num_sentences x num_topic (each row sum to 1)
         topic_sentences = np.dot(topic_weights, self.topic_matrix)  # num_sentences x num_word
         topic_sentences = np.divide(topic_sentences,
