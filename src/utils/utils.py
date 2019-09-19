@@ -45,7 +45,7 @@ def generate_samples_topic(sess, gen_x, batch_size, generated_num, lambda_values
     sentence_generated_from = []
     generated_samples_no_lambda_words = []
 
-    max_gen = int(generated_num / batch_size)  # 156
+    max_gen = int(generated_num / batch_size) - 155 # 156
     for ii in range(max_gen):
         text_batch, topic_batch = oracle_loader.random_batch(only_text=False)
         feed = {x_topic: topic_batch}
@@ -109,7 +109,7 @@ def pre_train_epoch(sess, g_pretrain_op, g_pretrain_loss, x_real, data_loader, x
     data_loader.reset_pointer()
 
     from tqdm import tqdm
-    for it in tqdm(range(data_loader.num_batch)):
+    for it in tqdm(range(data_loader.num_batch - 155)):
         if x_topic is not None:
             text_batch, topic_batch = data_loader.next_batch(only_text=False)
             _, g_loss = sess.run([g_pretrain_op, g_pretrain_loss], feed_dict={x_real: text_batch, x_topic: topic_batch})

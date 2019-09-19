@@ -29,35 +29,35 @@ def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen
     topicness_values = tensor_array_ops.TensorArray(dtype=tf.float32, size=seq_len, dynamic_size=False,
                                                     infer_shape=True)
     gen_x_no_lambda = tensor_array_ops.TensorArray(dtype=tf.int32, size=seq_len, dynamic_size=False,
-                                                    infer_shape=True)
+                                                   infer_shape=True)
 
     def _gen_recurrence(i, x_t, h_tm1, gen_o, gen_x, gen_x_onehot_adv, lambda_values, gen_x_no_lambda):
         mem_o_t, h_t = gen_mem(x_t, h_tm1)  # hidden_memory_tuple, output della memoria che si potrebbe riutilizzare
         o_t = g_output_unit(mem_o_t)  # batch x vocab, logits not prob
 
-        print_op = tf.print("o_t shape", o_t.shape, ", o_t: ", o_t[0], output_stream=sys.stderr)
+        # print_op = tf.print("o_t shape", o_t.shape, ", o_t: ", o_t[0], output_stream=sys.stderr)
 
         topic_vector = x_topic
         lambda_param = g_output_unit_lambda(mem_o_t)
-        print_op_lambda = tf.print("Lambda= iteration:", i, " shape: {}, values:".format(lambda_param.shape),
-                                   lambda_param)
+        # print_op_lambda = tf.print("Lambda= iteration:", i, " shape: {}, values:".format(lambda_param.shape), lambda_param)
         next_token_no_lambda = tf.cast(tf.argmax(o_t, axis=1), tf.int32)
         # o_t = add_gumbel(o_t)
+        lambda_param = 0
         o_t = (1 - lambda_param) * o_t + lambda_param * topic_vector
 
         gumbel_t = add_gumbel(o_t)
         # gumbel_t = tf.divide(gumbel_t, tf.reduce_sum(gumbel_t, axis=1, keepdims=True))
-        print_op1 = tf.print("Gumbel_t before lambda: ", gumbel_t[0])
+        # print_op1 = tf.print("Gumbel_t before lambda: ", gumbel_t[0])
         # print_op2 = tf.print("x_topic shape", x_topic.shape, ", x_topic: ", x_topic, output_stream=sys.stderr)
 
-        print_op_topic = tf.print("Topic: ", topic_vector[0])
+        # print_op_topic = tf.print("Topic: ", topic_vector[0])
 
         next_token = tf.cast(tf.argmax(gumbel_t, axis=1), tf.int32)
 
         x_onehot_appr = tf.nn.softmax(tf.multiply(gumbel_t, temperature, name="gumbel_x_temp"),
                                       name="softmax_gumbel_temp")  # one-hot-like, [batch_size x vocab_size]
         # x_onehot_appr = (1 - lambda_param) * x_onehot_appr + lambda_param * topic_vector
-        print_op2 = tf.print("Final x_one_hot_appr: ", x_onehot_appr[0])
+        # print_op2 = tf.print("Final x_one_hot_appr: ", x_onehot_appr[0])
         # x_tp1 = tf.matmul(x_onehot_appr, g_embeddings)  # approximated embeddings, [batch_size x emb_dim]
 
         # with tf.control_dependencies([print_op, print_op1, print_op2, print_op_topic, print_op_lambda]):
@@ -75,7 +75,8 @@ def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen
         cond=lambda i, _1, _2, _3, _4, _5, _6, _7: i < seq_len,
         body=_gen_recurrence,
         loop_vars=(tf.constant(0, dtype=tf.int32), tf.nn.embedding_lookup(g_embeddings, start_tokens),
-                   init_states, gen_o, gen_x, gen_x_onehot_adv, topicness_values, gen_x_no_lambda), name="while_adv_recurrence")
+                   init_states, gen_o, gen_x, gen_x_onehot_adv, topicness_values, gen_x_no_lambda),
+        name="while_adv_recurrence")
 
     gen_x = gen_x.stack()  # seq_len x batch_size
     gen_x = tf.transpose(gen_x, perm=[1, 0], name="gen_x_trans")  # batch_size x seq_len
@@ -105,6 +106,7 @@ def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen
         mem_o_t, h_t = gen_mem(x_t, h_tm1)
         o_t = g_output_unit(mem_o_t)
         lambda_param = g_output_unit_lambda(mem_o_t)
+        lambda_param = 0
         g_predictions = g_predictions.write(i, tf.nn.softmax(
             (1 - lambda_param) * o_t + lambda_param * x_topic))  # batch_size x vocab_size
         x_tp1 = ta_emb_x.read(i)
@@ -205,7 +207,6 @@ def topic_discriminator(x_onehot, x_topic, batch_size, seq_len, vocab_size, dis_
     flatten = tf.concat([out, first_topic], axis=1)
 
     logits = linear(flatten, output_size=1, use_bias=True, sn=sn, scope='fc_topic')
-    logits = tf.sigmoid(logits)
     logits = tf.squeeze(logits, -1)  # batch_size
     return logits
 
