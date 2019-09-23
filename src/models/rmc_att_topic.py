@@ -7,7 +7,7 @@ from utils.ops import *
 
 
 def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen_emb_dim, mem_slots, head_size,
-              num_heads, hidden_dim, start_token, use_lambda=True):
+              num_heads, hidden_dim, start_token, use_lambda=True, **kwargs):
     start_tokens = tf.constant([start_token] * batch_size, dtype=tf.int32)
     output_memory_size = mem_slots * head_size * num_heads
 
@@ -15,6 +15,7 @@ def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen
                                    initializer=create_linear_initializer(vocab_size))
     gen_mem = RelationalMemory(mem_slots=mem_slots, head_size=head_size, num_heads=num_heads)
     g_output_unit = create_output_unit(output_memory_size, vocab_size)
+    g_topic_embedding = create_topic_embedding_unit(vocab_size, gen_emb_dim)
     g_output_unit_lambda = create_output_unit_lambda(output_size=1, input_size=output_memory_size,
                                                      additive_scope="_lambda", min_value=0.01)
 
@@ -33,6 +34,8 @@ def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen
 
     def _gen_recurrence(i, x_t, h_tm1, gen_o, gen_x, gen_x_onehot_adv, lambda_values, gen_x_no_lambda):
         mem_o_t, h_t = gen_mem(x_t, h_tm1)  # hidden_memory_tuple, output della memoria che si potrebbe riutilizzare
+        if "TopicInMemory" in kwargs and kwargs["TopicInMemory"]:
+            mem_o_t, h_t = gen_mem(g_topic_embedding(x_topic), h_t)
         o_t = g_output_unit(mem_o_t)  # batch x vocab, logits not prob
 
         # print_op = tf.print("o_t shape", o_t.shape, ", o_t: ", o_t[0], output_stream=sys.stderr)
@@ -42,8 +45,8 @@ def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen
         # print_op_lambda = tf.print("Lambda= iteration:", i, " shape: {}, values:".format(lambda_param.shape), lambda_param)
         next_token_no_lambda = tf.cast(tf.argmax(o_t, axis=1), tf.int32)
         # o_t = add_gumbel(o_t)
-        lambda_param = 0
-        o_t = (1 - lambda_param) * o_t + lambda_param * topic_vector
+        # lambda_param = tf.zeros(lambda_param.shape)
+        o_t =  o_t + lambda_param * topic_vector
 
         gumbel_t = add_gumbel(o_t)
         # gumbel_t = tf.divide(gumbel_t, tf.reduce_sum(gumbel_t, axis=1, keepdims=True))
@@ -104,11 +107,12 @@ def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen
 
     def _pretrain_recurrence(i, x_t, h_tm1, g_predictions):
         mem_o_t, h_t = gen_mem(x_t, h_tm1)
+        if "TopicInMemory" in kwargs and kwargs["TopicInMemory"]:
+            mem_o_t, h_t = gen_mem(g_topic_embedding(x_topic), h_t)
         o_t = g_output_unit(mem_o_t)
         lambda_param = g_output_unit_lambda(mem_o_t)
-        lambda_param = 0
-        g_predictions = g_predictions.write(i, tf.nn.softmax(
-            (1 - lambda_param) * o_t + lambda_param * x_topic))  # batch_size x vocab_size
+        lambda_param = tf.zeros(lambda_param.shape)
+        g_predictions = g_predictions.write(i, tf.nn.softmax(o_t + lambda_param * x_topic))  # batch_size x vocab_size
         x_tp1 = ta_emb_x.read(i)
         return i + 1, x_tp1, h_t, g_predictions
 

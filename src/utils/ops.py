@@ -202,7 +202,21 @@ def create_output_unit(output_size, vocab_size):
     def unit(hidden_mem_o):
         with tf.variable_scope("output_unit"):
             logits = tf.matmul(hidden_mem_o, Wo) + bo
-            logits = tf.nn.softmax(logits)  # so that they are positive todo fare qualcosa qua nel caso
+            # logits = tf.nn.softmax(logits)  # so that they are positive todo fare qualcosa qua nel caso
+        return logits
+
+    return unit
+
+
+def create_topic_embedding_unit(input_size, output_size):
+    # output_size = self.gen_mem.output_size.as_list()[0]
+    Wo = tf.get_variable('W_topic_embedding', shape=[input_size, output_size],
+                         initializer=create_linear_initializer(input_size))
+    bo = tf.get_variable('b_topic_embedding', shape=[output_size], initializer=create_bias_initializer())
+
+    def unit(hidden_mem_o):
+        with tf.variable_scope("output_unit_topic_embedding"):
+            logits = tf.matmul(hidden_mem_o, Wo) + bo
         return logits
 
     return unit
@@ -222,7 +236,7 @@ def create_output_unit_lambda(output_size, input_size, additive_scope="_lambda",
     def unit(hidden_mem_o):
         with tf.variable_scope("output_unit" + additive_scope):
             logits = tf.matmul(hidden_mem_o, Wo) + bo
-            logits = tf.sigmoid(logits)
+            # logits = tf.sigmoid(logits)
         return logits
 
     return unit

@@ -11,13 +11,15 @@ from real.real_gan.real_topic_train import real_topic_train
 from real.real_gan.real_train import real_train
 from utils.models.OracleLstm import OracleLstm
 from utils.text_process import text_precess
-from utils.utils import pp
-from topic_modelling.lda_topic import LDA
+from utils.utils import pp, str2bool
 
 parser = argparse.ArgumentParser(description='Train and run a RmcGAN')
 # Topic?
 parser.add_argument('--topic', default=False, action='store_true', help='If to use topic models or not')
 parser.add_argument('--topic_number', default=3, type=int, help='How many topic to use in the LDA')
+parser.add_argument('--topic-in-memory', type=str2bool, nargs='?',
+                    const=True, default=False,
+                    help="Activate topic-in-memory mode.")
 
 # Architecture
 parser.add_argument('--gf-dim', default=64, type=int, help='Number of filters to use for generator')
@@ -158,7 +160,7 @@ def main():
                                              seq_len=seq_len, gen_emb_dim=args.gen_emb_dim, mem_slots=args.mem_slots,
                                              head_size=args.head_size, num_heads=args.num_heads,
                                              hidden_dim=args.hidden_dim,
-                                             start_token=args.start_token)
+                                             start_token=args.start_token, TopicInMemory=args.topic_in_memory)
 
             discriminator = models.get_discriminator("rmc_vanilla", batch_size=args.batch_size,
                                                      seq_len=seq_len,
