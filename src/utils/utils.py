@@ -109,8 +109,7 @@ def pre_train_epoch(sess, g_pretrain_op, g_pretrain_loss, x_real, data_loader, x
     supervised_g_losses = []
     data_loader.reset_pointer()
 
-    from tqdm import tqdm
-    for it in tqdm(range(data_loader.num_batch)):
+    for it in range(data_loader.num_batch):
         if x_topic is not None:
             text_batch, topic_batch = data_loader.next_batch(only_text=False)
             _, g_loss = sess.run([g_pretrain_op, g_pretrain_loss], feed_dict={x_real: text_batch, x_topic: topic_batch})
