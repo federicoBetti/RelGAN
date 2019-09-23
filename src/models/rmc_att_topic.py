@@ -34,7 +34,7 @@ def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen
 
     def _gen_recurrence(i, x_t, h_tm1, gen_o, gen_x, gen_x_onehot_adv, lambda_values, gen_x_no_lambda):
         mem_o_t, h_t = gen_mem(x_t, h_tm1)  # hidden_memory_tuple, output della memoria che si potrebbe riutilizzare
-        if "TopicInMemory" in kwargs and kwargs["TopicInMemory"]:
+        if kwargs["TopicInMemory"]:
             mem_o_t, h_t = gen_mem(g_topic_embedding(x_topic), h_t)
         o_t = g_output_unit(mem_o_t)  # batch x vocab, logits not prob
 
@@ -46,7 +46,8 @@ def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen
         next_token_no_lambda = tf.cast(tf.argmax(o_t, axis=1), tf.int32)
         # o_t = add_gumbel(o_t)
         # lambda_param = tf.zeros(lambda_param.shape)
-        o_t =  o_t + lambda_param * topic_vector
+        if not kwargs["TopicInMemory"]:
+            o_t =  o_t + lambda_param * topic_vector
 
         gumbel_t = add_gumbel(o_t)
         # gumbel_t = tf.divide(gumbel_t, tf.reduce_sum(gumbel_t, axis=1, keepdims=True))
