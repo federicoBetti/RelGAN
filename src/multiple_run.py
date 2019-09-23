@@ -17,7 +17,7 @@ gadv_lr = ['1e-4', '1e-4', '1e-4', '1e-4']
 
 # Topic Related
 topic_number = ['9', '9', '9', '6']
-topic_in_memory = ['true', 'false']
+topic_in_memory = ['false', 'true']
 
 # Memory Related
 mem_slots = ['1', '2', '1', '1', '1', '1', '1', '1']
