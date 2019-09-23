@@ -39,7 +39,7 @@ decay = False
 adapt = 'exp'
 ntest = '20'
 
-job_number = 1
+job_number = 2
 configurations = []
 for job_id in range(job_number):
     configurations.append([
