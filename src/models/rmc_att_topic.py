@@ -40,14 +40,17 @@ def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen
 
         # print_op = tf.print("o_t shape", o_t.shape, ", o_t: ", o_t[0], output_stream=sys.stderr)
 
-        topic_vector = x_topic
-        lambda_param = g_output_unit_lambda(mem_o_t)
-        # print_op_lambda = tf.print("Lambda= iteration:", i, " shape: {}, values:".format(lambda_param.shape), lambda_param)
-        next_token_no_lambda = tf.cast(tf.argmax(o_t, axis=1), tf.int32)
-        # o_t = add_gumbel(o_t)
-        # lambda_param = tf.zeros(lambda_param.shape)
         if not kwargs["TopicInMemory"]:
-            o_t =  o_t + lambda_param * topic_vector
+            topic_vector = x_topic
+            lambda_param = g_output_unit_lambda(mem_o_t)
+            # print_op_lambda = tf.print("Lambda= iteration:", i, " shape: {}, values:".format(lambda_param.shape), lambda_param)
+            next_token_no_lambda = tf.cast(tf.argmax(o_t, axis=1), tf.int32)
+            # o_t = add_gumbel(o_t)
+            # lambda_param = tf.zeros(lambda_param.shape)
+            o_t = o_t + lambda_param * topic_vector
+        else:
+            lambda_param = tf.zeros(batch_size)
+            next_token_no_lambda = tf.cast(tf.argmax(o_t, axis=1), tf.int32)
 
         gumbel_t = add_gumbel(o_t)
         # gumbel_t = tf.divide(gumbel_t, tf.reduce_sum(gumbel_t, axis=1, keepdims=True))
@@ -111,9 +114,8 @@ def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen
         if kwargs["TopicInMemory"]:
             mem_o_t, h_t = gen_mem(g_topic_embedding(x_topic), h_t)
         o_t = g_output_unit(mem_o_t)
-        lambda_param = g_output_unit_lambda(mem_o_t)
-        lambda_param = tf.zeros(lambda_param.shape)
         if not kwargs["TopicInMemory"]:
+            lambda_param = g_output_unit_lambda(mem_o_t)
             o_t = o_t + lambda_param * x_topic
         g_predictions = g_predictions.write(i, tf.nn.softmax(o_t))  # batch_size x vocab_size
         x_tp1 = ta_emb_x.read(i)

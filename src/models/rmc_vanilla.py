@@ -109,7 +109,6 @@ def discriminator(x_onehot, batch_size, seq_len, vocab_size, dis_emb_dim, num_re
     emb_x = tf.reshape(emb_x_re, [batch_size, seq_len, dis_emb_dim])  # batch_size x seq_len x dis_emb_dim
 
     emb_x_expanded = tf.expand_dims(emb_x, -1)  # batch_size x seq_len x dis_emb_dim x 1
-    print('shape of emb_x_expanded: {}'.format(emb_x_expanded.get_shape().as_list()))
 
     # Create a convolution + maxpool layer for each filter size
     pooled_outputs = []
@@ -126,7 +125,6 @@ def discriminator(x_onehot, batch_size, seq_len, vocab_size, dis_emb_dim, num_re
     # Combine all the pooled features
     num_filters_total = sum(num_filters)
     h_pool = tf.concat(pooled_outputs, 3)  # batch_size x 1 x num_rep x num_filters_total
-    print('shape of h_pool: {}'.format(h_pool.get_shape().as_list()))
     h_pool_flat = tf.reshape(h_pool, [-1, num_filters_total])
 
     # Add highway
