@@ -34,13 +34,13 @@ def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen
 
     def _gen_recurrence(i, x_t, h_tm1, gen_o, gen_x, gen_x_onehot_adv, lambda_values, gen_x_no_lambda):
         mem_o_t, h_t = gen_mem(x_t, h_tm1)  # hidden_memory_tuple, output della memoria che si potrebbe riutilizzare
-        if kwargs["TopicInMemory"]:
+        if kwargs["TopicInMemory"] and not kwargs["NoTopic"]:
             mem_o_t, h_t = gen_mem(g_topic_embedding(x_topic), h_t)
         o_t = g_output_unit(mem_o_t)  # batch x vocab, logits not prob
 
         # print_op = tf.print("o_t shape", o_t.shape, ", o_t: ", o_t[0], output_stream=sys.stderr)
 
-        if not kwargs["TopicInMemory"]:
+        if not kwargs["TopicInMemory"] and not kwargs["NoTopic"]:
             topic_vector = x_topic
             lambda_param = g_output_unit_lambda(mem_o_t)
             # print_op_lambda = tf.print("Lambda= iteration:", i, " shape: {}, values:".format(lambda_param.shape), lambda_param)
@@ -111,10 +111,10 @@ def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen
 
     def _pretrain_recurrence(i, x_t, h_tm1, g_predictions):
         mem_o_t, h_t = gen_mem(x_t, h_tm1)
-        if kwargs["TopicInMemory"]:
+        if kwargs["TopicInMemory"] and not kwargs["NoTopic"]:
             mem_o_t, h_t = gen_mem(g_topic_embedding(x_topic), h_t)
         o_t = g_output_unit(mem_o_t)
-        if not kwargs["TopicInMemory"]:
+        if not kwargs["TopicInMemory"] and not kwargs["NoTopic"]:
             lambda_param = g_output_unit_lambda(mem_o_t)
             o_t = o_t + lambda_param * x_topic
         g_predictions = g_predictions.write(i, tf.nn.softmax(o_t))  # batch_size x vocab_size
@@ -217,6 +217,7 @@ def topic_discriminator(x_onehot, x_topic, batch_size, seq_len, vocab_size, dis_
 
     logits = linear(flatten, output_size=1, use_bias=True, sn=sn, scope='fc_topic')
     logits = tf.squeeze(logits, -1)  # batch_size
+    logits = tf.sigmoid(logits)
     return logits
 
 

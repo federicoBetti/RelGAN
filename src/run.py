@@ -20,6 +20,9 @@ parser.add_argument('--topic_number', default=3, type=int, help='How many topic 
 parser.add_argument('--topic-in-memory', type=str2bool, nargs='?',
                     const=True, default=False,
                     help="Activate topic-in-memory mode.")
+parser.add_argument('--no-topic', type=str2bool, nargs='?',
+                    const=True, default=False,
+                    help="Use condition on topic.")
 
 # Architecture
 parser.add_argument('--gf-dim', default=64, type=int, help='Number of filters to use for generator')
@@ -160,7 +163,8 @@ def main():
                                              seq_len=seq_len, gen_emb_dim=args.gen_emb_dim, mem_slots=args.mem_slots,
                                              head_size=args.head_size, num_heads=args.num_heads,
                                              hidden_dim=args.hidden_dim,
-                                             start_token=args.start_token, TopicInMemory=args.topic_in_memory)
+                                             start_token=args.start_token, TopicInMemory=args.topic_in_memory,
+                                             NoTopic=args.no_topic)
 
             discriminator = models.get_discriminator("rmc_vanilla", batch_size=args.batch_size,
                                                      seq_len=seq_len,

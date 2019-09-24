@@ -6,7 +6,7 @@ import gc
 import numpy as np
 
 from path_resolution import resources_path
-from topic_modelling.lda_utils import get_perc_sent_topic, process_texts
+from topic_modelling.lda_utils import get_perc_sent_topic, process_texts, get_perc_few_sent_topic
 from topic_modelling.lda_topic import train_specific_LDA, get_corpus
 
 
@@ -114,7 +114,6 @@ class RealDataTopicLoader(RealDataLoader):
         self.topic_batches = np.split(np.array(self.sentence_topic_array), self.num_batch, axis=0)
 
         self.pointer = 0
-        del self.lda
 
     def next_batch(self, only_text=True):
         # with the parameter I can change only when needed
@@ -207,10 +206,7 @@ class RealDataTopicLoader(RealDataLoader):
     def get_model_index(self, lda_index) -> List[int]:
         word = self.lda_index_word_dict[lda_index]
         from_lemmatize = [text_index for text_index in range(len(self.texts)) if self.texts[text_index] == word]
-        try:
-            return [int(self.model_word_index_dict[word])] + from_lemmatize
-        except KeyError:
-            return from_lemmatize
+        return from_lemmatize
 
     def get_LDA(self, word_index_dict, index_word_dict, data_file):
         self.vocab_size = len(self.model_index_word_dict)
@@ -245,18 +241,16 @@ class RealDataTopicLoader(RealDataLoader):
         t = time.time()
         tmp = process_texts(sentences, self.lda.stops)
         corpus_bow = [self.lda.dictionary.doc2bow(i) for i in tmp]
-        df = get_perc_sent_topic(ldamodel=self.lda.lda_model, corpus=corpus_bow, texts=sentences,
-                                 topic_num=self.topic_num)
+        df = get_perc_few_sent_topic(ldamodel=self.lda.lda_model, corpus_bow=corpus_bow, topic_num=self.topic_num)
         topic_weights = df.values[:, 1:self.topic_num + 1]  # num_sentences x num_topic (each row sum to 1)
-        topic_sentences = np.dot(topic_weights, self.topic_matrix)  # num_sentences x num_word
-        topic_sentences = np.divide(topic_sentences,
-                                    np.sum(topic_sentences, axis=1, keepdims=True))  # rowwise normalization
+        print(df.head(5))
+        topic_sentences = np.dot(topic_weights, self.topic_matrix)  # num_sentences x num_lda_word
+
 
         real_vector = np.zeros(
             (topic_sentences.shape[0], len(self.model_word_index_dict) + 1))  # sentence_number x vocab_size
 
         for ind, invere_index in enumerate(self.inverse_indexes):
-            # more than one index in the model because of lemmatization
             for x in invere_index:
                 real_vector[:, x] = topic_sentences[:, ind]
         gc.collect()

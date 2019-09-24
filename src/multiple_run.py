@@ -6,7 +6,7 @@ architecture = ['rmc_att_topic', 'rmc_att_topic', 'rmc_att_topic', 'rmc_att_topi
 topic_architecture = ['standard', 'standard', 'reuse_att_topic', 'standard']
 gantype = ['standard', 'standard', 'standard', 'standard', 'standard']  # per ora funziona solo con questo il topic
 gsteps = ['2', '2', '2', '2']
-dsteps = ['5', '1', '2', '2']
+dsteps = ['5', '3', '2', '2']
 npre_epochs = ['350', '300', '250', '150']
 nadv_steps = ['6000', '5000', '5000', '5000']
 ntopic_pre_epochs = ['500', '500', '250', '50']
@@ -18,6 +18,7 @@ gadv_lr = ['1e-4', '1e-4', '1e-4', '1e-4']
 # Topic Related
 topic_number = ['9', '9', '9', '6']
 topic_in_memory = ['false', 'true']
+no_topic = ['false', 'false']
 
 # Memory Related
 mem_slots = ['1', '2', '1', '1', '1', '1', '1', '1']
@@ -72,10 +73,10 @@ for job_id in range(job_number):
 
         # evaluation
         '--nll-gen',
-        # '--bleu',
+        '--bleu',
         #'--selfbleu',
         # '--doc-embsim',
-        # '--KL',
+        '--KL',
 
         # relational memory
         '--mem-slots', mem_slots[job_id],
@@ -96,7 +97,8 @@ for job_id in range(job_number):
         # custom params
         '--topic',
         '--topic_number', topic_number[job_id],
-        '--topic-in-memory', topic_in_memory[job_id]
+        '--topic-in-memory', topic_in_memory[job_id],
+        '--no-topic', no_topic[job_id]
     ])
 
 for configuration in configurations:

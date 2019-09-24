@@ -164,8 +164,25 @@ def word_cloud(lda):
     plt.show()
 
 
-def get_perc_sent_topic(lda, topic_num, data_file):
+def get_perc_few_sent_topic(ldamodel, corpus_bow, topic_num):
+    sent_topics_df = pd.DataFrame()
 
+    # Get main topic in each document
+    for i, row_list in enumerate(ldamodel[corpus_bow]):
+        row = row_list[0] if ldamodel.per_word_topics else row_list
+        to_append = np.zeros(topic_num)
+        for j, (topic_n, prop_topic) in enumerate(row):
+            to_append[topic_n] = prop_topic
+        sent_topics_df = sent_topics_df.append(pd.Series(to_append), ignore_index=True)
+
+    sent_topics_df.columns = ["Topic {}".format(topic_number) for topic_number in range(topic_num)]
+
+    # Add original text to the end of the output
+    sent_topics_df = sent_topics_df.reset_index()
+    return sent_topics_df
+
+
+def get_perc_sent_topic(lda, topic_num, data_file):
     file_path = "{}-{}-{}".format(lda.lda_model, topic_num, data_file[-10:])
     file_path = resources_path("topic_models", file_path)
     try:
