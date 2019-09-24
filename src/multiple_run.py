@@ -74,7 +74,7 @@ for job_id in range(job_number):
         # evaluation
         '--nll-gen',
         '--bleu',
-        #'--selfbleu',
+        # '--selfbleu',
         # '--doc-embsim',
         '--KL',
 
@@ -101,5 +101,10 @@ for job_id in range(job_number):
         '--no-topic', no_topic[job_id]
     ])
 
-for configuration in configurations:
-    subprocess.run(["python", "run.py"] + configuration, shell=False)
+with open("to_run.sh", 'w') as file:
+    file.write("#!/bin/bash \n")
+    for configuration in configurations:
+        file.write(" ".join(["python", "run.py"] + configuration) + "\n")
+
+    # for configuration in configurations:
+    #     subprocess.run(["python", "run.py"] + configuration, shell=False)
