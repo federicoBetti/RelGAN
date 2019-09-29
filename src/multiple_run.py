@@ -6,9 +6,9 @@ architecture = ['rmc_att_topic', 'rmc_att_topic', 'rmc_att_topic', 'rmc_att_topi
 topic_architecture = ['standard', 'standard', 'reuse_att_topic', 'standard']
 gantype = ['standard', 'standard', 'standard', 'standard', 'standard']  # per ora funziona solo con questo il topic
 gsteps = ['2', '2', '2', '2']
-dsteps = ['5', '3', '2', '2']
+dsteps = ['3', '3', '2', '2']
 npre_epochs = ['300', '300', '250', '150']
-nadv_steps = ['6000', '5000', '5000', '5000']
+nadv_steps = ['5000', '5000', '5000', '5000']
 ntopic_pre_epochs = ['500', '500', '250', '50']
 opt_type = ['adam', 'adam', 'adam', 'adam']
 temperature = ['1000', '1000', '1000', '100']
@@ -16,14 +16,14 @@ d_lr = ['1e-4', '1e-4', '1e-4', '1e-4']
 gadv_lr = ['1e-4', '1e-4', '1e-4', '1e-4']
 
 # Topic Related
-topic_number = ['9', '9', '9', '6']
+topic_number = ['3', '9', '9', '6']
 topic_in_memory = ['true', 'true']
 no_topic = ['false', 'true']
 
 # Memory Related
 mem_slots = ['2', '2', '1', '1', '1', '1', '1', '1']
 head_size = ['256', '256', '256', '256', '256', '256', '256', '256']
-num_heads = ['2', '2', '2', '2', '2', '2', '2', '2']
+num_heads = ['1', '2', '2', '2', '2', '2', '2', '2']
 seed = ['171', '172', '173', '174', '175', '176', '177', '178']
 
 bs = '64'
@@ -40,7 +40,7 @@ decay = False
 adapt = 'exp'
 ntest = '20'
 
-job_number = 2
+job_number = 1
 configurations = []
 for job_id in range(job_number):
     configurations.append([

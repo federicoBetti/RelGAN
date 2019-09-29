@@ -42,6 +42,10 @@ def inference_main(oracle_loader, config, model_path, input_path):
 
     sent_number = len(sentences)
     topic_sentences = oracle_loader.get_topic(sentences)
+    for sent, topic in zip(sentences, topic_sentences):
+        print(sent)
+        print(["{}, value: {}".format(oracle_loader.model_index_word_dict[str(arg)], topic[arg]) for arg in np.argsort(-topic)[:10]])
+        print()
     graph = tf.Graph()
     with graph.as_default():
         with tf.Session() as sess:
@@ -62,5 +66,5 @@ def inference_main(oracle_loader, config, model_path, input_path):
         sent = res[index]
         # print(sent)
         # print_best_words(topic_sentences[index], oracle_loader)
-        print("Starting sentence: {}".format(sentences[index]), end="")
+        print("Starting sentence: {}".format(sentences[index]))
         print("Generated sentence:", code_to_text(codes=[sent], dictionary=oracle_loader.model_index_word_dict))

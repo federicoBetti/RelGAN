@@ -5,6 +5,7 @@ import os
 import tensorflow as tf
 from path_resolution import resources_path
 from real.real_gan.real_loader import RealDataTopicLoader
+from run import create_subsample_data_file
 from utils.inference_utils import inference_main
 from utils.text_process import text_precess
 import models
@@ -18,7 +19,7 @@ parser.add_argument('--model-name', default="last_model", type=str,
 parser.add_argument('--input-name', default='input.txt', type=str,
                     help='Name of the file from which the starting sentences should be taken')
 parser.add_argument('--topic', default=True, action='store_true', help='If to use topic models or not')
-parser.add_argument('--topic-number', default=3, type=int, help='How many topic to use in the LDA')
+parser.add_argument('--topic-number', default=9, type=int, help='How many topic to use in the LDA')
 
 # Architecture
 parser.add_argument('--gf-dim', default=64, type=int, help='Number of filters to use for generator')
@@ -66,7 +67,7 @@ parser.add_argument('--head-size', default=512, type=int, help="head size or mem
 parser.add_argument('--num-heads', default=2, type=int, help="number of heads")
 
 # Data
-parser.add_argument('--dataset', default='image_coco', type=str, help='[oracle, image_coco, emnlp_news]')
+parser.add_argument('--dataset', default='emnlp_news', type=str, help='[oracle, image_coco, emnlp_news]')
 parser.add_argument('--vocab-size', default=5000, type=int, help="vocabulary size")
 parser.add_argument('--start-token', default=0, type=int, help="start token for a sentence")
 parser.add_argument('--seq-len', default=20, type=int, help="sequence length: [20, 40]")
@@ -87,6 +88,12 @@ def main():
     data_file = resources_path(args.data_dir, '{}.txt'.format(args.dataset))
     sample_dir = resources_path(config['sample_dir'])
     oracle_file = os.path.join(sample_dir, 'oracle_{}.txt'.format(args.dataset))
+
+    if args.dataset == 'emnlp_news' :
+        data_file, lda_file = create_subsample_data_file(data_file)
+    else:
+        lda_file = data_file
+
     seq_len, vocab_size, word_index_dict, index_word_dict = text_precess(data_file, oracle_file=oracle_file)
     print(index_word_dict)
     config['seq_len'] = seq_len
@@ -96,7 +103,9 @@ def main():
     if config['topic']:
         topic_number = config['topic_number']
         oracle_loader = RealDataTopicLoader(args.batch_size, args.seq_len)
+        oracle_loader.set_dataset(args.dataset)
         oracle_loader.topic_num = topic_number
+        oracle_loader.set_dictionaries(word_index_dict, index_word_dict)
         oracle_loader.get_LDA(word_index_dict, index_word_dict, data_file)
         print(oracle_loader.model_index_word_dict)
         inference_main(oracle_loader, config, model_path, input_path)

@@ -1,5 +1,6 @@
 import math
 import re
+import string
 import time
 from typing import List
 
@@ -45,7 +46,7 @@ def process_texts(input_texts, stops):
         texts = nltk.word_tokenize(texts)
 
         # remove stopwords and lemmatize the sentence
-        texts = [lemmatizer.lemmatize(word) for word in texts if word not in stops]
+        texts = [lemmatizer.lemmatize(word) for word in texts if word not in stops and word.isalpha()]
 
         # this is another version considering also postag, must be revised in case
         # final_t = []

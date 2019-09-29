@@ -16,7 +16,7 @@ from utils.utils import pp, str2bool
 parser = argparse.ArgumentParser(description='Train and run a RmcGAN')
 # Topic?
 parser.add_argument('--topic', default=False, action='store_true', help='If to use topic models or not')
-parser.add_argument('--topic_number', default=3, type=int, help='How many topic to use in the LDA')
+parser.add_argument('--topic_number', default=9, type=int, help='How many topic to use in the LDA')
 parser.add_argument('--topic-in-memory', type=str2bool, nargs='?',
                     const=True, default=False,
                     help="Activate topic-in-memory mode.")
@@ -37,10 +37,10 @@ parser.add_argument('--sn', default=False, action='store_true', help='if using s
 # Training
 parser.add_argument('--gsteps', default='1', type=int, help='How many training steps to use for generator')
 parser.add_argument('--dsteps', default='5', type=int, help='How many training steps to use for discriminator')
-parser.add_argument('--n-topic-pre-epochs', default=300, type=int,
+parser.add_argument('--n-topic-pre-epochs', default=1, type=int,
                     help='Number of steps to run pre-training for the topic discriminator')
-parser.add_argument('--npre-epochs', default=150, type=int, help='Number of steps to run pre-training')
-parser.add_argument('--nadv-steps', default=5000, type=int, help='Number of steps to run adversarial training')
+parser.add_argument('--npre-epochs', default=1, type=int, help='Number of steps to run pre-training')
+parser.add_argument('--nadv-steps', default=1, type=int, help='Number of steps to run adversarial training')
 parser.add_argument('--ntest', default=50, type=int, help='How often to run tests')
 parser.add_argument('--d-lr', default=1e-4, type=float, help='Learning rate for the discriminator')
 parser.add_argument('--gpre-lr', default=1e-2, type=float, help='Learning rate for the generator in pre-training')
@@ -68,7 +68,7 @@ parser.add_argument('--KL', default=False, action='store_true', help='if using K
 # relational memory
 parser.add_argument('--mem-slots', default=1, type=int, help="memory size")
 parser.add_argument('--head-size', default=512, type=int, help="head size or memory size")
-parser.add_argument('--num-heads', default=2, type=int, help="number of heads")
+parser.add_argument('--num-heads', default=1, type=int, help="number of heads")
 
 # Data
 parser.add_argument('--dataset', default='image_coco', type=str, help='[oracle, image_coco, emnlp_news]')
@@ -154,10 +154,10 @@ def main():
         if config['topic']:
             topic_number = config['topic_number']
             oracle_loader = RealDataTopicLoader(args.batch_size, args.seq_len)
+            oracle_loader.set_dataset(args.dataset)
             oracle_loader.set_files(data_file, lda_file)
             oracle_loader.topic_num = topic_number
             oracle_loader.set_dictionaries(word_index_dict, index_word_dict)
-            oracle_loader.set_dataset = args.dataset
 
             generator = models.get_generator("rmc_att_topic", vocab_size=vocab_size, batch_size=args.batch_size,
                                              seq_len=seq_len, gen_emb_dim=args.gen_emb_dim, mem_slots=args.mem_slots,

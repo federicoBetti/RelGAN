@@ -151,6 +151,16 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
 
     # ------------- initial the graph --------------
     with init_sess() as sess:
+        variables_dict = {}
+        for v in tf.trainable_variables():
+            name_scope = v.name.split('/')
+            d = variables_dict
+            params_number = np.prod(v.get_shape().as_list())
+            for name in name_scope:
+                d[name] = d.get(name, {})
+                d = d[name]
+                d['total_param'] = d.get('total_param', 0) + params_number
+
         print("Total paramter number: {}".format(np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()])))
         log = open(csv_file, 'w')
         # file_suffix = "date: {}, normal RelGAN, pretrain epochs: {}, adv epochs: {}".format(datetime.datetime.now(),
@@ -286,7 +296,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
 
         sum_writer.close()
 
-        save_model = False
+        save_model = True
         if save_model:
             model_dir = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
             model_path = os.path.join(resources_path("trained_models"), model_dir)
