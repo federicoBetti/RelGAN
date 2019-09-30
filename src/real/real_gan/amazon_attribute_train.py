@@ -189,6 +189,7 @@ def amazon_attribute_train(generator: rmc_att_topic.generator, discriminator: rm
                     n = np.zeros((batch_size, seq_len))
                     for ind, el in enumerate(sentence):
                         n[ind] = el
+                    # todo start from here, this should work but it is bad
                     _, g_loss = sess.run([g_pretrain_op, g_pretrain_loss], feed_dict={x_real: n,
                                                                                       x_user: user,
                                                                                       x_product: product,
