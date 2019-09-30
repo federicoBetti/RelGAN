@@ -10,6 +10,7 @@ from utils.static_file_manage import load_json, load_pickle, write_json, write_p
 def text_to_code(tokens, dictionary, seq_len):
     code_str = ""
     eof_code = len(dictionary)  # used to filled in the blank to make up a sentence with seq_len
+
     for sentence in tokens:
         index = 0
         for word in sentence:
@@ -131,3 +132,16 @@ def text_precess(train_text_loc, test_text_loc=None, oracle_file=None) -> Tuple[
                                            , word_index_dict, sequence_len))
 
     return sequence_len, len(word_index_dict) + 1, word_index_dict, index_word_dict
+
+def create_tokens_files(data_files):
+    token_list = []
+    sequence_len = 0
+    for file in data_files:
+        file_tokens = get_tokenized(file)
+        length_tokens = len(max(file_tokens, key=len))
+        if length_tokens > sequence_len:
+            sequence_len = length_tokens
+        token_list.extend(file_tokens)
+
+    word_set = get_word_list(token_list)
+    [word_index_dict, index_word_dict] = get_dict(word_set)

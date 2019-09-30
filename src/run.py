@@ -6,11 +6,14 @@ import models
 from oracle.oracle_gan.oracle_loader import OracleDataLoader
 from oracle.oracle_gan.oracle_train import oracle_train
 from path_resolution import resources_path
+from real.real_gan.amazon_attribute_train import amazon_attribute_train
+from real.real_gan.amazon_loader import RealDataAmazonLoader
 from real.real_gan.real_loader import RealDataTopicLoader, RealDataLoader
 from real.real_gan.real_topic_train import real_topic_train
 from real.real_gan.real_train import real_train
 from utils.models.OracleLstm import OracleLstm
-from utils.text_process import text_precess
+from utils.static_file_manage import load_json
+from utils.text_process import text_precess, create_tokens_files
 from utils.utils import pp, str2bool
 
 parser = argparse.ArgumentParser(description='Train and run a RmcGAN')
@@ -194,6 +197,39 @@ def main():
 
         print("Run Finished!")
         return
+    elif args.dataset in ['Amazon_Attribute']:
+        # custom dataset selected
+        data_dir = resources_path(config['data_dir'], "Amazon_Attribute")
+        sample_dir = resources_path(config['sample_dir'])
+        oracle_file = os.path.join(sample_dir, 'oracle_{}.txt'.format(args.dataset))
+        train_file = os.path.join(data_dir, 'train.csv')
+        dev_file = os.path.join(data_dir, 'dev.csv')
+        test_file = os.path.join(data_dir, 'test.csv')
+
+        # create_tokens_files(data_files=[train_file, dev_file, test_file])
+        config_file = load_json(os.path.join(data_dir, 'config.json'))
+        config = {**config, **config_file}  # merge dictionaries
+
+        oracle_loader = RealDataAmazonLoader(args.batch_size, args.seq_len)
+        oracle_loader.create_batches(data_file=[train_file, dev_file, test_file])
+
+        generator = models.get_generator("amazon_attribute", vocab_size=config['vocabulary_size'],
+                                         batch_size=args.batch_size,
+                                         seq_len=config['seq_len'], gen_emb_dim=args.gen_emb_dim,
+                                         mem_slots=args.mem_slots,
+                                         head_size=args.head_size, num_heads=args.num_heads,
+                                         hidden_dim=args.hidden_dim,
+                                         start_token=args.start_token, user_num=config['user_num'],
+                                         product_num=config['product_num'],
+                                         rating_num=5)
+
+        discriminator = models.get_discriminator("amazon_attribute", batch_size=args.batch_size,
+                                                 seq_len=config['seq_len'],
+                                                 vocab_size=config['vocabulary_size'],
+                                                 dis_emb_dim=args.dis_emb_dim,
+                                                 num_rep=args.num_rep, sn=args.sn)
+
+        amazon_attribute_train(generator, discriminator, oracle_loader, config, args)
     else:
         raise NotImplementedError('{}: unknown dataset!'.format(args.dataset))
 

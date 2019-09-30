@@ -39,30 +39,40 @@ def get_losses(d_out_real, d_out_fake, x_real_onehot, x_fake_onehot_appr, d_topi
             d_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
                 logits=d_out_fake, labels=tf.zeros_like(d_out_fake)
             ), name="d_loss_fake")
+            d_loss = d_loss_real + d_loss_fake
 
-            d_topic_loss_real_pos = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-                logits=d_topic_out_real_pos, labels=tf.ones_like(d_topic_out_real_neg)
-            ), name="d_topic_loss_real_pos")
+            if d_topic_out_real_neg is not None:
+                d_topic_loss_real_pos = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=d_topic_out_real_pos, labels=tf.ones_like(d_topic_out_real_neg)
+                ), name="d_topic_loss_real_pos")
 
-            d_topic_loss_real_neg = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-                logits=d_topic_out_real_neg, labels=tf.zeros_like(d_topic_out_real_pos)
-            ), name="d_topic_loss_real_neg")
+                d_topic_loss_real_neg = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=d_topic_out_real_neg, labels=tf.zeros_like(d_topic_out_real_pos)
+                ), name="d_topic_loss_real_neg")
 
-            d_topic_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-                logits=d_topic_out_fake, labels=tf.zeros_like(d_topic_out_fake)
-            ), name="d_topic_loss_fake")
+                d_topic_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=d_topic_out_fake, labels=tf.zeros_like(d_topic_out_fake)
+                ), name="d_topic_loss_fake")
 
-            d_loss = d_loss_real + d_loss_fake + (d_topic_loss_real_pos + d_topic_loss_fake) / 10
+                d_loss += (d_topic_loss_real_pos + d_topic_loss_fake) / 10
+            else:
+                d_topic_loss_real_pos = None
+                d_topic_loss_real_neg = None
+                d_topic_loss_fake = None
 
             g_sentence_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
                 logits=d_out_fake, labels=tf.ones_like(d_out_fake)
             ), name="g_sentence_loss")
+            g_loss = g_sentence_loss
 
-            g_topic_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-                logits=d_topic_out_fake, labels=tf.ones_like(d_topic_out_fake)
-            ), name="g_topic_loss")
+            if d_topic_out_fake is not None:
+                g_topic_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=d_topic_out_fake, labels=tf.ones_like(d_topic_out_fake)
+                ), name="g_topic_loss")
 
-            g_loss = g_sentence_loss + (g_topic_loss / 10)
+                g_loss = g_loss + (g_topic_loss / 10)
+            else:
+                g_topic_loss = None
 
             log_pg = tf.reduce_mean(tf.log(gen_o + EPS))  # [1], measures the log p_g(x)
 
@@ -201,9 +211,12 @@ def get_train_ops(config, g_pretrain_loss, g_loss, d_loss, d_topic_loss,
     d_train_op = d_optimizer.apply_gradients(zip(d_grads, d_vars))
 
     # gradient clipping
-    d_topic_grads, _ = tf.clip_by_global_norm(tf.gradients(d_topic_loss, d_topic_vars, name="gradients_d_topic_adv"),
-                                              grad_clip, name="d_topic_adv_clipping")
-    d_topic_pretrain_op = d_topic_optimizer.apply_gradients(zip(d_topic_grads, d_topic_vars))
+    if d_topic_loss is not None:
+        d_topic_grads, _ = tf.clip_by_global_norm(tf.gradients(d_topic_loss, d_topic_vars, name="gradients_d_topic_adv"),
+                                                  grad_clip, name="d_topic_adv_clipping")
+        d_topic_pretrain_op = d_topic_optimizer.apply_gradients(zip(d_topic_grads, d_topic_vars))
+    else:
+        d_topic_pretrain_op = None
 
     return g_pretrain_op, g_train_op, d_train_op, d_topic_pretrain_op
 

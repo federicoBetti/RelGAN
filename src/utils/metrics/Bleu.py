@@ -60,7 +60,6 @@ class Bleu(Metrics):
             for hypothesis in test_data:
                 if i >= self.sample_size:
                     break
-
                 hypothesis = nltk.word_tokenize(hypothesis)
                 bleu.append(self.calc_bleu(reference, hypothesis, weight))
                 i += 1

@@ -1,12 +1,13 @@
 import tensorflow as tf
-from models import rmc_vanilla, rmc_att, rmc_vdcnn, lstm_vanilla, rmc_att_topic
+from models import rmc_vanilla, rmc_att, rmc_vdcnn, lstm_vanilla, rmc_att_topic, amazon_attr
 
 generator_dict = {
     'lstm_vanilla': lstm_vanilla.generator,
     'rmc_vanilla': rmc_vanilla.generator,
     'rmc_att': rmc_att.generator,
     'rmc_att_topic': rmc_att_topic.generator,
-    'rmc_vdcnn': rmc_vdcnn.generator
+    'rmc_vdcnn': rmc_vdcnn.generator,
+    'amazon_attribute': amazon_attr.generator
 }
 
 discriminator_dict = {
@@ -14,7 +15,8 @@ discriminator_dict = {
     'rmc_vanilla': rmc_vanilla.discriminator,
     'rmc_att': rmc_att.discriminator,
     'rmc_att_topic': rmc_att_topic.discriminator,
-    'rmc_vdcnn': rmc_vdcnn.discriminator
+    'rmc_vdcnn': rmc_vdcnn.discriminator,
+    'amazon_attribute': amazon_attr.discriminator
 }
 
 discriminator_topic_dict = {

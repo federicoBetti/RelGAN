@@ -230,8 +230,9 @@ def create_output_unit_lambda(output_size, input_size, additive_scope="_lambda",
     :param additive_scope:
     :return:
     """
-    Wo = tf.get_variable('W_lambda', shape=[input_size, output_size], initializer=create_linear_initializer(input_size))
-    bo = tf.get_variable('b_lambda', shape=[output_size], initializer=create_bias_initializer())
+    Wo = tf.get_variable('W' + additive_scope, shape=[input_size, output_size],
+                         initializer=create_linear_initializer(input_size))
+    bo = tf.get_variable('b' + additive_scope, shape=[output_size], initializer=create_bias_initializer())
 
     def unit(hidden_mem_o):
         with tf.variable_scope("output_unit" + additive_scope):
@@ -240,6 +241,34 @@ def create_output_unit_lambda(output_size, input_size, additive_scope="_lambda",
         return logits
 
     return unit
+
+
+def create_1D_self_attention_unit(scope, output_dim):
+    self.W1 = tf.keras.layers.Dense(units)
+    self.W2 = tf.keras.layers.Dense(units)
+    self.V = tf.keras.layers.Dense(1)
+
+
+    def unit(query, values):
+        # hidden shape == (batch_size, hidden size)
+        # hidden_with_time_axis shape == (batch_size, 1, hidden size)
+        # we are doing this to perform addition to calculate the score
+        hidden_with_time_axis = tf.expand_dims(query, 1)
+
+        # score shape == (batch_size, max_length, 1)
+        # we get 1 at the last axis because we are applying score to self.V
+        # the shape of the tensor before applying self.V is (batch_size, max_length, units)
+        score = self.V(tf.nn.tanh(
+            self.W1(values) + self.W2(hidden_with_time_axis)))
+
+        # attention_weights shape == (batch_size, max_length, 1)
+        attention_weights = tf.nn.softmax(score, axis=1)
+
+        # context_vector shape after sum == (batch_size, hidden_size)
+        context_vector = attention_weights * values
+        context_vector = tf.reduce_sum(context_vector, axis=1)
+
+    return context_vector, attention_weights
 
 
 def add_gumbel(o_t, eps=1e-10):
