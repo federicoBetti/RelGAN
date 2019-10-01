@@ -102,7 +102,7 @@ def generate_amazon(sess, gen_x, batch_size, generated_num, oracle_loader=None, 
 
     max_gen = int(generated_num / batch_size) #- 155 # 156
     for ii in range(max_gen):
-        user, product, rating, sentences = oracle_loader.random_batch(tensors['dataset'])
+        user, product, rating, sentences = oracle_loader.random_batch(dataset=tensors['dataset'])
         feed_dict = {tensors['x_user']: user,
                      tensors['x_product']: product,
                      tensors['x_rating']: rating}

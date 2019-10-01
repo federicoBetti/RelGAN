@@ -8,13 +8,15 @@ from oracle.oracle_gan.oracle_loader import OracleDataLoader
 from oracle.oracle_gan.oracle_train import oracle_train
 from path_resolution import resources_path
 from real.real_gan.amazon_attribute_train import amazon_attribute_train
-from real.real_gan.amazon_loader import RealDataAmazonLoader
-from real.real_gan.real_loader import RealDataTopicLoader, RealDataLoader
+from real.real_gan.customer_reviews_train import customer_reviews_train
+from real.real_gan.loaders.amazon_loader import RealDataAmazonLoader
+from real.real_gan.loaders.custom_reviews_loader import RealDataCustomerReviewsLoader
+from real.real_gan.loaders.real_loader import RealDataTopicLoader, RealDataLoader
 from real.real_gan.real_topic_train import real_topic_train
 from real.real_gan.real_train import real_train
 from utils.models.OracleLstm import OracleLstm
 from utils.static_file_manage import load_json
-from utils.text_process import text_precess, create_tokens_files
+from utils.text_process import text_precess
 from utils.utils import pp, str2bool
 
 parser = argparse.ArgumentParser(description='Train and run a RmcGAN')
@@ -233,6 +235,37 @@ def main():
                                                  num_rep=args.num_rep, sn=args.sn)
 
         amazon_attribute_train(generator, discriminator, oracle_loader, config, args)
+    elif args.dataset in ['CustomerReviews']:
+        # custom dataset selected
+        data_dir = resources_path(config['data_dir'], "MovieReviews", "cr")
+        sample_dir = resources_path(config['sample_dir'])
+        oracle_file = os.path.join(sample_dir, 'oracle_{}.txt'.format(args.dataset))
+        train_file = os.path.join(data_dir, 'train.csv')
+
+        # create_tokens_files(data_files=[train_file, dev_file, test_file])
+        config_file = load_json(os.path.join(data_dir, 'config.json'))
+        config = {**config, **config_file}  # merge dictionaries
+
+        oracle_loader = RealDataCustomerReviewsLoader(args.batch_size, args.seq_len)
+        oracle_loader.create_batches(data_file=[train_file])
+        oracle_loader.model_index_word_dict = load_json(join(data_dir, 'index_word_dict.json'))
+        oracle_loader.model_word_index_dict = load_json(join(data_dir, 'word_index_dict.json'))
+
+        generator = models.get_generator("CustomerReviews", vocab_size=config['vocabulary_size'],
+                                         batch_size=args.batch_size, start_token=args.start_token,
+                                         seq_len=config['seq_len'], gen_emb_dim=args.gen_emb_dim,
+                                         mem_slots=args.mem_slots,
+                                         head_size=args.head_size, num_heads=args.num_heads,
+                                         hidden_dim=args.hidden_dim,
+                                         sentiment_num=config['sentiment_num'])
+
+        discriminator = models.get_discriminator("CustomerReviews", batch_size=args.batch_size,
+                                                 seq_len=config['seq_len'],
+                                                 vocab_size=config['vocabulary_size'],
+                                                 dis_emb_dim=args.dis_emb_dim,
+                                                 num_rep=args.num_rep, sn=args.sn)
+
+        customer_reviews_train(generator, discriminator, oracle_loader, config, args)
     else:
         raise NotImplementedError('{}: unknown dataset!'.format(args.dataset))
 

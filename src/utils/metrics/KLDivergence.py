@@ -4,7 +4,7 @@ from typing import List, Tuple
 from numpy import mean
 from scipy.stats import entropy
 
-from real.real_gan.real_loader import RealDataTopicLoader
+from real.real_gan.loaders.real_loader import RealDataTopicLoader
 from utils.metrics.Metrics import Metrics
 
 

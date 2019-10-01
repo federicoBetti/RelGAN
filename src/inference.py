@@ -2,13 +2,11 @@
 import argparse
 import os
 
-import tensorflow as tf
 from path_resolution import resources_path
-from real.real_gan.real_loader import RealDataTopicLoader
+from real.real_gan.loaders.real_loader import RealDataTopicLoader
 from run import create_subsample_data_file
 from utils.inference_utils import inference_main
 from utils.text_process import text_precess
-import models
 from utils.utils import pp
 
 parser = argparse.ArgumentParser(description='Use the model trained with input')

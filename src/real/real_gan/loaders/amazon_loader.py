@@ -1,6 +1,6 @@
 import random
 
-from real.real_gan.real_loader import RealDataLoader
+from real.real_gan.loaders.real_loader import RealDataLoader
 import pandas as pd
 import numpy as np
 
@@ -49,7 +49,7 @@ class RealDataAmazonLoader(RealDataLoader):
         self.pointer = 0
 
     def next_batch(self, only_text=True):
-        ret = self.sequence_batches[self.pointer]
+        ret = self.sequence_batches_train[self.pointer]
         self.pointer = (self.pointer + 1) % self.num_batch
         user, product, rating, sentence = ret[:, 0], ret[:, 1], ret[:, 2], ret[:, 3]
         return user, product, rating, sentence  # batch_size x

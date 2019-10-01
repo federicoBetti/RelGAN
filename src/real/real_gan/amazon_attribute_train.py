@@ -9,10 +9,9 @@ from tqdm import tqdm
 
 from models import rmc_att_topic
 from path_resolution import resources_path
-from real.real_gan.amazon_loader import RealDataAmazonLoader
-from real.real_gan.real_loader import RealDataTopicLoader
-from real.real_gan.real_topic_train_utils import get_accuracy, get_losses, get_train_ops, \
-    get_metric_summary_op, get_metrics, get_fixed_temperature, create_json_file
+from real.real_gan.loaders.amazon_loader import RealDataAmazonLoader
+from real.real_gan.real_topic_train_utils import get_losses, get_train_ops, \
+    get_metric_summary_op, get_fixed_temperature, create_json_file
 from utils.metrics.Bleu import BleuAmazon
 from utils.utils import *
 
@@ -191,7 +190,7 @@ def amazon_attribute_train(generator: rmc_att_topic.generator, discriminator: rm
                 supervised_g_losses = []
                 oracle_loader.reset_pointer()
 
-                for it in range(oracle_loader.num_batch):
+                for it in tqdm(range(oracle_loader.num_batch)):
                     user, product, rating, sentence = oracle_loader.next_batch()
                     n = np.zeros((batch_size, seq_len))
                     for ind, el in enumerate(sentence):
