@@ -11,7 +11,7 @@ from models import rmc_att_topic
 from path_resolution import resources_path
 from real.real_gan.loaders.amazon_loader import RealDataAmazonLoader
 from real.real_gan.real_topic_train_utils import get_train_ops, \
-    get_metric_summary_op, get_fixed_temperature, create_json_file, EPS
+    get_metric_summary_op, get_fixed_temperature, create_json_file, EPS, get_metrics
 from utils.metrics.Bleu import BleuAmazon
 from utils.utils import *
 
@@ -116,6 +116,8 @@ def amazon_attribute_train(generator: rmc_att_topic.generator, discriminator: rm
     loss_summary_op = tf.summary.merge(loss_summaries)
 
     # Metric Summaries
+    config['bleu_amazon'] = True
+    config['bleu_amazon_validation'] = True
     metrics_pl, metric_summary_op = get_metric_summary_op(config)
 
     # Summaries
@@ -142,9 +144,8 @@ def amazon_attribute_train(generator: rmc_att_topic.generator, discriminator: rm
         run_information.write_summary(str(args), 0)
         print("Information stored in the summary!")
 
-        # metrics = get_metrics(config, oracle_loader, test_file, gen_text_file, g_pretrain_loss, x_real, None, sess,
-        #                       json_file)
-        metrics = []
+        metrics = get_metrics(config, oracle_loader, test_file, gen_text_file, generator_obj.pretrain_loss, x_real,
+                              None, sess, json_file)
         metrics.append(BleuAmazon("BleuAmazon_2", json_file=json_file, gram=2))
         metrics.append(BleuAmazon("BleuAmazon_3", json_file=json_file, gram=3))
         metrics.append(BleuAmazon("BleuAmazon_4", json_file=json_file, gram=4))
@@ -193,27 +194,6 @@ def amazon_attribute_train(generator: rmc_att_topic.generator, discriminator: rm
 
                     gc.collect()
 
-        # gc.collect()
-        # # Check if there is a pretrained generator and a topic discriminator saved
-        # model_dir = "PretrainGeneratorAndTopicDiscriminator"
-        # model_path = resources_path(os.path.join("checkpoint_folder", model_dir))
-        # try:
-        #     new_saver = tf.train.import_meta_graph(os.path.join(model_path, "model.ckpt.meta"))
-        #     new_saver.restore(sess, os.path.join(model_path, "model.ckpt"))
-        #     print("Used saved model for topic discriminator and pretrained generator")
-        # except OSError:
-        #     print('Start Topic Discriminator pre-training...')
-        #     topic_discriminator_pretrain(n_topic_pre_epochs, sess, d_topic_pretrain_op, d_topic_loss,
-        #                                  d_topic_accuracy, x_real, x_topic,
-        #                                  x_topic_random, oracle_loader,
-        #                                  d_topic_out_real_pos, d_topic_out_real_neg, topic_discr_pretrain_summary,
-        #                                  topic_discr_accuracy_summary)
-        #
-        #     # if not os.path.exists(model_path):
-        #     #     os.makedirs(model_path)
-        #     # save_path = saver.save(sess, os.path.join(model_path, "model.ckpt"))
-        #     # print("Up to Topic Discriminator Pretrain saved in path: %s" % save_path)
-
         print('Start adversarial training...')
         progress = tqdm(range(nadv_steps))
         for adv_epoch in progress:
@@ -231,9 +211,13 @@ def amazon_attribute_train(generator: rmc_att_topic.generator, discriminator: rm
             for _ in range(config['dsteps']):
                 # normal + topic discriminator together
                 user, product, rating, sentence = oracle_loader.random_batch(dataset="train")
+                n = np.zeros((batch_size, seq_len))
+                for ind, el in enumerate(sentence):
+                    n[ind] = el
                 feed_dict = {generator_obj.x_user: user,
                              generator_obj.x_product: product,
-                             generator_obj.x_rating: rating}
+                             generator_obj.x_rating: rating,
+                             x_real: n}
                 sess.run(d_train_op, feed_dict=feed_dict)
 
             t1 = time.time()
@@ -243,9 +227,15 @@ def amazon_attribute_train(generator: rmc_att_topic.generator, discriminator: rm
             temp_var_np = get_fixed_temperature(temper, niter, nadv_steps, adapt)
             sess.run(update_temperature_op, feed_dict={temp_var: temp_var_np})
 
-            text_batch, topic_batch = oracle_loader.random_batch(only_text=False)
-            feed = {x_real: text_batch}
-            g_loss_np, d_loss_np, loss_summary_str = sess.run([g_loss, d_loss, loss_summary_op], feed_dict=feed)
+            user, product, rating, sentence = oracle_loader.random_batch(dataset="train")
+            n = np.zeros((batch_size, seq_len))
+            for ind, el in enumerate(sentence):
+                n[ind] = el
+            feed_dict = {generator_obj.x_user: user,
+                         generator_obj.x_product: product,
+                         generator_obj.x_rating: rating,
+                         x_real: n}
+            g_loss_np, d_loss_np, loss_summary_str = sess.run([g_loss, d_loss, loss_summary_op], feed_dict=feed_dict)
             sum_writer.add_summary(loss_summary_str, niter)
 
             sess.run(global_step_op)
@@ -253,44 +243,28 @@ def amazon_attribute_train(generator: rmc_att_topic.generator, discriminator: rm
             progress.set_description('g_loss: %4.4f, d_loss: %4.4f' % (g_loss_np, d_loss_np))
 
             # Test
-            # print("N_iter: {}, test every {} epochs".format(niter, config['ntest']))
             if np.mod(adv_epoch, 500) == 0 or adv_epoch == nadv_steps - 1:
-                # generate fake data and create batches
-                gen_save_file = os.path.join(sample_dir, 'adv_samples_{:05d}.txt'.format(niter))
-                codes_with_lambda, sentence_generated_from, codes, json_object = generate_samples_topic(sess, x_fake,
-                                                                                                        batch_size,
-                                                                                                        num_sentences,
-                                                                                                        lambda_values=lambda_values_returned,
-                                                                                                        oracle_loader=oracle_loader,
-                                                                                                        gen_x_no_lambda=gen_x_no_lambda,
-                                                                                                        x_topic=x_topic)
-                create_json_file(json_object, json_file)
-                # gen_real_test_file_not_file(codes, sentence_generated_from, gen_save_file, index_word_dict)
-                gen_real_test_file_not_file(codes, sentence_generated_from, gen_text_file, index_word_dict, json_object)
-                gen_real_test_file_not_file(codes_with_lambda, sentence_generated_from, gen_text_file_print,
-                                            index_word_dict, json_object, generator_sentences=True)
-
-                # take sentences from saved files
-                sent = take_sentences_topic(gen_text_file_print)
-                if adv_epoch < 3500:
-                    sent_number = 8
-                else:
-                    sent_number = 20
-                sent = random.sample(sent, sent_number)
-                gen_sentences_summary.write_summary(sent, adv_epoch)
+                generator_obj.generated_num = 200
+                json_object = generator_obj.generate_samples(sess, oracle_loader, dataset="train")
+                write_json(json_file, json_object)
+                json_object = generator_obj.generate_samples(sess, oracle_loader, dataset="validation")
+                write_json(json_file_validation, json_object)
 
                 # write summaries
                 scores = [metric.get_score() for metric in metrics]
                 metrics_summary_str = sess.run(metric_summary_op, feed_dict=dict(zip(metrics_pl, scores)))
-                sum_writer.add_summary(metrics_summary_str, niter + config['npre_epochs'])
+                sum_writer.add_summary(metrics_summary_str, epoch)
+                # tqdm.write("in {} seconds".format(time.time() - t))
 
-                msg = 'adv_step: ' + str(niter)
+                msg = 'pre_gen_epoch:' + str(epoch) + ', g_pre_loss: %.4f' % g_pretrain_loss_np
                 metric_names = [metric.get_name() for metric in metrics]
                 for (name, score) in zip(metric_names, scores):
                     msg += ', ' + name + ': %.4f' % score
-                tqdm.write(msg)
+                progress.set_description(msg)
                 log.write(msg)
                 log.write('\n')
+
+                gc.collect()
 
         sum_writer.close()
 
@@ -300,71 +274,12 @@ def amazon_attribute_train(generator: rmc_att_topic.generator, discriminator: rm
             model_path = os.path.join(resources_path("trained_models"), model_dir)
             simple_save(sess,
                         model_path,
-                        inputs={"x_topic": x_topic},
-                        outputs={"gen_x": x_fake})
+                        inputs={"x_user": x_user,
+                                "x_rating": x_rating,
+                                "x_product": x_product},
+                        outputs={"gen_x": generator_obj.gen_x})
             # save_path = saver.save(sess, os.path.join(model_path, "model.ckpt"))
             print("Model saved in path: %s" % model_path)
-
-
-def generator_pretrain_amazon(npre_epochs, sess, g_pretrain_op, g_pretrain_loss, x_real, oracle_loader,
-                              gen_pretrain_loss_summary, sample_dir, x_fake, batch_size, num_sentences, gen_text_file,
-                              gen_sentences_summary, metrics, metric_summary_op, metrics_pl, sum_writer, log,
-                              lambda_values, gen_text_file_print, gen_x_no_lambda, json_file):
-    progress = tqdm(range(npre_epochs))
-    for epoch in progress:
-        # pre-training
-        # Pre-train the generator using MLE for one epoch
-        supervised_g_losses = []
-        oracle_loader.reset_pointer()
-
-        for it in range(oracle_loader.num_batch):
-            user, product, rating, sentence = oracle_loader.next_batch()
-            _, g_loss = sess.run([g_pretrain_op, g_pretrain_loss], feed_dict={x_real: sentence})
-
-        supervised_g_losses.append(g_loss)
-
-        g_pretrain_loss_np = np.mean(supervised_g_losses)
-        gen_pretrain_loss_summary.write_summary(g_pretrain_loss_np, epoch)
-
-        # Test
-        ntest_pre = 40
-        if np.mod(epoch, ntest_pre) == 0:
-            # generate fake data and create batches
-            # tqdm.write("Epoch: {}; Computing Metrics and writing summaries".format(epoch), end=" ")
-            t = time.time()
-            codes_with_lambda, sentence_generated_from, codes, json_object = generate_samples_topic(sess, x_fake,
-                                                                                                    batch_size,
-                                                                                                    num_sentences,
-                                                                                                    lambda_values=lambda_values,
-                                                                                                    oracle_loader=oracle_loader,
-                                                                                                    gen_x_no_lambda=gen_x_no_lambda,
-                                                                                                    x_topic=x_topic)
-            create_json_file(json_object, json_file)
-            # gen_real_test_file_not_file(codes, sentence_generated_from, gen_save_file, index_word_dict)
-            gen_real_test_file_not_file(codes, sentence_generated_from, gen_text_file, index_word_dict, json_object)
-            gen_real_test_file_not_file(codes_with_lambda, sentence_generated_from, gen_text_file_print,
-                                        index_word_dict, json_object, True)
-
-            # take sentences from saved files
-            sent = take_sentences_topic(gen_text_file_print)
-            sent = random.sample(sent, 5)
-            gen_sentences_summary.write_summary(sent, epoch)
-
-            # write summaries
-            scores = [metric.get_score() for metric in metrics]
-            metrics_summary_str = sess.run(metric_summary_op, feed_dict=dict(zip(metrics_pl, scores)))
-            sum_writer.add_summary(metrics_summary_str, epoch)
-            # tqdm.write("in {} seconds".format(time.time() - t))
-
-            msg = 'pre_gen_epoch:' + str(epoch) + ', g_pre_loss: %.4f' % g_pretrain_loss_np
-            metric_names = [metric.get_name() for metric in metrics]
-            for (name, score) in zip(metric_names, scores):
-                msg += ', ' + name + ': %.4f' % score
-            progress.set_description(msg)
-            log.write(msg)
-            log.write('\n')
-
-            gc.collect()
 
 
 def topic_discriminator_pretrain(n_topic_pre_epochs, sess, d_topic_pretrain_op, d_topic_loss,

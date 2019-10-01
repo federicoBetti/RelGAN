@@ -135,9 +135,9 @@ class AmazonGenerator:
         supervised_g_losses = []
         oracle_loader.reset_pointer()
 
+        n = np.zeros((self.batch_size, self.seq_len))
         for it in tqdm(range(oracle_loader.num_batch)):
             user, product, rating, sentence = oracle_loader.next_batch()
-            n = np.zeros((self.batch_size, self.seq_len))
             for ind, el in enumerate(sentence):
                 n[ind] = el
 

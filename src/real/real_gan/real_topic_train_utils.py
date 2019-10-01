@@ -212,8 +212,9 @@ def get_train_ops(config, g_pretrain_loss, g_loss, d_loss, d_topic_loss,
 
     # gradient clipping
     if d_topic_loss is not None:
-        d_topic_grads, _ = tf.clip_by_global_norm(tf.gradients(d_topic_loss, d_topic_vars, name="gradients_d_topic_adv"),
-                                                  grad_clip, name="d_topic_adv_clipping")
+        d_topic_grads, _ = tf.clip_by_global_norm(
+            tf.gradients(d_topic_loss, d_topic_vars, name="gradients_d_topic_adv"),
+            grad_clip, name="d_topic_adv_clipping")
         d_topic_pretrain_op = d_topic_optimizer.apply_gradients(zip(d_topic_grads, d_topic_vars))
     else:
         d_topic_pretrain_op = None
@@ -266,6 +267,18 @@ def get_metric_summary_op(config):
             temp_pl = tf.placeholder(tf.float32, name='bleu{}'.format(i))
             metrics_pl.append(temp_pl)
             metrics_sum.append(tf.summary.scalar('metrics/bleu{}'.format(i), temp_pl))
+
+    if config['bleu_amazon']:
+        for i in range(2, 5):
+            temp_pl = tf.placeholder(tf.float32, name='bleu_amazon{}'.format(i))
+            metrics_pl.append(temp_pl)
+            metrics_sum.append(tf.summary.scalar('metrics/bleu_amazon{}'.format(i), temp_pl))
+
+    if config['bleu_amazon_validation']:
+        for i in [2]:
+            temp_pl = tf.placeholder(tf.float32, name='bleu_amazon_validation{}'.format(i))
+            metrics_pl.append(temp_pl)
+            metrics_sum.append(tf.summary.scalar('metrics/bleu_amazon_validation{}'.format(i), temp_pl))
 
     if config['selfbleu']:
         for i in range(2, 6):
