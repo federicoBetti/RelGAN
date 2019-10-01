@@ -46,7 +46,7 @@ def generate_samples_topic(sess, gen_x, batch_size, generated_num, lambda_values
     sentence_generated_from = []
     generated_samples_no_lambda_words = []
 
-    max_gen = int(generated_num / batch_size) #- 155 # 156
+    max_gen = int(generated_num / batch_size)  # - 155 # 156
     for ii in range(max_gen):
         text_batch, topic_batch = oracle_loader.random_batch(only_text=False)
         feed = {x_topic: topic_batch}
@@ -100,7 +100,7 @@ def generate_amazon(sess, gen_x, batch_size, generated_num, oracle_loader=None, 
     generated_samples = []
     sentence_generated_from = []
 
-    max_gen = int(generated_num / batch_size) #- 155 # 156
+    max_gen = int(generated_num / batch_size)  # - 155 # 156
     for ii in range(max_gen):
         user, product, rating, sentences = oracle_loader.random_batch(dataset=tensors['dataset'])
         feed_dict = {tensors['x_user']: user,
@@ -263,6 +263,7 @@ def take_sentences_topic(gen_text_file):
         strings.append(line + taken_from_line)
     return strings
 
+
 def str2bool(v):
     if isinstance(v, bool):
         return v
@@ -272,6 +273,22 @@ def str2bool(v):
         return False
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
+
+
+def get_parameters_division():
+    # count parameters
+    variables_dict = {}
+    for v in tf.trainable_variables():
+        name_scope = v.name.split('/')
+        d = variables_dict
+        params_number = np.prod(v.get_shape().as_list())
+        for name in name_scope:
+            d[name] = d.get(name, {})
+            d = d[name]
+            d['total_param'] = d.get('total_param', 0) + params_number
+    print("Total paramter number: {}".format(np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()])))
+    return variables_dict
+
 
 class CustomSummary(object):
     """

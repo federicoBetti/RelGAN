@@ -7,7 +7,7 @@ generator_dict = {
     'rmc_att': rmc_att.generator,
     'rmc_att_topic': rmc_att_topic.generator,
     'rmc_vdcnn': rmc_vdcnn.generator,
-    'amazon_attribute': amazon_attr.generator,
+    'amazon_attribute': amazon_attr.AmazonGenerator,
     'CustomerReviews': customer_reviews.ReviewGenerator
 }
 
@@ -17,7 +17,7 @@ discriminator_dict = {
     'rmc_att': rmc_att.discriminator,
     'rmc_att_topic': rmc_att_topic.discriminator,
     'rmc_vdcnn': rmc_vdcnn.discriminator,
-    'amazon_attribute': amazon_attr.discriminator,
+    'amazon_attribute': amazon_attr.AmazonDiscriminator,
     'CustomerReviews': customer_reviews.ReviewDiscriminator
 }
 
