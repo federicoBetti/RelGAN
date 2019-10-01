@@ -1,6 +1,7 @@
 import argparse
 import os
 import random
+from os.path import join
 
 import models
 from oracle.oracle_gan.oracle_loader import OracleDataLoader
@@ -212,6 +213,8 @@ def main():
 
         oracle_loader = RealDataAmazonLoader(args.batch_size, args.seq_len)
         oracle_loader.create_batches(data_file=[train_file, dev_file, test_file])
+        oracle_loader.model_index_word_dict = load_json(join(data_dir, 'index_word_dict.json'))
+        oracle_loader.model_word_index_dict = load_json(join(data_dir, 'word_index_dict.json'))
 
         generator = models.get_generator("amazon_attribute", vocab_size=config['vocabulary_size'],
                                          batch_size=args.batch_size,

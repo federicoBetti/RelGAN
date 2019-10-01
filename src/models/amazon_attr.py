@@ -16,7 +16,6 @@ def generator(x_real, temperature, x_user, x_product, x_rating, vocab_size, batc
                                    initializer=create_linear_initializer(vocab_size))
     gen_mem = RelationalMemory(mem_slots=mem_slots, head_size=head_size, num_heads=num_heads)
     g_output_unit = create_output_unit(output_memory_size, vocab_size)
-    g_topic_embedding = create_topic_embedding_unit(vocab_size, gen_emb_dim)
 
     # managing of attributes
     g_user = linear(input_=tf.one_hot(x_user, user_num), output_size=gen_emb_dim, use_bias=True, scope="linear_x_user")

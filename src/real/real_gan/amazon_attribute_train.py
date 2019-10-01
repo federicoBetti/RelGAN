@@ -13,6 +13,7 @@ from real.real_gan.amazon_loader import RealDataAmazonLoader
 from real.real_gan.real_loader import RealDataTopicLoader
 from real.real_gan.real_topic_train_utils import get_accuracy, get_losses, get_train_ops, \
     get_metric_summary_op, get_metrics, get_fixed_temperature, create_json_file
+from utils.metrics.Bleu import BleuAmazon
 from utils.utils import *
 
 
@@ -50,6 +51,7 @@ def amazon_attribute_train(generator: rmc_att_topic.generator, discriminator: rm
     gen_text_file = os.path.join(sample_dir, 'generator_text.txt')
     gen_text_file_print = os.path.join(sample_dir, 'gen_text_file_print.txt')
     json_file = os.path.join(sample_dir, 'json_file.txt')
+    json_file_validation = os.path.join(sample_dir, 'json_file_validation.txt')
     csv_file = os.path.join(log_dir, 'experiment-log-rmcgan.csv')
     data_file = os.path.join(data_dir, '{}.txt'.format(dataset))
 
@@ -76,8 +78,9 @@ def amazon_attribute_train(generator: rmc_att_topic.generator, discriminator: rm
 
     # generator and discriminator outputs
     x_fake_onehot_appr, x_fake, g_pretrain_loss, gen_o, = generator(x_real=x_real,
-                                                        temperature=temperature,
-                                                        x_user=x_user, x_product=x_product, x_rating=x_rating)
+                                                                    temperature=temperature,
+                                                                    x_user=x_user, x_product=x_product,
+                                                                    x_rating=x_rating)
     d_out_real = discriminator(x_onehot=x_real_onehot)  # , with_out=False)
     d_out_fake = discriminator(x_onehot=x_fake_onehot_appr)  # , with_out=False)
 
@@ -135,7 +138,6 @@ def amazon_attribute_train(generator: rmc_att_topic.generator, discriminator: rm
 
     # To save the trained model
     saver = tf.train.Saver()
-
     # ------------- initial the graph --------------
     with init_sess() as sess:
 
@@ -163,8 +165,13 @@ def amazon_attribute_train(generator: rmc_att_topic.generator, discriminator: rm
         run_information.write_summary(str(args), 0)
         print("Information stored in the summary!")
 
-        metrics = get_metrics(config, oracle_loader, test_file, gen_text_file, g_pretrain_loss, x_real, None, sess,
-                              json_file)
+        # metrics = get_metrics(config, oracle_loader, test_file, gen_text_file, g_pretrain_loss, x_real, None, sess,
+        #                       json_file)
+        metrics = []
+        metrics.append(BleuAmazon("BleuAmazon_2", json_file=json_file, gram=2))
+        metrics.append(BleuAmazon("BleuAmazon_3", json_file=json_file, gram=3))
+        metrics.append(BleuAmazon("BleuAmazon_4", json_file=json_file, gram=4))
+        metrics.append(BleuAmazon("BleuAmazon_validation_2", json_file=json_file_validation, gram=2))
 
         gc.collect()
         # Check if there is a pretrained generator saved
@@ -189,7 +196,7 @@ def amazon_attribute_train(generator: rmc_att_topic.generator, discriminator: rm
                     n = np.zeros((batch_size, seq_len))
                     for ind, el in enumerate(sentence):
                         n[ind] = el
-                    # todo start from here, this should work but it is bad
+
                     _, g_loss = sess.run([g_pretrain_op, g_pretrain_loss], feed_dict={x_real: n,
                                                                                       x_user: user,
                                                                                       x_product: product,
@@ -206,25 +213,23 @@ def amazon_attribute_train(generator: rmc_att_topic.generator, discriminator: rm
                     # generate fake data and create batches
                     # tqdm.write("Epoch: {}; Computing Metrics and writing summaries".format(epoch), end=" ")
                     t = time.time()
-                    codes_with_lambda, sentence_generated_from, codes, json_object = generate_samples_topic(sess,
-                                                                                                            x_fake,
-                                                                                                            batch_size,
-                                                                                                            num_sentences,
-                                                                                                            lambda_values=lambda_values,
-                                                                                                            oracle_loader=oracle_loader,
-                                                                                                            gen_x_no_lambda=gen_x_no_lambda,
-                                                                                                            x_topic=x_topic)
-                    create_json_file(json_object, json_file)
+                    num_sentences = 200
+                    json_object = generate_amazon(sess, x_fake, batch_size, num_sentences, oracle_loader,
+                                                  x_user=x_user, x_product=x_product, x_rating=x_rating, dataset="train")
+                    write_json(json_file, json_object)
+                    json_object = generate_amazon(sess, x_fake, batch_size, num_sentences, oracle_loader,
+                                                  x_user=x_user, x_product=x_product, x_rating=x_rating, dataset="validation")
+                    write_json(json_file_validation, json_object)
                     # gen_real_test_file_not_file(codes, sentence_generated_from, gen_save_file, index_word_dict)
-                    gen_real_test_file_not_file(codes, sentence_generated_from, gen_text_file, index_word_dict,
-                                                json_object)
-                    gen_real_test_file_not_file(codes_with_lambda, sentence_generated_from, gen_text_file_print,
-                                                index_word_dict, json_object, True)
+                    # gen_real_test_file_not_file(codes, sentence_generated_from, gen_text_file, index_word_dict,
+                    #                             json_object)
+                    # gen_real_test_file_not_file(codes_with_lambda, sentence_generated_from, gen_text_file_print,
+                    #                             index_word_dict, json_object, True)
 
                     # take sentences from saved files
-                    sent = take_sentences_topic(gen_text_file_print)
-                    sent = random.sample(sent, 5)
-                    gen_sentences_summary.write_summary(sent, epoch)
+                    # sent = take_sentences_topic(gen_text_file_print)
+                    # sent = random.sample(sent, 5)
+                    # gen_sentences_summary.write_summary(sent, epoch)
 
                     # write summaries
                     scores = [metric.get_score() for metric in metrics]

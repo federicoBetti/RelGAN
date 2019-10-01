@@ -96,6 +96,35 @@ def generate_samples_topic(sess, gen_x, batch_size, generated_num, lambda_values
     return codes_with_lambda, sentence_generated_from, codes, json_file
 
 
+def generate_amazon(sess, gen_x, batch_size, generated_num, oracle_loader=None, **tensors):
+    generated_samples = []
+    sentence_generated_from = []
+
+    max_gen = int(generated_num / batch_size) #- 155 # 156
+    for ii in range(max_gen):
+        user, product, rating, sentences = oracle_loader.random_batch(tensors['dataset'])
+        feed_dict = {tensors['x_user']: user,
+                     tensors['x_product']: product,
+                     tensors['x_rating']: rating}
+        sentence_generated_from.extend(sentences)
+        gen_x_res = sess.run([gen_x], feed_dict=feed_dict)
+
+        generated_samples.extend([x for a in gen_x_res for x in a])
+
+    json_file = {'sentences': []}
+    for sent, start_sentence in zip(generated_samples, sentence_generated_from):
+        json_file['sentences'].append({
+            'real_starting': " ".join([
+                oracle_loader.model_index_word_dict[str(el)] for el in start_sentence if
+                el < len(oracle_loader.model_index_word_dict)]),
+            'generated_sentence': " ".join([
+                oracle_loader.model_index_word_dict[str(el)] for el in sent if
+                el < len(oracle_loader.model_index_word_dict)])
+        })
+
+    return json_file
+
+
 def init_sess():
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
