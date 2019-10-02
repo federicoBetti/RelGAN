@@ -14,6 +14,7 @@ from real.real_gan.loaders.custom_reviews_loader import RealDataCustomerReviewsL
 from real.real_gan.real_topic_train_utils import get_train_ops, \
     get_metric_summary_op, get_fixed_temperature, create_json_file
 from utils.metrics.Bleu import BleuAmazon
+from utils.metrics.Nll import NllTopic
 from utils.utils import *
 
 
@@ -27,7 +28,8 @@ print("Available GPUs: {}".format(get_available_gpus()))
 
 # A function to initiate the graph and train the networks
 
-def customer_reviews_train(generator: ReviewGenerator, discriminator: ReviewDiscriminator,
+def customer_reviews_train(generator: ReviewGenerator, discriminator_positive: ReviewDiscriminator,
+                           discriminator_negative: ReviewDiscriminator,
                            oracle_loader: RealDataCustomerReviewsLoader, config, args):
     batch_size = config['batch_size']
     num_sentences = config['num_sentences']
@@ -67,24 +69,37 @@ def customer_reviews_train(generator: ReviewGenerator, discriminator: ReviewDisc
         os.makedirs(log_dir)
 
     # placeholder definitions
-    x_real = tf.placeholder(tf.int32, [batch_size, seq_len], name="x_real")  # tokens of oracle sequences
+    x_real = tf.placeholder(tf.int32, [batch_size, seq_len], name="x_real")
+    x_pos = tf.placeholder(tf.int32, [batch_size, seq_len], name="x_pos")
+    x_neg = tf.placeholder(tf.int32, [batch_size, seq_len], name="x_neg")
     x_sentiment = tf.placeholder(tf.int32, [batch_size], name="x_sentiment")
 
     temperature = tf.Variable(1., trainable=False, name='temperature')
 
-    x_real_onehot = tf.one_hot(x_real, vocab_size)  # batch_size x seq_len x vocab_size
-    assert x_real_onehot.get_shape().as_list() == [batch_size, seq_len, vocab_size]
+    x_real_pos_onehot = tf.one_hot(x_pos, vocab_size)  # batch_size x seq_len x vocab_size
+    x_real_neg_onehot = tf.one_hot(x_neg, vocab_size)  # batch_size x seq_len x vocab_size
+    assert x_real_pos_onehot.get_shape().as_list() == [batch_size, seq_len, vocab_size]
 
     # generator and discriminator outputs
     generator_obj = generator(x_real=x_real, temperature=temperature, x_sentiment=x_sentiment)
-    discriminator_real = discriminator(x_onehot=x_real_onehot)  # , with_out=False)
-    discriminator_fake = discriminator(x_onehot=generator_obj.gen_x_onehot_adv)  # , with_out=False)
+    # discriminator for positive sentences
+    discriminator_positive_real_pos = discriminator_positive(x_onehot=x_real_pos_onehot)
+    discriminator_positive_real_neg = discriminator_positive(x_onehot=x_real_neg_onehot)
+    discriminator_positive_fake = discriminator_positive(x_onehot=generator_obj.gen_x_onehot_adv)
+    # discriminator for negative sentences
+    discriminator_negative_real_pos = discriminator_negative(x_onehot=x_real_pos_onehot)
+    discriminator_negative_real_neg = discriminator_negative(x_onehot=x_real_neg_onehot)
+    discriminator_negative_fake = discriminator_negative(x_onehot=generator_obj.gen_x_onehot_adv)
 
     # GAN / Divergence type
-    log_pg, g_loss, d_loss, d_loss_real, d_loss_fake, g_sentence_loss = get_losses(generator_obj,
-                                                                                   discriminator_real,
-                                                                                   discriminator_fake,
-                                                                                   config)
+
+    log_pg, g_loss, d_loss = get_losses(generator_obj,
+                                        discriminator_positive_real_pos,
+                                        discriminator_positive_real_neg,
+                                        discriminator_positive_fake,
+                                        discriminator_negative_real_pos,
+                                        discriminator_negative_real_neg,
+                                        discriminator_negative_fake)
 
     # Global step
     global_step = tf.Variable(0, trainable=False)
@@ -107,10 +122,7 @@ def customer_reviews_train(generator: ReviewGenerator, discriminator: ReviewDisc
 
     # Loss summaries
     loss_summaries = [
-        tf.summary.scalar('adv_loss/discriminator/classic/d_loss_real', d_loss_real),
-        tf.summary.scalar('adv_loss/discriminator/classic/d_loss_fake', d_loss_fake),
         tf.summary.scalar('adv_loss/discriminator/total', d_loss),
-        tf.summary.scalar('adv_loss/generator/g_sentence_loss', g_sentence_loss),
         tf.summary.scalar('adv_loss/generator/total_g_loss', g_loss),
         tf.summary.scalar('adv_loss/log_pg', log_pg),
         tf.summary.scalar('adv_loss/Wall_clock_time', Wall_clock_time),
@@ -125,12 +137,9 @@ def customer_reviews_train(generator: ReviewGenerator, discriminator: ReviewDisc
     gen_pretrain_loss_summary = CustomSummary(name='pretrain_loss', scope='generator')
     gen_sentences_summary = CustomSummary(name='generated_sentences', scope='generator',
                                           summary_type=tf.summary.text, item_type=tf.string)
-    topic_discr_pretrain_summary = CustomSummary(name='pretrain_loss', scope='topic_discriminator')
-    topic_discr_accuracy_summary = CustomSummary(name='pretrain_accuracy', scope='topic_discriminator')
     run_information = CustomSummary(name='run_information', scope='info',
                                     summary_type=tf.summary.text, item_type=tf.string)
-    custom_summaries = [gen_pretrain_loss_summary, gen_sentences_summary, topic_discr_pretrain_summary,
-                        topic_discr_accuracy_summary, run_information]
+    custom_summaries = [gen_pretrain_loss_summary, gen_sentences_summary, run_information]
 
     # To save the trained model
     saver = tf.train.Saver()
@@ -138,31 +147,40 @@ def customer_reviews_train(generator: ReviewGenerator, discriminator: ReviewDisc
     with init_sess() as sess:
 
         # count parameters
-        variables_dict = {}
-        for v in tf.trainable_variables():
-            name_scope = v.name.split('/')
-            d = variables_dict
-            params_number = np.prod(v.get_shape().as_list())
-            for name in name_scope:
-                d[name] = d.get(name, {})
-                d = d[name]
-                d['total_param'] = d.get('total_param', 0) + params_number
+        variables_dict = get_parameters_division()
 
-        print("Total paramter number: {}".format(
-            np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()])))
         log = open(csv_file, 'w')
-        # file_suffix = "date: {}, normal RelGAN, pretrain epochs: {}, adv epochs: {}".format(datetime.datetime.now(),
-        #                                                                                     npre_epochs, nadv_steps)
-        sum_writer = tf.summary.FileWriter(os.path.join(log_dir, 'summary'),
-                                           sess.graph)  # , filename_suffix=file_suffix)
+        sum_writer = tf.summary.FileWriter(os.path.join(log_dir, 'summary'), sess.graph)
         for custom_summary in custom_summaries:
             custom_summary.set_file_writer(sum_writer, sess)
 
         run_information.write_summary(str(args), 0)
         print("Information stored in the summary!")
 
-        # metrics = get_metrics(config, oracle_loader, test_file, gen_text_file, g_pretrain_loss, x_real, None, sess,
-        #                       json_file)
+        def get_metrics():
+            # set up evaluation metric
+            metrics = []
+            if config['nll_gen']:
+                nll_gen = NllTopic(oracle_loader, generator_obj.pretrain_loss, x_real, sess, name='nll_gen', x_topic=x_topic)
+                metrics.append(nll_gen)
+            if config['doc_embsim']:
+                doc_embsim = DocEmbSim(test_file, gen_file, config['vocab_size'], name='doc_embsim')
+                metrics.append(doc_embsim)
+            if config['bleu']:
+                for i in range(2, 6):
+                    bleu = Bleu(test_text=gen_file, real_text=test_file, gram=i, name='bleu' + str(i))
+                    metrics.append(bleu)
+            if config['selfbleu']:
+                for i in range(2, 6):
+                    selfbleu = SelfBleu(test_text=gen_file, gram=i, name='selfbleu' + str(i))
+                    metrics.append(selfbleu)
+            if config['KL']:
+                KL_div = KL_divergence(oracle_loader, json_file, name='KL_divergence')
+                metrics.append(KL_div)
+
+            return metrics
+        metrics = get_metrics(config, oracle_loader, test_file, gen_text_file, g_pretrain_loss, x_real, None, sess,
+                              json_file)
         metrics = []
         metrics.append(BleuAmazon("BleuAmazon_2", json_file=json_file, gram=2))
         metrics.append(BleuAmazon("BleuAmazon_3", json_file=json_file, gram=3))
@@ -395,22 +413,50 @@ def topic_discriminator_pretrain(n_topic_pre_epochs, sess, d_topic_pretrain_op, 
         progress.set_description('topic_loss: %4.4f, accuracy: %4.4f' % (d_topic_pretrain_loss, accuracy_mean))
 
 
-def get_losses(generator_obj, discriminator_real, discriminator_fake, config):
+def get_losses(generator_obj,
+               discriminator_positive_real_pos,
+               discriminator_positive_real_neg,
+               discriminator_positive_fake,
+               discriminator_negative_real_pos,
+               discriminator_negative_real_neg,
+               discriminator_negative_fake):
     EPS = 1e-10
     with tf.variable_scope("standard_GAN_loss"):
-        d_loss_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-            logits=discriminator_real.logits, labels=tf.ones_like(discriminator_real.logits)
-        ), name="d_loss_real")
-        d_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-            logits=discriminator_fake.logits, labels=tf.zeros_like(discriminator_fake.logits)
-        ), name="d_loss_fake")
-        d_loss = d_loss_real + d_loss_fake
+        d_loss_pos_pos = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+            logits=discriminator_positive_real_pos.logits,
+            labels=tf.ones_like(discriminator_positive_real_pos.logits)
+        ), name="d_loss_pos_pos")
+        d_loss_pos_neg = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+            logits=discriminator_positive_real_neg.logits,
+            labels=tf.zeros_like(discriminator_positive_real_neg.logits)
+        ), name="d_loss_pos_neg")
+        d_loss_pos_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+            logits=discriminator_positive_fake.logits, labels=tf.zeros_like(discriminator_positive_fake.logits)
+        ), name="d_loss_pos_fake")
+        d_loss_pos = d_loss_pos_pos + d_loss_pos_neg + d_loss_pos_fake
 
-        g_sentence_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-            logits=discriminator_fake.logits, labels=tf.ones_like(discriminator_fake.logits)
-        ), name="g_sentence_loss")
-        g_loss = g_sentence_loss
+        d_loss_neg_neg = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+            logits=discriminator_negative_real_neg.logits,
+            labels=tf.ones_like(discriminator_negative_real_neg.logits)
+        ), name="d_loss_neg_neg")
+        d_loss_neg_pos = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+            logits=discriminator_negative_real_pos.logits,
+            labels=tf.zeros_like(discriminator_negative_real_pos.logits)
+        ), name="d_loss_neg_pos")
+        d_loss_neg_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+            logits=discriminator_negative_fake.logits, labels=tf.zeros_like(discriminator_negative_fake.logits)
+        ), name="d_loss_neg_fake")
+        d_loss_neg = d_loss_neg_neg + d_loss_neg_pos + d_loss_neg_fake
+        d_loss = d_loss_neg + d_loss_pos
+
+        g_sentence_loss_pos = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+            logits=discriminator_positive_fake.logits, labels=tf.ones_like(discriminator_positive_fake.logits)
+        ), name="g_sentence_loss_pos")
+        g_sentence_loss_neg = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+            logits=discriminator_negative_fake.logits, labels=tf.ones_like(discriminator_negative_fake.logits)
+        ), name="g_sentence_loss_neg")
+        g_loss = g_sentence_loss_pos + g_sentence_loss_neg
 
         log_pg = tf.reduce_mean(tf.log(generator_obj.gen_o + EPS))  # [1], measures the log p_g(x)
 
-        return log_pg, g_loss, d_loss, d_loss_real, d_loss_fake, g_sentence_loss
+        return log_pg, g_loss, d_loss

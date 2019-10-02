@@ -12,6 +12,7 @@ from real.real_gan.loaders.amazon_loader import RealDataAmazonLoader
 from real.real_gan.real_topic_train_utils import get_train_ops, \
     get_metric_summary_op, get_fixed_temperature, EPS, get_metrics
 from utils.metrics.Bleu import BleuAmazon
+from utils.metrics.KLDivergence import KL_divergence
 from utils.metrics.Nll import NllAmazon
 from utils.utils import *
 
@@ -144,35 +145,7 @@ def amazon_attribute_train(generator: rmc_att_topic.generator, discriminator: rm
         run_information.write_summary(str(args), 0)
         print("Information stored in the summary!")
 
-        def get_metrics(config, oracle_loader, test_file, gen_file, g_pretrain_loss, x_real, x_topic, sess, json_file):
-            # set up evaluation metric
-            metrics = []
-            if config['nll_gen']:
-                nll_gen = NllAmazon(oracle_loader, generator_obj, sess, name='nll_gen')
-                metrics.append(nll_gen)
-            if config['doc_embsim']:
-                doc_embsim = DocEmbSim(test_file, gen_file, config['vocab_size'], name='doc_embsim')
-                metrics.append(doc_embsim)
-            if config['bleu']:
-                for i in range(2, 6):
-                    bleu = Bleu(test_text=gen_file, real_text=test_file, gram=i, name='bleu' + str(i))
-                    metrics.append(bleu)
-            if config['selfbleu']:
-                for i in range(2, 6):
-                    selfbleu = SelfBleu(test_text=gen_file, gram=i, name='selfbleu' + str(i))
-                    metrics.append(selfbleu)
-            if config['KL']:
-                KL_div = KL_divergence(oracle_loader, json_file, name='KL_divergence')
-                metrics.append(KL_div)
-
-            return metrics
-
-        metrics = get_metrics(config, oracle_loader, test_file, gen_text_file, generator_obj.pretrain_loss, x_real,
-                              None, sess, json_file)
-        metrics.append(BleuAmazon("BleuAmazon_2", json_file=json_file, gram=2))
-        metrics.append(BleuAmazon("BleuAmazon_3", json_file=json_file, gram=3))
-        metrics.append(BleuAmazon("BleuAmazon_4", json_file=json_file, gram=4))
-        metrics.append(BleuAmazon("BleuAmazon_validation_2", json_file=json_file_validation, gram=2))
+        metrics = get_metrics(config, oracle_loader, sess, json_file, json_file_validation, generator_obj)
 
         gc.collect()
         # Check if there is a pretrained generator saved
@@ -413,3 +386,24 @@ def get_losses(generator, discriminator_real, discriminator_fake, config):
     log_pg = tf.reduce_mean(tf.log(generator.gen_o + EPS))  # [1], measures the log p_g(x)
 
     return log_pg, g_loss, d_loss
+
+
+def get_metrics(config, oracle_loader, sess, json_file, json_file_validation, generator_obj):
+    # set up evaluation metric
+    metrics = []
+    if config['nll_gen']:
+        nll_gen = NllAmazon(oracle_loader, generator_obj, sess, name='nll_gen')
+        metrics.append(nll_gen)
+    if config['bleu_amazon']:
+        for i in range(2, 5):
+            bleu = BleuAmazon("BleuAmazon_{}".format(i), json_file=json_file, gram=i)
+            metrics.append(bleu)
+    if config['bleu_amazon_validation']:
+        for i in range(2, 3):
+            bleu = BleuAmazon("BleuAmazon_validation_{}".format(i), json_file=json_file_validation, gram=i)
+            metrics.append(bleu)
+    if config['KL']:
+        KL_div = KL_divergence(oracle_loader, json_file, name='KL_divergence')
+        metrics.append(KL_div)
+
+    return metrics
