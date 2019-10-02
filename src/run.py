@@ -259,13 +259,21 @@ def main():
                                          hidden_dim=args.hidden_dim,
                                          sentiment_num=config['sentiment_num'])
 
-        discriminator = models.get_discriminator("CustomerReviews", batch_size=args.batch_size,
-                                                 seq_len=config['seq_len'],
-                                                 vocab_size=config['vocabulary_size'],
-                                                 dis_emb_dim=args.dis_emb_dim,
-                                                 num_rep=args.num_rep, sn=args.sn)
+        discriminator_positive = models.get_discriminator("CustomerReviews", scope="discriminator_positive",
+                                                          batch_size=args.batch_size,
+                                                          seq_len=config['seq_len'],
+                                                          vocab_size=config['vocabulary_size'],
+                                                          dis_emb_dim=args.dis_emb_dim,
+                                                          num_rep=args.num_rep, sn=args.sn)
 
-        customer_reviews_train(generator, discriminator, oracle_loader, config, args)
+        discriminator_negative = models.get_discriminator("CustomerReviews", scope="discriminator_negative",
+                                                          batch_size=args.batch_size,
+                                                          seq_len=config['seq_len'],
+                                                          vocab_size=config['vocabulary_size'],
+                                                          dis_emb_dim=args.dis_emb_dim,
+                                                          num_rep=args.num_rep, sn=args.sn)
+
+        customer_reviews_train(generator, discriminator_positive, discriminator_negative, oracle_loader, config, args)
     else:
         raise NotImplementedError('{}: unknown dataset!'.format(args.dataset))
 

@@ -46,3 +46,27 @@ class NllTopic(Nll):
             g_loss = self.sess.run(self.pretrain_loss, feed_dict={self.x_real: text_batch, self.x_topic: topic_batch})
             nll.append(g_loss)
         return np.mean(nll)
+
+
+class NllAmazon(Nll):
+    def __init__(self, oracle_loader, generator_obj, sess, name):
+        super().__init__(oracle_loader, generator_obj.pretrain_loss, None, sess, name)
+        self.generator_object = generator_obj
+
+    def nll_loss(self):
+        nll = []
+        self.data_loader.reset_pointer()
+        batch_num = self.data_loader.num_batch
+        n = np.zeros((self.generator_object.batch_size, self.generator_object.seq_len))
+        for it in range(batch_num):
+            user, product, rating, sentence = self.data_loader.next_batch()
+            for ind, el in enumerate(sentence):
+                n[ind] = el
+
+            g_loss = self.sess.run(self.pretrain_loss, feed_dict={self.x_real: n,
+                                                                  self.generator_object.x_user: user,
+                                                                  self.generator_object.x_product: product,
+                                                                  self.generator_object.x_rating: rating})
+
+            nll.append(g_loss)
+        return np.mean(nll)

@@ -1,8 +1,7 @@
 # In this file I will create the training for the model with topics
 import datetime
-import random
-
 import gc
+
 from tensorflow.python.client import device_lib
 from tensorflow.python.saved_model.simple_save import simple_save
 from tqdm import tqdm
@@ -11,8 +10,9 @@ from models import rmc_att_topic
 from path_resolution import resources_path
 from real.real_gan.loaders.amazon_loader import RealDataAmazonLoader
 from real.real_gan.real_topic_train_utils import get_train_ops, \
-    get_metric_summary_op, get_fixed_temperature, create_json_file, EPS, get_metrics
+    get_metric_summary_op, get_fixed_temperature, EPS, get_metrics
 from utils.metrics.Bleu import BleuAmazon
+from utils.metrics.Nll import NllAmazon
 from utils.utils import *
 
 
@@ -143,6 +143,29 @@ def amazon_attribute_train(generator: rmc_att_topic.generator, discriminator: rm
             custom_summary.set_file_writer(sum_writer, sess)
         run_information.write_summary(str(args), 0)
         print("Information stored in the summary!")
+
+        def get_metrics(config, oracle_loader, test_file, gen_file, g_pretrain_loss, x_real, x_topic, sess, json_file):
+            # set up evaluation metric
+            metrics = []
+            if config['nll_gen']:
+                nll_gen = NllAmazon(oracle_loader, generator_obj, sess, name='nll_gen')
+                metrics.append(nll_gen)
+            if config['doc_embsim']:
+                doc_embsim = DocEmbSim(test_file, gen_file, config['vocab_size'], name='doc_embsim')
+                metrics.append(doc_embsim)
+            if config['bleu']:
+                for i in range(2, 6):
+                    bleu = Bleu(test_text=gen_file, real_text=test_file, gram=i, name='bleu' + str(i))
+                    metrics.append(bleu)
+            if config['selfbleu']:
+                for i in range(2, 6):
+                    selfbleu = SelfBleu(test_text=gen_file, gram=i, name='selfbleu' + str(i))
+                    metrics.append(selfbleu)
+            if config['KL']:
+                KL_div = KL_divergence(oracle_loader, json_file, name='KL_divergence')
+                metrics.append(KL_div)
+
+            return metrics
 
         metrics = get_metrics(config, oracle_loader, test_file, gen_text_file, generator_obj.pretrain_loss, x_real,
                               None, sess, json_file)

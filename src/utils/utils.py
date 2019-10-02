@@ -219,16 +219,6 @@ def gen_real_test_file_not_file(codes: str, sentence_generated_from, file, iw_di
     :param iw_dict: index to word dictionary to convert from codes to words
     :param generator_sentences: boolean, if to write the generator sentence from which the topic was taken
     """
-    # raw = codes.split('\n')[:-1]
-    # This was useless because it only arrives "int (float) int (float) ... "
-    # tokenized = []
-    # for text in raw:
-    #     print(text)
-    #     text = nltk.word_tokenize(text.lower())
-    #     tokenized.append(text)
-    # assert len(tokenized) == len(sentence_generated_from), \
-    #     "Codes and sentence generated from have different lengths: {} and {}".format(len(tokenized),
-    #                                                                                  len(sentence_generated_from))
     with open(file, 'w') as outfile:
         for sent in json_file['sentences']:
             outfile.write(sent['generated_sentence'] + "\n")
