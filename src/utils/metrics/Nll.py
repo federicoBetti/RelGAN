@@ -70,3 +70,12 @@ class NllAmazon(Nll):
 
             nll.append(g_loss)
         return np.mean(nll)
+
+
+class NllReview(Nll):
+    def __init__(self, oracle_loader, generator_obj, sess, name):
+        super().__init__(oracle_loader, generator_obj.pretrain_loss, None, sess, name)
+        self.generator_object = generator_obj
+
+    def nll_loss(self):
+        return self.generator_object.pretrain_epoch(oracle_loader=self.data_loader, sess=self.sess)

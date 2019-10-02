@@ -178,7 +178,6 @@ def amazon_attribute_train(generator: rmc_att_topic.generator, discriminator: rm
                     scores = [metric.get_score() for metric in metrics]
                     metrics_summary_str = sess.run(metric_summary_op, feed_dict=dict(zip(metrics_pl, scores)))
                     sum_writer.add_summary(metrics_summary_str, epoch)
-                    # tqdm.write("in {} seconds".format(time.time() - t))
 
                     msg = 'pre_gen_epoch:' + str(epoch) + ', g_pre_loss: %.4f' % g_pretrain_loss_np
                     metric_names = [metric.get_name() for metric in metrics]
@@ -205,7 +204,6 @@ def amazon_attribute_train(generator: rmc_att_topic.generator, discriminator: rm
                              generator_obj.x_rating: rating}
                 sess.run(g_train_op, feed_dict=feed_dict)
             for _ in range(config['dsteps']):
-                # normal + topic discriminator together
                 user, product, rating, sentence = oracle_loader.random_batch(dataset="train")
                 n = np.zeros((batch_size, seq_len))
                 for ind, el in enumerate(sentence):

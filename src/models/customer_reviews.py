@@ -29,7 +29,8 @@ class ReviewGenerator:
         self.g_output_unit = create_output_unit(output_memory_size, vocab_size)
 
         # managing of attributes
-        self.g_sentiment = linear(input_=tf.one_hot(self.x_sentiment, sentiment_num), output_size=gen_emb_dim, use_bias=True,
+        self.g_sentiment = linear(input_=tf.one_hot(self.x_sentiment, sentiment_num), output_size=gen_emb_dim,
+                                  use_bias=True,
                                   scope="linear_x_sentiment")
 
         # self_attention_unit = create_self_attention_unit(scope="attribute_self_attention") #todo
@@ -123,14 +124,19 @@ class ReviewGenerator:
 
     def pretrain_epoch(self, oracle_loader, sess, **kwargs):
         supervised_g_losses = []
-        for it in tqdm(range(oracle_loader.num_batch)):
+        for it in range(oracle_loader.num_batch):
             sentiment, sentence = oracle_loader.next_batch()
             n = np.zeros((self.batch_size, self.seq_len))
             for ind, el in enumerate(sentence):
                 n[ind] = el
 
-            _, g_loss = sess.run([kwargs['g_pretrain_op'], self.pretrain_loss], feed_dict={self.x_real: n,
-                                                                              self.x_sentiment: sentiment})
+            try:
+                _ = kwargs['g_pretrain_op']
+                _, g_loss = sess.run([kwargs['g_pretrain_op'], self.pretrain_loss], feed_dict={self.x_real: n,
+                                                                                               self.x_sentiment: sentiment})
+            except KeyError:
+                g_loss = sess.run(self.pretrain_loss, feed_dict={self.x_real: n,
+                                                                 self.x_sentiment: sentiment})
 
             supervised_g_losses.append(g_loss)
 
@@ -142,7 +148,7 @@ class ReviewGenerator:
 
         max_gen = int(self.generated_num / self.batch_size)  # - 155 # 156
         for ii in range(max_gen):
-            sentiment, sentences = oracle_loader.random_batch(dataset=config['dataset'])
+            sentiment, sentences = oracle_loader.random_batch()
             feed_dict = {self.x_sentiment: sentiment}
             sentence_generated_from.extend(sentences)
             gen_x_res = sess.run([self.gen_x], feed_dict=feed_dict)

@@ -14,7 +14,8 @@ from real.real_gan.loaders.custom_reviews_loader import RealDataCustomerReviewsL
 from real.real_gan.real_topic_train_utils import get_train_ops, \
     get_metric_summary_op, get_fixed_temperature, create_json_file
 from utils.metrics.Bleu import BleuAmazon
-from utils.metrics.Nll import NllTopic
+from utils.metrics.KLDivergence import KL_divergence
+from utils.metrics.Nll import NllTopic, NllReview
 from utils.utils import *
 
 
@@ -33,7 +34,6 @@ def customer_reviews_train(generator: ReviewGenerator, discriminator_positive: R
                            oracle_loader: RealDataCustomerReviewsLoader, config, args):
     batch_size = config['batch_size']
     num_sentences = config['num_sentences']
-    generator.generated_num = num_sentences
     vocab_size = config['vocabulary_size']
     seq_len = config['seq_len']
     dataset = config['dataset']
@@ -161,31 +161,16 @@ def customer_reviews_train(generator: ReviewGenerator, discriminator_positive: R
             # set up evaluation metric
             metrics = []
             if config['nll_gen']:
-                nll_gen = NllTopic(oracle_loader, generator_obj.pretrain_loss, x_real, sess, name='nll_gen', x_topic=x_topic)
+                nll_gen = NllReview(oracle_loader, generator_obj, sess, name='nll_gen_review')
                 metrics.append(nll_gen)
-            if config['doc_embsim']:
-                doc_embsim = DocEmbSim(test_file, gen_file, config['vocab_size'], name='doc_embsim')
-                metrics.append(doc_embsim)
-            if config['bleu']:
-                for i in range(2, 6):
-                    bleu = Bleu(test_text=gen_file, real_text=test_file, gram=i, name='bleu' + str(i))
-                    metrics.append(bleu)
-            if config['selfbleu']:
-                for i in range(2, 6):
-                    selfbleu = SelfBleu(test_text=gen_file, gram=i, name='selfbleu' + str(i))
-                    metrics.append(selfbleu)
             if config['KL']:
                 KL_div = KL_divergence(oracle_loader, json_file, name='KL_divergence')
                 metrics.append(KL_div)
 
             return metrics
-        metrics = get_metrics(config, oracle_loader, test_file, gen_text_file, g_pretrain_loss, x_real, None, sess,
-                              json_file)
-        metrics = []
-        metrics.append(BleuAmazon("BleuAmazon_2", json_file=json_file, gram=2))
-        metrics.append(BleuAmazon("BleuAmazon_3", json_file=json_file, gram=3))
-        metrics.append(BleuAmazon("BleuAmazon_4", json_file=json_file, gram=4))
-        metrics.append(BleuAmazon("BleuAmazon_validation_2", json_file=json_file_validation, gram=2))
+
+        metrics = get_metrics()
+        generator_obj.generated_num = num_sentences
 
         gc.collect()
         # Check if there is a pretrained generator saved
@@ -228,25 +213,6 @@ def customer_reviews_train(generator: ReviewGenerator, discriminator_positive: R
                     gc.collect()
 
         gc.collect()
-        # Check if there is a pretrained generator and a topic discriminator saved
-        model_dir = "PretrainGeneratorAndTopicDiscriminator"
-        model_path = resources_path(os.path.join("checkpoint_folder", model_dir))
-        try:
-            new_saver = tf.train.import_meta_graph(os.path.join(model_path, "model.ckpt.meta"))
-            new_saver.restore(sess, os.path.join(model_path, "model.ckpt"))
-            print("Used saved model for topic discriminator and pretrained generator")
-        except OSError:
-            print('Start Topic Discriminator pre-training...')
-            topic_discriminator_pretrain(n_topic_pre_epochs, sess, d_topic_pretrain_op, d_topic_loss,
-                                         d_topic_accuracy, x_real, x_topic,
-                                         x_topic_random, oracle_loader,
-                                         d_topic_out_real_pos, d_topic_out_real_neg, topic_discr_pretrain_summary,
-                                         topic_discr_accuracy_summary)
-
-            # if not os.path.exists(model_path):
-            #     os.makedirs(model_path)
-            # save_path = saver.save(sess, os.path.join(model_path, "model.ckpt"))
-            # print("Up to Topic Discriminator Pretrain saved in path: %s" % save_path)
 
         print('Start adversarial training...')
         progress = tqdm(range(nadv_steps))
@@ -257,13 +223,28 @@ def customer_reviews_train(generator: ReviewGenerator, discriminator_positive: R
             t0 = time.time()
             # Adversarial training
             for _ in range(config['gsteps']):
-                text_batch, topic_batch = oracle_loader.random_batch(only_text=False)
-                sess.run(g_train_op, feed_dict={x_real: text_batch, x_topic: topic_batch})
+                sentiment, sentence = oracle_loader.random_batch()
+                n = np.zeros((generator_obj.batch_size, generator_obj.seq_len))
+                for ind, el in enumerate(sentence):
+                    n[ind] = el
+                sess.run(g_pretrain_op, feed_dict={generator_obj.x_real: n,
+                                                   generator_obj.x_sentiment: sentiment})
             for _ in range(config['dsteps']):
-                # normal + topic discriminator together
-                text_batch, topic_batch = oracle_loader.random_batch(only_text=False)
-                sess.run(d_train_op, feed_dict={x_real: text_batch, x_topic: topic_batch,
-                                                x_topic_random: oracle_loader.random_topic()})
+                sentiment, sentence, pos, neg = oracle_loader.get_positive_negative_batch()
+                n1 = np.zeros((generator_obj.batch_size, generator_obj.seq_len))
+                n2 = np.zeros((generator_obj.batch_size, generator_obj.seq_len))
+                n3 = np.zeros((generator_obj.batch_size, generator_obj.seq_len))
+                for ind, (s, p, n) in enumerate(zip(sentence, pos, neg)):
+                    n1[ind] = s
+                    n2[ind] = p[0]
+                    n3[ind] = n[0]
+                feed_dict = {
+                    x_real: n1,
+                    x_pos: n2,
+                    x_neg: n3,
+                    x_sentiment: sentiment
+                }
+                sess.run(d_train_op, feed_dict=feed_dict)
 
             t1 = time.time()
             sess.run(update_Wall_op, feed_dict={time_diff: t1 - t0})
@@ -272,9 +253,21 @@ def customer_reviews_train(generator: ReviewGenerator, discriminator_positive: R
             temp_var_np = get_fixed_temperature(temper, niter, nadv_steps, adapt)
             sess.run(update_temperature_op, feed_dict={temp_var: temp_var_np})
 
-            text_batch, topic_batch = oracle_loader.random_batch(only_text=False)
-            feed = {x_real: text_batch, x_topic: topic_batch, x_topic_random: oracle_loader.random_topic()}
-            g_loss_np, d_loss_np, loss_summary_str = sess.run([g_loss, d_loss, loss_summary_op], feed_dict=feed)
+            sentiment, sentence, pos, neg = oracle_loader.get_positive_negative_batch()
+            n1 = np.zeros((generator_obj.batch_size, generator_obj.seq_len))
+            n2 = np.zeros((generator_obj.batch_size, generator_obj.seq_len))
+            n3 = np.zeros((generator_obj.batch_size, generator_obj.seq_len))
+            for ind, (s, p, n) in enumerate(zip(sentence, pos, neg)):
+                n1[ind] = s
+                n2[ind] = p[0]
+                n3[ind] = n[0]
+            feed_dict = {
+                x_real: n1,
+                x_pos: n2,
+                x_neg: n3,
+                x_sentiment: sentiment
+            }
+            g_loss_np, d_loss_np, loss_summary_str = sess.run([g_loss, d_loss, loss_summary_op], feed_dict=feed_dict)
             sum_writer.add_summary(loss_summary_str, niter)
 
             sess.run(global_step_op)
@@ -284,46 +277,27 @@ def customer_reviews_train(generator: ReviewGenerator, discriminator_positive: R
             # Test
             # print("N_iter: {}, test every {} epochs".format(niter, config['ntest']))
             if np.mod(adv_epoch, 500) == 0 or adv_epoch == nadv_steps - 1:
-                # generate fake data and create batches
-                gen_save_file = os.path.join(sample_dir, 'adv_samples_{:05d}.txt'.format(niter))
-                codes_with_lambda, sentence_generated_from, codes, json_object = generate_samples_topic(sess, x_fake,
-                                                                                                        batch_size,
-                                                                                                        num_sentences,
-                                                                                                        lambda_values=lambda_values_returned,
-                                                                                                        oracle_loader=oracle_loader,
-                                                                                                        gen_x_no_lambda=gen_x_no_lambda,
-                                                                                                        x_topic=x_topic)
-                create_json_file(json_object, json_file)
-                # gen_real_test_file_not_file(codes, sentence_generated_from, gen_save_file, index_word_dict)
-                gen_real_test_file_not_file(codes, sentence_generated_from, gen_text_file, index_word_dict, json_object)
-                gen_real_test_file_not_file(codes_with_lambda, sentence_generated_from, gen_text_file_print,
-                                            index_word_dict, json_object, generator_sentences=True)
-
-                # take sentences from saved files
-                sent = take_sentences_topic(gen_text_file_print)
-                if adv_epoch < 3500:
-                    sent_number = 8
-                else:
-                    sent_number = 20
-                sent = random.sample(sent, sent_number)
-                gen_sentences_summary.write_summary(sent, adv_epoch)
+                json_object = generator_obj.generate_json(oracle_loader, sess)
+                write_json(json_file, json_object)
 
                 # write summaries
                 scores = [metric.get_score() for metric in metrics]
                 metrics_summary_str = sess.run(metric_summary_op, feed_dict=dict(zip(metrics_pl, scores)))
-                sum_writer.add_summary(metrics_summary_str, niter + config['npre_epochs'])
+                sum_writer.add_summary(metrics_summary_str, adv_epoch)
 
                 msg = 'adv_step: ' + str(niter)
                 metric_names = [metric.get_name() for metric in metrics]
                 for (name, score) in zip(metric_names, scores):
                     msg += ', ' + name + ': %.4f' % score
-                tqdm.write(msg)
+                progress.set_description(msg)
                 log.write(msg)
                 log.write('\n')
 
+                gc.collect()
+
         sum_writer.close()
 
-        save_model = True
+        save_model = False
         if save_model:
             model_dir = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
             model_path = os.path.join(resources_path("trained_models"), model_dir)

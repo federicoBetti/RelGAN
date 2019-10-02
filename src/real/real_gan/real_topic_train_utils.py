@@ -163,11 +163,13 @@ def get_train_ops(config, g_pretrain_loss, g_loss, d_loss, d_topic_loss,
     gadv_lr = config['gadv_lr']
 
     g_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='generator')
+    d_vars_pos = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='discriminator_positive')
+    d_vars_neg = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='discriminator_negative')
     d_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='discriminator')
     d_topic_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='topic_discriminator')
 
     # train together both discriminators
-    d_vars = d_vars + d_topic_vars
+    d_vars = d_vars + d_topic_vars + d_vars_neg + d_vars_pos
 
     grad_clip = 5.0  # keep the same with the previous setting
 
@@ -267,18 +269,6 @@ def get_metric_summary_op(config):
             temp_pl = tf.placeholder(tf.float32, name='bleu{}'.format(i))
             metrics_pl.append(temp_pl)
             metrics_sum.append(tf.summary.scalar('metrics/bleu{}'.format(i), temp_pl))
-
-    if config['bleu_amazon']:
-        for i in range(2, 5):
-            temp_pl = tf.placeholder(tf.float32, name='bleu_amazon{}'.format(i))
-            metrics_pl.append(temp_pl)
-            metrics_sum.append(tf.summary.scalar('metrics/bleu_amazon{}'.format(i), temp_pl))
-
-    if config['bleu_amazon_validation']:
-        for i in [2]:
-            temp_pl = tf.placeholder(tf.float32, name='bleu_amazon_validation{}'.format(i))
-            metrics_pl.append(temp_pl)
-            metrics_sum.append(tf.summary.scalar('metrics/bleu_amazon_validation{}'.format(i), temp_pl))
 
     if config['selfbleu']:
         for i in range(2, 6):
