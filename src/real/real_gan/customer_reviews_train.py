@@ -14,6 +14,7 @@ from real.real_gan.loaders.custom_reviews_loader import RealDataCustomerReviewsL
 from real.real_gan.real_topic_train_utils import get_train_ops, \
     get_metric_summary_op, get_fixed_temperature, create_json_file
 from utils.metrics.Bleu import BleuAmazon
+from utils.metrics.Jaccard import JaccardSimilarity
 from utils.metrics.KLDivergence import KL_divergence
 from utils.metrics.Nll import NllTopic, NllReview
 from utils.utils import *
@@ -38,7 +39,6 @@ def customer_reviews_train(generator: ReviewGenerator, discriminator_positive: R
     seq_len = config['seq_len']
     dataset = config['dataset']
     npre_epochs = config['npre_epochs']
-    n_topic_pre_epochs = config['n_topic_pre_epochs']
     nadv_steps = config['nadv_steps']
     temper = config['temperature']
     adapt = config['adapt']
@@ -49,16 +49,8 @@ def customer_reviews_train(generator: ReviewGenerator, discriminator_positive: R
     sample_dir = resources_path(config['sample_dir'])
 
     # filename
-    oracle_file = os.path.join(sample_dir, 'oracle_{}.txt'.format(dataset))
-    gen_file = os.path.join(sample_dir, 'generator.txt')
-    gen_text_file = os.path.join(sample_dir, 'generator_text.txt')
-    gen_text_file_print = os.path.join(sample_dir, 'gen_text_file_print.txt')
     json_file = os.path.join(sample_dir, 'json_file.txt')
-    json_file_validation = os.path.join(sample_dir, 'json_file_validation.txt')
     csv_file = os.path.join(log_dir, 'experiment-log-rmcgan.csv')
-    data_file = os.path.join(data_dir, '{}.txt'.format(dataset))
-
-    test_file = os.path.join(data_dir, 'test.csv')
 
     # create necessary directories
     if not os.path.exists(data_dir):
@@ -142,15 +134,16 @@ def customer_reviews_train(generator: ReviewGenerator, discriminator_positive: R
     custom_summaries = [gen_pretrain_loss_summary, gen_sentences_summary, run_information]
 
     # To save the trained model
-    saver = tf.train.Saver()
     # ------------- initial the graph --------------
     with init_sess() as sess:
 
         # count parameters
-        variables_dict = get_parameters_division()
 
         log = open(csv_file, 'w')
-        sum_writer = tf.summary.FileWriter(os.path.join(log_dir, 'summary'), sess.graph)
+        summary_dir = os.path.join(log_dir, 'summary', str(time.time()))
+        if not os.path.exists(summary_dir):
+            os.makedirs(summary_dir)
+        sum_writer = tf.summary.FileWriter(summary_dir, sess.graph)
         for custom_summary in custom_summaries:
             custom_summary.set_file_writer(sum_writer, sess)
 
@@ -166,6 +159,9 @@ def customer_reviews_train(generator: ReviewGenerator, discriminator_positive: R
             if config['KL']:
                 KL_div = KL_divergence(oracle_loader, json_file, name='KL_divergence')
                 metrics.append(KL_div)
+            if config['jaccard']:
+                Jaccard_Sim = JaccardSimilarity(oracle_loader, json_file, name='jaccard_similarity')
+                metrics.append(Jaccard_Sim)
 
             return metrics
 
@@ -190,12 +186,19 @@ def customer_reviews_train(generator: ReviewGenerator, discriminator_positive: R
                 oracle_loader.reset_pointer()
                 g_pretrain_loss_np = generator_obj.pretrain_epoch(oracle_loader, sess, g_pretrain_op=g_pretrain_op)
                 gen_pretrain_loss_summary.write_summary(g_pretrain_loss_np, epoch)
+                msg = 'pre_gen_epoch:' + str(epoch) + ', g_pre_loss: %.4f' % g_pretrain_loss_np
+                progress.set_description(msg)
 
                 # Test
-                ntest_pre = 40
-                if np.mod(epoch, ntest_pre) == 0:
+                ntest_pre = 20
+                if np.mod(epoch, ntest_pre) == 0 or epoch == npre_epochs - 1:
                     json_object = generator_obj.generate_json(oracle_loader, sess)
                     write_json(json_file, json_object)
+
+                    # take sentences from saved files
+                    sent = take_sentences_json(json_object)
+                    print(sent[:5])
+                    gen_sentences_summary.write_summary(sent, epoch)
 
                     # write summaries
                     scores = [metric.get_score() for metric in metrics]
@@ -206,7 +209,7 @@ def customer_reviews_train(generator: ReviewGenerator, discriminator_positive: R
                     metric_names = [metric.get_name() for metric in metrics]
                     for (name, score) in zip(metric_names, scores):
                         msg += ', ' + name + ': %.4f' % score
-                    progress.set_description(msg)
+                    tqdm.write(msg)
                     log.write(msg)
                     log.write('\n')
 
@@ -276,20 +279,25 @@ def customer_reviews_train(generator: ReviewGenerator, discriminator_positive: R
 
             # Test
             # print("N_iter: {}, test every {} epochs".format(niter, config['ntest']))
-            if np.mod(adv_epoch, 500) == 0 or adv_epoch == nadv_steps - 1:
+            if np.mod(adv_epoch, 20) == 0 or adv_epoch == nadv_steps - 1:
                 json_object = generator_obj.generate_json(oracle_loader, sess)
                 write_json(json_file, json_object)
+
+                # take sentences from saved files
+                sent = take_sentences_json(json_object)
+                print(sent[:5])
+                gen_sentences_summary.write_summary(sent, niter + config['npre_epochs'])
 
                 # write summaries
                 scores = [metric.get_score() for metric in metrics]
                 metrics_summary_str = sess.run(metric_summary_op, feed_dict=dict(zip(metrics_pl, scores)))
-                sum_writer.add_summary(metrics_summary_str, adv_epoch)
+                sum_writer.add_summary(metrics_summary_str, niter + config['npre_epochs'])
 
                 msg = 'adv_step: ' + str(niter)
                 metric_names = [metric.get_name() for metric in metrics]
                 for (name, score) in zip(metric_names, scores):
                     msg += ', ' + name + ': %.4f' % score
-                progress.set_description(msg)
+                tqdm.write(msg)
                 log.write(msg)
                 log.write('\n')
 
@@ -307,67 +315,6 @@ def customer_reviews_train(generator: ReviewGenerator, discriminator_positive: R
                         outputs={"gen_x": x_fake})
             # save_path = saver.save(sess, os.path.join(model_path, "model.ckpt"))
             print("Model saved in path: %s" % model_path)
-
-
-def generator_pretrain_amazon(npre_epochs, sess, g_pretrain_op, g_pretrain_loss, x_real, oracle_loader,
-                              gen_pretrain_loss_summary, sample_dir, x_fake, batch_size, num_sentences, gen_text_file,
-                              gen_sentences_summary, metrics, metric_summary_op, metrics_pl, sum_writer, log,
-                              lambda_values, gen_text_file_print, gen_x_no_lambda, json_file):
-    progress = tqdm(range(npre_epochs))
-    for epoch in progress:
-        # pre-training
-        # Pre-train the generator using MLE for one epoch
-        supervised_g_losses = []
-        oracle_loader.reset_pointer()
-
-        for it in range(oracle_loader.num_batch):
-            user, product, rating, sentence = oracle_loader.next_batch()
-            _, g_loss = sess.run([g_pretrain_op, g_pretrain_loss], feed_dict={x_real: sentence})
-
-        supervised_g_losses.append(g_loss)
-
-        g_pretrain_loss_np = np.mean(supervised_g_losses)
-        gen_pretrain_loss_summary.write_summary(g_pretrain_loss_np, epoch)
-
-        # Test
-        ntest_pre = 40
-        if np.mod(epoch, ntest_pre) == 0:
-            # generate fake data and create batches
-            # tqdm.write("Epoch: {}; Computing Metrics and writing summaries".format(epoch), end=" ")
-            t = time.time()
-            codes_with_lambda, sentence_generated_from, codes, json_object = generate_samples_topic(sess, x_fake,
-                                                                                                    batch_size,
-                                                                                                    num_sentences,
-                                                                                                    lambda_values=lambda_values,
-                                                                                                    oracle_loader=oracle_loader,
-                                                                                                    gen_x_no_lambda=gen_x_no_lambda,
-                                                                                                    x_topic=x_topic)
-            create_json_file(json_object, json_file)
-            # gen_real_test_file_not_file(codes, sentence_generated_from, gen_save_file, index_word_dict)
-            gen_real_test_file_not_file(codes, sentence_generated_from, gen_text_file, index_word_dict, json_object)
-            gen_real_test_file_not_file(codes_with_lambda, sentence_generated_from, gen_text_file_print,
-                                        index_word_dict, json_object, True)
-
-            # take sentences from saved files
-            sent = take_sentences_topic(gen_text_file_print)
-            sent = random.sample(sent, 5)
-            gen_sentences_summary.write_summary(sent, epoch)
-
-            # write summaries
-            scores = [metric.get_score() for metric in metrics]
-            metrics_summary_str = sess.run(metric_summary_op, feed_dict=dict(zip(metrics_pl, scores)))
-            sum_writer.add_summary(metrics_summary_str, epoch)
-            # tqdm.write("in {} seconds".format(time.time() - t))
-
-            msg = 'pre_gen_epoch:' + str(epoch) + ', g_pre_loss: %.4f' % g_pretrain_loss_np
-            metric_names = [metric.get_name() for metric in metrics]
-            for (name, score) in zip(metric_names, scores):
-                msg += ', ' + name + ': %.4f' % score
-            progress.set_description(msg)
-            log.write(msg)
-            log.write('\n')
-
-            gc.collect()
 
 
 def topic_discriminator_pretrain(n_topic_pre_epochs, sess, d_topic_pretrain_op, d_topic_loss,

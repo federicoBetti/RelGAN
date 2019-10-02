@@ -281,6 +281,11 @@ def get_metric_summary_op(config):
         metrics_pl.append(KL_placeholder)
         metrics_sum.append(tf.summary.scalar('metrics/KL_topic_divergence', KL_placeholder))
 
+    if config['jaccard']:
+        Jaccard_placeholder = tf.placeholder(tf.float32)
+        metrics_pl.append(Jaccard_placeholder)
+        metrics_sum.append(tf.summary.scalar('metrics/Jaccard_Similarity', Jaccard_placeholder))
+
     metric_summary_op = tf.summary.merge(metrics_sum)
     return metrics_pl, metric_summary_op
 

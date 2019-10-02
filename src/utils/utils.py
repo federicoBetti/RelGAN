@@ -1,4 +1,5 @@
 import argparse
+import random
 import time
 
 import numpy as np
@@ -240,6 +241,16 @@ def take_sentences(gen_text_file):
     return strings
 
 
+def take_sentences_json(json_object):
+    sentences = json_object['sentences']
+    sent_number = 10
+    sent = random.sample(sentences, sent_number)
+    all_sentences = []
+    for s in sent:
+        all_sentences.append("{} --- {}".format(str(s['sentiment']), s['generated_sentence']))
+    return all_sentences
+
+
 def take_sentences_topic(gen_text_file):
     """
     :param gen_text_file: file containing generated sentences
@@ -276,7 +287,8 @@ def get_parameters_division():
             d[name] = d.get(name, {})
             d = d[name]
             d['total_param'] = d.get('total_param', 0) + params_number
-    print("Total paramter number: {}".format(np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()])))
+    print("Total paramter number: {}".format(
+        np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()])))
     return variables_dict
 
 

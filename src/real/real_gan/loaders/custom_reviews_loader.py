@@ -30,6 +30,7 @@ class RealDataCustomerReviewsLoader(RealDataLoader):
         self.token_stream = []
 
         df = pd.read_csv(train_file)
+        self.all_sentences = df['text'].values
         self.token_stream = df[['sentiment', 'tokenized_text']].values
         for el in self.token_stream:
             el[1] = np.asarray([int(s) for s in el[1][1:-1].split(", ") if "\n" not in s])
@@ -87,3 +88,6 @@ class RealDataCustomerReviewsLoader(RealDataLoader):
 
     def reset_pointer(self):
         self.pointer = 0
+
+    def get_all_sentences(self):
+        return self.all_sentences
