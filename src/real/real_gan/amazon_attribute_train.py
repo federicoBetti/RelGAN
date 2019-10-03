@@ -238,7 +238,7 @@ def amazon_attribute_train(generator: rmc_att_topic.generator, discriminator: rm
 
             # Test
             if np.mod(adv_epoch, 500) == 0 or adv_epoch == nadv_steps - 1:
-                generator_obj.generated_num = 200
+                generator_obj.generated_num = generator_obj.batch_size * 10
                 json_object = generator_obj.generate_samples(sess, oracle_loader, dataset="train")
                 write_json(json_file, json_object)
                 json_object = generator_obj.generate_samples(sess, oracle_loader, dataset="validation")

@@ -161,7 +161,7 @@ class AmazonGenerator:
         sentence_generated_from = []
 
         max_gen = int(self.generated_num / self.batch_size)  # - 155 # 156
-        for ii in tqdm(range(max_gen)):
+        for ii in range(max_gen):
             user, product, rating, sentences = oracle_loader.random_batch(dataset=tensors['dataset'])
             feed_dict = {self.x_user: user,
                          self.x_product: product,
