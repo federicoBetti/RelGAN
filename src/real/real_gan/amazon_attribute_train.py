@@ -183,7 +183,7 @@ def amazon_attribute_train(generator: rmc_att_topic.generator, discriminator: rm
                     metric_names = [metric.get_name() for metric in metrics]
                     for (name, score) in zip(metric_names, scores):
                         msg += ', ' + name + ': %.4f' % score
-                    progress.set_description(msg)
+                    tqdm.write(msg)
                     log.write(msg)
                     log.write('\n')
 
@@ -247,14 +247,14 @@ def amazon_attribute_train(generator: rmc_att_topic.generator, discriminator: rm
                 # write summaries
                 scores = [metric.get_score() for metric in metrics]
                 metrics_summary_str = sess.run(metric_summary_op, feed_dict=dict(zip(metrics_pl, scores)))
-                sum_writer.add_summary(metrics_summary_str, epoch)
+                sum_writer.add_summary(metrics_summary_str, adv_epoch + npre_epochs)
                 # tqdm.write("in {} seconds".format(time.time() - t))
 
-                msg = 'pre_gen_epoch:' + str(epoch) + ', g_pre_loss: %.4f' % g_pretrain_loss_np
+                msg = 'pre_gen_epoch:' + str(adv_epoch) + ', g_pre_loss: %.4f' % g_pretrain_loss_np
                 metric_names = [metric.get_name() for metric in metrics]
                 for (name, score) in zip(metric_names, scores):
                     msg += ', ' + name + ': %.4f' % score
-                progress.set_description(msg)
+                tqdm.write(msg)
                 log.write(msg)
                 log.write('\n')
 
