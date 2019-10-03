@@ -63,7 +63,7 @@ class NllAmazon(Nll):
             for ind, el in enumerate(sentence):
                 n[ind] = el
 
-            g_loss = self.sess.run(self.pretrain_loss, feed_dict={self.x_real: n,
+            g_loss = self.sess.run(self.pretrain_loss, feed_dict={self.generator_object.x_real: n,
                                                                   self.generator_object.x_user: user,
                                                                   self.generator_object.x_product: product,
                                                                   self.generator_object.x_rating: rating})
