@@ -10,7 +10,7 @@ from models import rmc_att_topic
 from path_resolution import resources_path
 from real.real_gan.loaders.amazon_loader import RealDataAmazonLoader
 from real.real_gan.real_topic_train_utils import get_train_ops, \
-    get_metric_summary_op, get_fixed_temperature, EPS, get_metrics
+    get_metric_summary_op, get_fixed_temperature, EPS
 from utils.metrics.Bleu import BleuAmazon
 from utils.metrics.KLDivergence import KL_divergence
 from utils.metrics.Nll import NllAmazon

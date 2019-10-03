@@ -1,4 +1,5 @@
 import sys
+import time
 
 from tensorflow.python.ops import tensor_array_ops, control_flow_ops
 from tqdm import tqdm
@@ -137,15 +138,20 @@ class AmazonGenerator:
 
         n = np.zeros((self.batch_size, self.seq_len))
         for it in tqdm(range(oracle_loader.num_batch)):
+            # t = time.time()
             user, product, rating, sentence = oracle_loader.next_batch()
+            # t1 = time.time()
             for ind, el in enumerate(sentence):
                 n[ind] = el
-
+            # t2 = time.time()
             _, g_loss = sess.run([kwargs['g_pretrain_op'], self.pretrain_loss], feed_dict={self.x_real: n,
                                                                               self.x_user: user,
                                                                               self.x_product: product,
                                                                               self.x_rating: rating})
-
+            t3 = time.time()
+            # print("Loader {}".format(t1 - t))
+            # print("n: {}".format(t2 -t1))
+            # print("pretrain: {}".format(t3 - t2))
             supervised_g_losses.append(g_loss)
 
         return np.mean(supervised_g_losses)

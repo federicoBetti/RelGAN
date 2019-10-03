@@ -270,6 +270,18 @@ def get_metric_summary_op(config):
             metrics_pl.append(temp_pl)
             metrics_sum.append(tf.summary.scalar('metrics/bleu{}'.format(i), temp_pl))
 
+    if config['bleu_amazon']:
+        for i in range(2, 5):
+            temp_pl = tf.placeholder(tf.float32, name='BleuAmazon_{}'.format(i))
+            metrics_pl.append(temp_pl)
+            metrics_sum.append(tf.summary.scalar('metrics/BleuAmazon_{}'.format(i), temp_pl))
+
+    if config['bleu_amazon_validation']:
+        for i in range(2, 3):
+            temp_pl = tf.placeholder(tf.float32, name='BleuAmazon_validation_{}'.format(i))
+            metrics_pl.append(temp_pl)
+            metrics_sum.append(tf.summary.scalar('metrics/BleuAmazon_validation_{}'.format(i), temp_pl))
+
     if config['selfbleu']:
         for i in range(2, 6):
             temp_pl = tf.placeholder(tf.float32, name='selfbleu{}'.format(i))
