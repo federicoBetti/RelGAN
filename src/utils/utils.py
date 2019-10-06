@@ -251,6 +251,16 @@ def take_sentences_json(json_object):
     return all_sentences
 
 
+def take_sentences_attribute(json_object):
+    sentences = json_object['sentences']
+    sent_number = 10
+    sent = random.sample(sentences, sent_number)
+    all_sentences = []
+    for s in sent:
+        all_sentences.append("{} --- {}".format(str(s['generated_sentence']), s['real_starting']))
+    return all_sentences
+
+
 def take_sentences_topic(gen_text_file):
     """
     :param gen_text_file: file containing generated sentences

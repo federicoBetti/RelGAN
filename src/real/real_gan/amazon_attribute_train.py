@@ -174,6 +174,10 @@ def amazon_attribute_train(generator: rmc_att_topic.generator, discriminator: rm
                     json_object = generator_obj.generate_samples(sess, oracle_loader, dataset="validation")
                     write_json(json_file_validation, json_object)
 
+                    # take sentences from saved files
+                    sent = take_sentences_attribute(json_object)
+                    gen_sentences_summary.write_summary(sent, epoch)
+
                     # write summaries
                     scores = [metric.get_score() for metric in metrics]
                     metrics_summary_str = sess.run(metric_summary_op, feed_dict=dict(zip(metrics_pl, scores)))
@@ -243,6 +247,10 @@ def amazon_attribute_train(generator: rmc_att_topic.generator, discriminator: rm
                 write_json(json_file, json_object)
                 json_object = generator_obj.generate_samples(sess, oracle_loader, dataset="validation")
                 write_json(json_file_validation, json_object)
+
+                # take sentences from saved files
+                sent = take_sentences_attribute(json_object)
+                gen_sentences_summary.write_summary(sent, adv_epoch + npre_epochs)
 
                 # write summaries
                 scores = [metric.get_score() for metric in metrics]
