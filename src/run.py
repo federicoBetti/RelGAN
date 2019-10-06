@@ -70,7 +70,11 @@ parser.add_argument('--bleu', default=False, action='store_true', help='if using
 parser.add_argument('--selfbleu', default=False, action='store_true', help='if using selfbleu metric, [2,3,4,5]')
 parser.add_argument('--doc-embsim', default=False, action='store_true', help='if using DocEmbSim metric')
 parser.add_argument('--KL', default=False, action='store_true', help='if using KL divergence metric')
-parser.add_argument('--jaccard', default=False, action='store_true', help='if using Jaccard metric')
+parser.add_argument('--jaccard-similarity', default=False, action='store_true', help='if using Jaccard metric')
+parser.add_argument('--jaccard-diversity', default=False, action='store_true', help='if using Jaccard diversity metric')
+parser.add_argument('--bleu-amazon', default=False, action='store_true', help='if using bleu on amazon dataset')
+parser.add_argument('--bleu-amazon-validation', default=False, action='store_true', help='if using bleu on amazon '
+                                                                                         'dataset validation set')
 
 # relational memory
 parser.add_argument('--mem-slots', default=1, type=int, help="memory size")

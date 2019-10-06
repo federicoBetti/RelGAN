@@ -14,7 +14,7 @@ from real.real_gan.loaders.custom_reviews_loader import RealDataCustomerReviewsL
 from real.real_gan.real_topic_train_utils import get_train_ops, \
     get_metric_summary_op, get_fixed_temperature, create_json_file
 from utils.metrics.Bleu import BleuAmazon
-from utils.metrics.Jaccard import JaccardSimilarity
+from utils.metrics.Jaccard import JaccardSimilarity, JaccardDiversity
 from utils.metrics.KLDivergence import KL_divergence
 from utils.metrics.Nll import NllTopic, NllReview
 from utils.utils import *
@@ -159,8 +159,11 @@ def customer_reviews_train(generator: ReviewGenerator, discriminator_positive: R
             if config['KL']:
                 KL_div = KL_divergence(oracle_loader, json_file, name='KL_divergence')
                 metrics.append(KL_div)
-            if config['jaccard']:
+            if config['jaccard_similarity']:
                 Jaccard_Sim = JaccardSimilarity(oracle_loader, json_file, name='jaccard_similarity')
+                metrics.append(Jaccard_Sim)
+            if config['jaccard_diversity']:
+                Jaccard_Sim = JaccardDiversity(oracle_loader, json_file, name='jaccard_diversity')
                 metrics.append(Jaccard_Sim)
 
             return metrics
@@ -197,7 +200,6 @@ def customer_reviews_train(generator: ReviewGenerator, discriminator_positive: R
 
                     # take sentences from saved files
                     sent = take_sentences_json(json_object)
-                    print(sent[:5])
                     gen_sentences_summary.write_summary(sent, epoch)
 
                     # write summaries
