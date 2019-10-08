@@ -214,7 +214,7 @@ def real_topic_train_NoDiscr(generator: rmc_att_topic.generator, oracle_loader: 
                         })
                     return json_file
 
-                json_object = generate_sentences(sess, gen_o, batch_size, num_sentences, oracle_loader=oracle_loader,
+                json_object = generate_sentences(sess, x_fake, batch_size, num_sentences, oracle_loader=oracle_loader,
                                                  x_topic=x_topic)
 
                 with open(gen_text_file, 'w') as outfile:

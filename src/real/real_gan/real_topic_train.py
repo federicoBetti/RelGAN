@@ -256,7 +256,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
 
             # Test
             # print("N_iter: {}, test every {} epochs".format(niter, config['ntest']))
-            if np.mod(adv_epoch, 500) == 0 or adv_epoch == nadv_steps - 1:
+            if np.mod(adv_epoch, 400) == 0 or adv_epoch == nadv_steps - 1:
                 # generate fake data and create batches
                 gen_save_file = os.path.join(sample_dir, 'adv_samples_{:05d}.txt'.format(niter))
                 codes_with_lambda, sentence_generated_from, codes, json_object = generate_samples_topic(sess, x_fake,

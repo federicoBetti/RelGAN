@@ -2,12 +2,11 @@
 
 import gc
 
-from tensorflow.python.client import device_lib
 from tensorflow.compat.v1 import placeholder
+from tensorflow.python.client import device_lib
 
 from models import rmc_att_topic
 from path_resolution import resources_path
-from real.real_gan.loaders.real_loader import RealDataTopicLoader
 from real.real_gan.real_topic_train_utils import get_metric_summary_op
 from utils.metrics.Bleu import Bleu
 from utils.metrics.KLDivergence import KL_divergence

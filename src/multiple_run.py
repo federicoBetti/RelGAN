@@ -2,16 +2,16 @@ import subprocess
 import os
 
 # Architecture Related
-architecture = ['lstm_vanilla', 'rmc_att_topic', 'rmc_att_topic', 'rmc_att_topic']
-topic_architecture = ['standard', 'standard', 'reuse_att_topic', 'standard']
+architecture = ['rmc_vanilla', 'rmc_att_topic', 'rmc_att_topic', 'rmc_att_topic']
+topic_architecture = ['standard', 'standard', 'standard', 'standard']
 gantype = ['standard', 'standard', 'standard', 'standard', 'standard']  # per ora funziona solo con questo il topic
 gsteps = ['2', '2', '2', '2']
-dsteps = ['3', '3', '2', '2']
-npre_epochs = ['300', '300', '250', '150']
+dsteps = ['3', '3', '3', '2']
+npre_epochs = ['300', '300', '300', '150']
 nadv_steps = ['0', '5000', '5000', '5000']
-ntopic_pre_epochs = ['0', '500', '250', '50']
+ntopic_pre_epochs = ['0', '500', '450', '50']
 opt_type = ['adam', 'adam', 'adam', 'adam']
-temperature = ['1000', '1000', '1000', '100']
+temperature = ['1000', '1000', '1000', '1000']
 d_lr = ['1e-4', '1e-4', '1e-4', '1e-4']
 gadv_lr = ['1e-4', '1e-4', '1e-4', '1e-4']
 
@@ -40,7 +40,7 @@ decay = False
 adapt = 'exp'
 ntest = '20'
 
-job_number = 1
+job_number = 2
 configurations = []
 for job_id in range(job_number):
     configurations.append([
