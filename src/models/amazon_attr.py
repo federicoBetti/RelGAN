@@ -50,6 +50,48 @@ class AmazonGenerator:
         self.create_recurrence()
         self.create_pretrain()
 
+    def multihead_attention(self, attribute):
+        """Perform multi-head attention from 'Attention is All You Need'.
+
+        Implementation of the attention mechanism from
+        https://arxiv.org/abs/1706.03762.
+
+        Args:
+          memory: Memory tensor to perform attention on, with size [B, N, H*V].
+
+        Returns:
+          new_memory: New memory tensor.
+        """
+        key_size = 512
+        head_size = 512
+        num_heads = 2
+        qkv_size = 2 * key_size + head_size
+        total_size = qkv_size * num_heads  # Denote as F.
+        batch_size = attribute.get_shape().as_list()[0]  # Denote as B
+        qkv = linear(attribute, total_size, use_bias=False, scope='lin_qkv')  # [B*N, F]
+        qkv = tf.reshape(qkv, [batch_size, -1, total_size])  # [B, N, F]
+        qkv = tf.contrib.layers.layer_norm(qkv, trainable=True)  # [B, N, F]
+
+        # [B, N, F] -> [B, N, H, F/H]
+        qkv_reshape = tf.reshape(qkv, [batch_size, -1, num_heads, qkv_size])
+
+        # [B, N, H, F/H] -> [B, H, N, F/H]
+        qkv_transpose = tf.transpose(qkv_reshape, [0, 2, 1, 3])
+        q, k, v = tf.split(qkv_transpose, [key_size, key_size, head_size], -1)
+
+        q *= qkv_size ** -0.5
+        dot_product = tf.matmul(q, k, transpose_b=True)  # [B, H, N, N]
+        weights = tf.nn.softmax(dot_product)
+
+        output = tf.matmul(weights, v)  # [B, H, N, V]
+
+        # [B, H, N, V] -> [B, N, H, V]
+        output_transpose = tf.transpose(output, [0, 2, 1, 3])
+
+        # [B, N, H, V] -> [B, N, H * V]
+        attended_attribute = tf.reshape(output_transpose, [batch_size, -1])
+        return attended_attribute
+
     def create_recurrence(self):
         # ---------- generate tokens and approximated one-hot results (Adversarial) ---------
         gen_o = tensor_array_ops.TensorArray(dtype=tf.float32, size=self.seq_len, dynamic_size=False, infer_shape=True)
@@ -58,8 +100,7 @@ class AmazonGenerator:
                                                         infer_shape=True)
 
         def _gen_recurrence(i, x_t, h_tm1, gen_o, gen_x, gen_x_onehot_adv):
-            mem_o_t, h_t = self.gen_mem(x_t,
-                                        h_tm1)  # hidden_memory_tuple, output della memoria che si potrebbe riutilizzare
+            mem_o_t, h_t = self.gen_mem(x_t, h_tm1)  # hidden_memory_tuple
             mem_o_t, h_t = self.gen_mem(self.g_attribute, h_t)
             # mem_o_t, h_t = gen_mem(self_attention_unit(), h_t) # todo
             o_t = self.g_output_unit(mem_o_t)  # batch x vocab, logits not prob

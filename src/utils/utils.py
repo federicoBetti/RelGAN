@@ -5,6 +5,7 @@ import time
 import numpy as np
 import tensorflow as tf
 import matplotlib
+from tqdm import tqdm
 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -139,7 +140,7 @@ def pre_train_epoch(sess, g_pretrain_op, g_pretrain_loss, x_real, data_loader, x
     supervised_g_losses = []
     data_loader.reset_pointer()
 
-    for it in range(data_loader.num_batch):
+    for it in tqdm(range(data_loader.num_batch)):
         if x_topic is not None:
             text_batch, topic_batch = data_loader.next_batch(only_text=False)
             _, g_loss = sess.run([g_pretrain_op, g_pretrain_loss], feed_dict={x_real: text_batch, x_topic: topic_batch})
@@ -241,13 +242,16 @@ def take_sentences(gen_text_file):
     return strings
 
 
-def take_sentences_json(json_object):
+def take_sentences_json(json_object, first_elem='sentiment', second_elem='generated_sentence'):
     sentences = json_object['sentences']
     sent_number = 10
     sent = random.sample(sentences, sent_number)
     all_sentences = []
     for s in sent:
-        all_sentences.append("{} --- {}".format(str(s['sentiment']), s['generated_sentence']))
+        to_print = "{}".format(str(s[first_elem]))
+        if second_elem is not None:
+            to_print += " --- {}".format(s[second_elem])
+        all_sentences.append(to_print)
     return all_sentences
 
 

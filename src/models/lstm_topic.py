@@ -3,8 +3,9 @@ from tensorflow.python.ops import tensor_array_ops, control_flow_ops
 from utils.ops import *
 
 
-def generator(x_real, temperature, vocab_size, batch_size, seq_len, gen_emb_dim, mem_slots, head_size, num_heads,
-              hidden_dim, start_token):
+def generator(x_real, temperature, x_topic, vocab_size, batch_size, seq_len, gen_emb_dim, mem_slots, head_size,
+              num_heads,
+              hidden_dim, start_token, **kwargs):
     start_tokens = tf.constant([start_token] * batch_size, dtype=tf.int32)
 
     # build LSTM unit
@@ -12,6 +13,7 @@ def generator(x_real, temperature, vocab_size, batch_size, seq_len, gen_emb_dim,
                                    initializer=create_linear_initializer(vocab_size))
     gen_mem = create_recurrent_unit(emb_dim=gen_emb_dim, hidden_dim=hidden_dim)
     g_output_unit = create_lstm_output_unit(hidden_dim, vocab_size)
+    g_topic_embedding = create_topic_embedding_unit(vocab_size, gen_emb_dim)
 
     # Initial states
     h0 = tf.zeros([batch_size, hidden_dim])
@@ -22,9 +24,13 @@ def generator(x_real, temperature, vocab_size, batch_size, seq_len, gen_emb_dim,
     gen_x = tensor_array_ops.TensorArray(dtype=tf.int32, size=seq_len, dynamic_size=False, infer_shape=True)
     gen_x_onehot_adv = tensor_array_ops.TensorArray(dtype=tf.float32, size=seq_len, dynamic_size=False,
                                                     infer_shape=True)  # generator output (relaxed of gen_x)
+    topicness_values = tensor_array_ops.TensorArray(dtype=tf.float32, size=seq_len, dynamic_size=False,
+                                                    infer_shape=True)
+    gen_x_no_lambda = tensor_array_ops.TensorArray(dtype=tf.int32, size=seq_len, dynamic_size=False,
+                                                   infer_shape=True)
 
     # the generator recurrent module used for adversarial training
-    def _gen_recurrence(i, x_t, h_tm1, gen_o, gen_x, gen_x_onehot_adv):
+    def _gen_recurrence(i, x_t, h_tm1, gen_o, gen_x, gen_x_onehot_adv, lambda_values, gen_x_no_lambda):
         h_t = gen_mem(x_t, h_tm1)  # hidden_memory_tuple
         o_t = g_output_unit(h_t)  # batch x vocab, logits not probs
         gumbel_t = add_gumbel(o_t)
@@ -41,14 +47,21 @@ def generator(x_real, temperature, vocab_size, batch_size, seq_len, gen_emb_dim,
 
         gen_x_onehot_adv = gen_x_onehot_adv.write(i, x_onehot_appr)
 
-        return i + 1, x_tp1, h_t, gen_o, gen_x, gen_x_onehot_adv
+        # usefull things about lambda
+        lambda_param = tf.zeros(batch_size)
+        next_token_no_lambda = tf.cast(tf.argmax(o_t, axis=1), tf.int32)
+        lambda_values = lambda_values.write(i, tf.squeeze(lambda_param))
+        gen_x_no_lambda = gen_x_no_lambda.write(i, tf.squeeze(next_token_no_lambda))
+
+        return i + 1, x_tp1, h_t, gen_o, gen_x, gen_x_onehot_adv, lambda_values, gen_x_no_lambda
 
     # build a graph for outputting sequential tokens
-    _, _, _, gen_o, gen_x, gen_x_onehot_adv = control_flow_ops.while_loop(
-        cond=lambda i, _1, _2, _3, _4, _5: i < seq_len,
+    _, _, _, gen_o, gen_x, gen_x_onehot_adv, topicness_values, gen_x_no_lambda = control_flow_ops.while_loop(
+        cond=lambda i, _1, _2, _3, _4, _5, _6, _7: i < seq_len,
         body=_gen_recurrence,
-        loop_vars=(tf.constant(0, dtype=tf.int32), tf.nn.embedding_lookup(g_embeddings, start_tokens),
-                   init_states, gen_o, gen_x, gen_x_onehot_adv))
+        loop_vars=(tf.constant(0, dtype=tf.int32), g_topic_embedding(x_topic),
+                   init_states, gen_o, gen_x, gen_x_onehot_adv, topicness_values, gen_x_no_lambda),
+        name="while_adv_recurrence")
 
     gen_o = tf.transpose(gen_o.stack(), perm=[1, 0])  # batch_size x seq_len
     gen_x = tf.transpose(gen_x.stack(), perm=[1, 0])  # batch_size x seq_len
@@ -62,6 +75,12 @@ def generator(x_real, temperature, vocab_size, batch_size, seq_len, gen_emb_dim,
     ta_emb_x = tensor_array_ops.TensorArray(dtype=tf.float32, size=seq_len)
     ta_emb_x = ta_emb_x.unstack(x_emb)
 
+    topicness_values = topicness_values.stack()  # seq_len x batch_size
+    topicness_values = tf.transpose(topicness_values, perm=[1, 0], name="lambda_values_trans")  # batch_size x seq_len
+
+    gen_x_no_lambda = gen_x_no_lambda.stack()  # seq_len x batch_size
+    gen_x_no_lambda = tf.transpose(gen_x_no_lambda, perm=[1, 0], name="gen_x_no_lambda_trans")  # batch_size x seq_len
+
     # the generator recurrent moddule used for pre-training
     def _pretrain_recurrence(i, x_t, h_tm1, g_predictions):
         h_t = gen_mem(x_t, h_tm1)
@@ -74,7 +93,7 @@ def generator(x_real, temperature, vocab_size, batch_size, seq_len, gen_emb_dim,
     _, _, _, g_predictions = control_flow_ops.while_loop(
         cond=lambda i, _1, _2, _3: i < seq_len,
         body=_pretrain_recurrence,
-        loop_vars=(tf.constant(0, dtype=tf.int32), tf.nn.embedding_lookup(g_embeddings, start_tokens),
+        loop_vars=(tf.constant(0, dtype=tf.int32), g_topic_embedding(x_topic),
                    init_states, g_predictions))
 
     g_predictions = tf.transpose(g_predictions.stack(),
@@ -87,7 +106,7 @@ def generator(x_real, temperature, vocab_size, batch_size, seq_len, gen_emb_dim,
         )
     ) / (seq_len * batch_size)
 
-    return gen_x_onehot_adv, gen_x, pretrain_loss, gen_o
+    return gen_x_onehot_adv, gen_x, pretrain_loss, gen_o, topicness_values, gen_x_no_lambda
 
 
 def discriminator(x_onehot, batch_size, seq_len, vocab_size, dis_emb_dim, num_rep, sn):

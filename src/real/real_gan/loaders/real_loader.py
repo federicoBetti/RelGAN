@@ -68,6 +68,12 @@ class RealDataLoader:
     def reset_pointer(self):
         self.pointer = 0
 
+    def set_dictionaries(self, word_index_dict: Dict[str, int], index_word_dict: Dict[str, str]):
+        self.model_word_index_dict = word_index_dict
+        self.model_index_word_dict = index_word_dict
+        assert len(word_index_dict) == len(index_word_dict)
+        self.vocab_size = len(self.model_index_word_dict)
+
 
 class RealDataTopicLoader(RealDataLoader):
     model_index_word_dict: Dict[str, str]
@@ -245,7 +251,6 @@ class RealDataTopicLoader(RealDataLoader):
         topic_weights = df.values[:, 1:self.topic_num + 1]  # num_sentences x num_topic (each row sum to 1)
         print(df.head(5))
         topic_sentences = np.dot(topic_weights, self.topic_matrix)  # num_sentences x num_lda_word
-
 
         real_vector = np.zeros(
             (topic_sentences.shape[0], len(self.model_word_index_dict) + 1))  # sentence_number x vocab_size
