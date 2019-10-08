@@ -5,6 +5,7 @@ import random
 import gc
 from tensorflow.python.client import device_lib
 from tensorflow.python.saved_model.simple_save import simple_save
+from tensorflow.compat.v1 import placeholder
 from tqdm import tqdm
 
 from models import rmc_att_topic
@@ -66,10 +67,10 @@ def real_topic_train_NoDiscr(generator: rmc_att_topic.generator, oracle_loader: 
         os.makedirs(log_dir)
 
     # placeholder definitions
-    x_real = tf.placeholder(tf.int32, [batch_size, seq_len], name="x_real")  # tokens of oracle sequences
-    x_topic = tf.placeholder(tf.float32, [batch_size, oracle_loader.vocab_size + 1],
+    x_real = placeholder(tf.int32, [batch_size, seq_len], name="x_real")  # tokens of oracle sequences
+    x_topic = placeholder(tf.float32, [batch_size, oracle_loader.vocab_size + 1],
                              name="x_topic")  # todo stessa cosa del +1
-    x_topic_random = tf.placeholder(tf.float32, [batch_size, oracle_loader.vocab_size + 1], name="x_topic_random")
+    x_topic_random = placeholder(tf.float32, [batch_size, oracle_loader.vocab_size + 1], name="x_topic_random")
 
     temperature = tf.Variable(1., trainable=False, name='temperature')
 
@@ -105,12 +106,12 @@ def real_topic_train_NoDiscr(generator: rmc_att_topic.generator, oracle_loader: 
     g_pretrain_op = get_train_ops(config, g_pretrain_loss)
 
     # Record wall clock time
-    time_diff = tf.placeholder(tf.float32)
+    time_diff = placeholder(tf.float32)
     Wall_clock_time = tf.Variable(0., trainable=False)
     update_Wall_op = Wall_clock_time.assign_add(time_diff)
 
     # Temperature placeholder
-    temp_var = tf.placeholder(tf.float32)
+    temp_var = placeholder(tf.float32)
     update_temperature_op = temperature.assign(temp_var)
 
     # Loss summaries

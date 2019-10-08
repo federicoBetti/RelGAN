@@ -1,4 +1,5 @@
-import tensorflow as tf
+from tensorflow import make_template
+
 from models import rmc_vanilla, rmc_att, rmc_vdcnn, lstm_free, lstm_topic, rmc_att_topic, amazon_attr, customer_reviews
 
 generator_dict = {
@@ -30,14 +31,14 @@ discriminator_topic_dict = {
 
 def get_generator(model_name, scope='generator', **kwargs):
     model_func = generator_dict[model_name]
-    return tf.make_template(scope, model_func, **kwargs)
+    return make_template(scope, model_func, **kwargs)
 
 
 def get_discriminator(model_name, scope='discriminator', **kwargs):
     model_func = discriminator_dict[model_name]
-    return tf.make_template(scope, model_func, **kwargs)
+    return make_template(scope, model_func, **kwargs)
 
 
 def get_topic_discriminator(model_name, scope='topic_discriminator', **kwargs):
     model_func = discriminator_topic_dict[model_name]
-    return tf.make_template(scope, model_func, **kwargs)
+    return make_template(scope, model_func, **kwargs)

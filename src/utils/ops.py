@@ -1,5 +1,6 @@
 import math
 import tensorflow as tf
+from tensorflow.compat.v1 import get_variable
 
 
 def hw_flatten(x):
@@ -53,14 +54,14 @@ def linear(input_, output_size, use_bias=False, sn=False, scope=None):
 
     # Now the computation.
     with tf.variable_scope(scope or "Linear"):
-        W = tf.get_variable("Matrix", shape=[output_size, input_size],
+        W = get_variable("Matrix", shape=[output_size, input_size],
                             initializer=create_linear_initializer(input_size, input_.dtype),
                             dtype=input_.dtype)
         if sn:
             W = spectral_norm(W)
         output_ = tf.matmul(input_, tf.transpose(W))
         if use_bias:
-            bias_term = tf.get_variable("Bias", [output_size],
+            bias_term = get_variable("Bias", [output_size],
                                         initializer=create_bias_initializer(input_.dtype),
                                         dtype=input_.dtype)
             output_ += bias_term
@@ -126,11 +127,11 @@ def conv2d(input_, out_nums, k_h=2, k_w=1, d_h=2, d_w=1, stddev=None, sn=False, 
     if stddev is None:
         stddev = math.sqrt(2. / (k_h * k_w * in_nums))
     with tf.variable_scope(scope or "Conv2d"):
-        W = tf.get_variable("Matrix", shape=[k_h, k_w, in_nums, out_nums],
+        W = get_variable("Matrix", shape=[k_h, k_w, in_nums, out_nums],
                             initializer=tf.truncated_normal_initializer(stddev=stddev))
         if sn:
             W = spectral_norm(W)
-        b = tf.get_variable("Bias", shape=[out_nums], initializer=tf.zeros_initializer)
+        b = get_variable("Bias", shape=[out_nums], initializer=tf.zeros_initializer)
         conv = tf.nn.conv2d(input_, filter=W, strides=[1, d_h, d_w, 1], padding=padding)
         conv = tf.nn.bias_add(conv, b)
 
@@ -157,7 +158,7 @@ def self_attention(x, ch, sn=False, scope="conv_self_attention"):
         beta = tf.nn.softmax(s, axis=-1, name="self_attention_softmax")  # attention map
 
         o = tf.matmul(beta, hw_flatten(h), name="self_attention_prob_x_values")  # [bs, N, C]
-        gamma = tf.get_variable("gamma", [1], initializer=tf.constant_initializer(0.0))
+        gamma = get_variable("gamma", [1], initializer=tf.constant_initializer(0.0))
 
         o = tf.reshape(o, [-1] + x.get_shape().as_list()[1:])  # [bs, h, w, C]
         x = tf.add(gamma * o, x, name="add_self_attention_input")
@@ -170,7 +171,7 @@ def spectral_norm(w, iteration=1):
     w_shape = w.shape.as_list()
     w = tf.reshape(w, [-1, w_shape[-1]])
 
-    u = tf.get_variable("u", [1, w_shape[-1]], initializer=tf.truncated_normal_initializer(), trainable=False)
+    u = get_variable("u", [1, w_shape[-1]], initializer=tf.truncated_normal_initializer(), trainable=False)
 
     u_hat = u
     v_hat = None
@@ -196,8 +197,8 @@ def spectral_norm(w, iteration=1):
 
 def create_output_unit(output_size, vocab_size):
     # output_size = self.gen_mem.output_size.as_list()[0]
-    Wo = tf.get_variable('Wo', shape=[output_size, vocab_size], initializer=create_linear_initializer(output_size))
-    bo = tf.get_variable('bo', shape=[vocab_size], initializer=create_bias_initializer())
+    Wo = get_variable('Wo', shape=[output_size, vocab_size], initializer=create_linear_initializer(output_size))
+    bo = get_variable('bo', shape=[vocab_size], initializer=create_bias_initializer())
 
     def unit(hidden_mem_o):
         with tf.variable_scope("output_unit"):
@@ -210,9 +211,9 @@ def create_output_unit(output_size, vocab_size):
 
 def create_topic_embedding_unit(input_size, output_size):
     # output_size = self.gen_mem.output_size.as_list()[0]
-    Wo = tf.get_variable('W_topic_embedding', shape=[input_size, output_size],
+    Wo = get_variable('W_topic_embedding', shape=[input_size, output_size],
                          initializer=create_linear_initializer(input_size))
-    bo = tf.get_variable('b_topic_embedding', shape=[output_size], initializer=create_bias_initializer())
+    bo = get_variable('b_topic_embedding', shape=[output_size], initializer=create_bias_initializer())
 
     def unit(hidden_mem_o):
         with tf.variable_scope("output_unit_topic_embedding"):
@@ -230,9 +231,9 @@ def create_output_unit_lambda(output_size, input_size, additive_scope="_lambda",
     :param additive_scope:
     :return:
     """
-    Wo = tf.get_variable('W' + additive_scope, shape=[input_size, output_size],
+    Wo = get_variable('W' + additive_scope, shape=[input_size, output_size],
                          initializer=create_linear_initializer(input_size))
-    bo = tf.get_variable('b' + additive_scope, shape=[output_size], initializer=create_bias_initializer())
+    bo = get_variable('b' + additive_scope, shape=[output_size], initializer=create_bias_initializer())
 
     def unit(hidden_mem_o):
         with tf.variable_scope("output_unit" + additive_scope):
@@ -279,7 +280,7 @@ def add_gumbel(o_t, eps=1e-10):
     that has mean of 0.0002!
     """
     with tf.variable_scope("Gumbel_softmax"):
-        u = tf.random_uniform(tf.shape(o_t), minval=0, maxval=1, dtype=tf.float32)
+        u = tf.random.uniform(tf.shape(o_t), minval=0, maxval=1, dtype=tf.float32)
         g_t = -tf.log(-tf.log(u + eps) + eps)
         gumbel_t = tf.add(o_t, g_t)
     return gumbel_t
@@ -291,7 +292,7 @@ def add_gumbel_cond(o_t, next_token_onehot, eps=1e-10):
     def truncated_gumbel(gumbel, truncation):
         return -tf.log(eps + tf.exp(-gumbel) + tf.exp(-truncation))
 
-    v = tf.random_uniform(tf.shape(o_t), minval=0, maxval=1, dtype=tf.float32)
+    v = tf.random.uniform(tf.shape(o_t), minval=0, maxval=1, dtype=tf.float32)
 
     print("shape of v: {}".format(v.get_shape().as_list()))
     print("shape of next_token_onehot: {}".format(next_token_onehot.get_shape().as_list()))
@@ -306,7 +307,7 @@ def add_gumbel_cond(o_t, next_token_onehot, eps=1e-10):
 
 def gradient_penalty(discriminator, x_real_onehot, x_fake_onehot_appr, config):
     """compute the gradiet penalty for the WGAN-GP loss"""
-    alpha = tf.random_uniform(shape=[config['batch_size'], 1, 1], minval=0., maxval=1.)
+    alpha = tf.random.uniform(shape=[config['batch_size'], 1, 1], minval=0., maxval=1.)
     interpolated = alpha * x_real_onehot + (1. - alpha) * x_fake_onehot_appr
 
     logit = discriminator(x_onehot=interpolated)

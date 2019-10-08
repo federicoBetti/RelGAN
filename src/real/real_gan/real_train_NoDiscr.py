@@ -3,6 +3,7 @@
 import gc
 
 from tensorflow.python.client import device_lib
+from tensorflow.compat.v1 import placeholder
 
 from models import rmc_att_topic
 from path_resolution import resources_path
@@ -72,7 +73,7 @@ def real_train_NoDiscr(generator_obj: rmc_att_topic.generator, oracle_loader, co
         os.makedirs(log_dir)
 
     # placeholder definitions
-    x_real = tf.placeholder(tf.int32, [batch_size, seq_len], name="x_real")  # tokens of oracle sequences
+    x_real = placeholder(tf.int32, [batch_size, seq_len], name="x_real")  # tokens of oracle sequences
 
     temperature = tf.Variable(1., trainable=False, name='temperature')
 
@@ -107,13 +108,13 @@ def real_train_NoDiscr(generator_obj: rmc_att_topic.generator, oracle_loader, co
     g_pretrain_op = get_train_ops(config, generator.pretrain_loss)
 
     # Record wall clock time
-    time_diff = tf.placeholder(tf.float32)
+    time_diff = placeholder(tf.float32)
     Wall_clock_time = tf.Variable(0., trainable=False)
     # noinspection PyUnusedLocal
     update_Wall_op = Wall_clock_time.assign_add(time_diff)
 
     # Temperature placeholder
-    temp_var = tf.placeholder(tf.float32)
+    temp_var = placeholder(tf.float32)
     # noinspection PyUnusedLocal
     update_temperature_op = temperature.assign(temp_var)
 
