@@ -229,6 +229,6 @@ def generate_sentences(sess, x_fake, batch_size, num_sentences, oracle_loader, x
     for sent, input_sent in zip(generated_samples, sentence_generated_from):
         json_file['sentences'].append({
             'generated_sentence': get_sentence_from_index(sent, oracle_loader.model_index_word_dict),
-            'real_sentence': get_sentence_from_index(input_sent, oracle_loader.model_index_word_dict)
+            'real_starting': get_sentence_from_index(input_sent, oracle_loader.model_index_word_dict)
         })
     return json_file
