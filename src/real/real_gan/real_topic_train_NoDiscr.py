@@ -6,6 +6,7 @@ from tensorflow.compat.v1 import placeholder
 from tensorflow.python.client import device_lib
 from tensorflow.python.saved_model.simple_save import simple_save
 
+from models.rmc_att_topic import get_sentence_from_index
 from path_resolution import resources_path
 from real.real_gan.loaders.real_loader import RealDataTopicLoader
 from real.real_gan.real_topic_train_utils import get_metric_summary_op, get_metrics
@@ -126,36 +127,18 @@ def real_topic_train_NoDiscr(generator, oracle_loader: RealDataTopicLoader, conf
                                     summary_type=tf.summary.text, item_type=tf.string)
     custom_summaries = [gen_pretrain_loss_summary, gen_sentences_summary, run_information]
 
-    # To save the trained model
-    saver = tf.train.Saver()
-
     # ------------- initial the graph --------------
     with init_sess() as sess:
-        variables_dict = {}
-        for v in tf.trainable_variables():
-            name_scope = v.name.split('/')
-            d = variables_dict
-            params_number = np.prod(v.get_shape().as_list())
-            for name in name_scope:
-                d[name] = d.get(name, {})
-                d = d[name]
-                d['total_param'] = d.get('total_param', 0) + params_number
+        variables_dict = get_parameters_division()
 
-        print("Total paramter number: {}".format(
-            np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()])))
         log = open(csv_file, 'w')
-        # file_suffix = "date: {}, normal RelGAN, pretrain epochs: {}, adv epochs: {}".format(datetime.datetime.now(),
-        #                                                                                     npre_epochs, nadv_steps)
-        sum_writer = tf.summary.FileWriter(os.path.join(log_dir, 'summary'),
-                                           sess.graph)  # , filename_suffix=file_suffix)
+        sum_writer = tf.summary.FileWriter(os.path.join(log_dir, 'summary'), sess.graph)
         for custom_summary in custom_summaries:
             custom_summary.set_file_writer(sum_writer, sess)
 
         run_information.write_summary(str(args), 0)
         print("Information stored in the summary!")
-        # generate oracle data and create batches
-        # todo se le parole hanno poco senso potrebbe essere perchè qua ho la corrispondenza indice-parola sbagliata
-        index_word_dict = oracle_loader.model_index_word_dict
+
         oracle_loader.create_batches(oracle_file)
 
         metrics = get_metrics(config, oracle_loader, test_file, gen_text_file, g_pretrain_loss, x_real, x_topic, sess,
@@ -175,39 +158,13 @@ def real_topic_train_NoDiscr(generator, oracle_loader: RealDataTopicLoader, conf
         progress = tqdm(range(npre_epochs))
         for epoch in progress:
             # pre-training
-            g_pretrain_loss_np = pre_train_epoch(sess, g_pretrain_op, g_pretrain_loss, x_real, oracle_loader, x_topic)
-            gen_pretrain_loss_summary.write_summary(g_pretrain_loss_np, epoch)
-            progress.set_description("Pretrain_loss: {}".format(g_pretrain_loss_np))
+            # g_pretrain_loss_np = pre_train_epoch(sess, g_pretrain_op, g_pretrain_loss, x_real, oracle_loader, x_topic)
+            # gen_pretrain_loss_summary.write_summary(g_pretrain_loss_np, epoch)
+            # progress.set_description("Pretrain_loss: {}".format(g_pretrain_loss_np))
+
             # Test
             ntest_pre = 40
             if np.mod(epoch, ntest_pre) == 0:
-                # generate fake data and create batches
-                # tqdm.write("Epoch: {}; Computing Metrics and writing summaries".format(epoch), end=" ")
-                t = time.time()
-
-                def generate_sentences(sess, x_fake, batch_size, num_sentences, oracle_loader, x_topic):
-                    generated_samples, input_sentiment = [], []
-                    sentence_generated_from = []
-
-                    max_gen = int(num_sentences / batch_size)  # - 155 # 156
-                    for ii in range(max_gen):
-                        text_batch, topic_batch = oracle_loader.random_batch(only_text=False)
-                        feed = {x_topic: topic_batch}
-                        sentence_generated_from.extend(text_batch)
-                        gen_x_res = sess.run(x_fake, feed_dict=feed)
-
-                        generated_samples.extend(gen_x_res)
-
-                    json_file = {'sentences': []}
-                    for sent, input_sent in zip(generated_samples, sentence_generated_from):
-                        json_file['sentences'].append({
-                            'generated_sentence': " ".join([
-                                oracle_loader.model_index_word_dict[str(el)] for el in sent if
-                                el < len(oracle_loader.model_index_word_dict)]),
-                            'real_sentence': input_sent
-                        })
-                    return json_file
-
                 json_object = generate_sentences(sess, x_fake, batch_size, num_sentences, oracle_loader=oracle_loader,
                                                  x_topic=x_topic)
                 write_json(json_file, json_object)
@@ -253,3 +210,25 @@ def real_topic_train_NoDiscr(generator, oracle_loader: RealDataTopicLoader, conf
                         outputs={"gen_x": x_fake})
             # save_path = saver.save(sess, os.path.join(model_path, "model.ckpt"))
             print("Model saved in path: %s" % model_path)
+
+
+def generate_sentences(sess, x_fake, batch_size, num_sentences, oracle_loader, x_topic):
+    generated_samples, input_sentiment = [], []
+    sentence_generated_from = []
+
+    max_gen = int(num_sentences / batch_size)  # - 155 # 156
+    for ii in range(max_gen):
+        text_batch, topic_batch = oracle_loader.random_batch(only_text=False)
+        feed = {x_topic: topic_batch}
+        sentence_generated_from.extend(text_batch)
+        gen_x_res = sess.run(x_fake, feed_dict=feed)
+
+        generated_samples.extend(gen_x_res)
+
+    json_file = {'sentences': []}
+    for sent, input_sent in zip(generated_samples, sentence_generated_from):
+        json_file['sentences'].append({
+            'generated_sentence': get_sentence_from_index(sent, oracle_loader.model_index_word_dict),
+            'real_sentence': get_sentence_from_index(input_sent, oracle_loader.model_index_word_dict)
+        })
+    return json_file

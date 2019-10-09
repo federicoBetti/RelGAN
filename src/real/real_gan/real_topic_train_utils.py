@@ -289,7 +289,7 @@ def get_metrics(config, oracle_loader, test_file, gen_file, g_pretrain_loss, x_r
         metrics.append(doc_embsim)
     if config['bleu']:
         for i in range(2, 6):
-            bleu = Bleu(test_text=gen_file, real_text=test_file, gram=i, name='bleu' + str(i))
+            bleu = Bleu(test_text=json_file, real_text=test_file, gram=i, name='bleu' + str(i))
             metrics.append(bleu)
     if config['selfbleu']:
         for i in range(2, 6):

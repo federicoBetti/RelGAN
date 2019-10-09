@@ -193,7 +193,7 @@ def real_topic_train(generator_obj, discriminator_obj, topic_discriminator_obj, 
                         topic_discr_accuracy_summary, run_information]
 
     # To save the trained model
-    saver = tf.train.Saver()
+    saver = tf.compat.v1.train.Saver()
 
     # ------------- initial the graph --------------
     with init_sess() as sess:
@@ -202,7 +202,7 @@ def real_topic_train(generator_obj, discriminator_obj, topic_discriminator_obj, 
         print("Total paramter number: {}".format(
             np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()])))
         log = open(csv_file, 'w')
-        sum_writer = tf.summary.FileWriter(os.path.join(log_dir, 'summary'), sess.graph)
+        sum_writer = tf.compat.v1.summary.FileWriter(os.path.join(log_dir, 'summary'), sess.graph)
         for custom_summary in custom_summaries:
             custom_summary.set_file_writer(sum_writer, sess)
 

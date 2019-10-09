@@ -56,14 +56,13 @@ class Bleu(Metrics):
         bleu = list()
         reference = self.get_reference()
         weight = tuple((1. / ngram for _ in range(ngram)))
-        with open(self.test_data) as test_data:
-            i = 0
-            for hypothesis in test_data:
-                if i >= self.sample_size:
-                    break
-                hypothesis = nltk.word_tokenize(hypothesis)
-                bleu.append(self.calc_bleu(reference, hypothesis, weight))
-                i += 1
+        json_obj = load_json(self.test_data)
+        for i, hypothesis in enumerate(json_obj['sentences']):
+            if i >= self.sample_size:
+                break
+            hypothesis = nltk.word_tokenize(hypothesis)
+            bleu.append(self.calc_bleu(reference, hypothesis, weight))
+            i += 1
         return sum(bleu) / len(bleu)
 
     def calc_bleu(self, reference, hypothesis, weight):
