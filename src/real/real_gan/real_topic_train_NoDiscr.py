@@ -178,7 +178,7 @@ def real_topic_train_NoDiscr(generator, oracle_loader: RealDataTopicLoader, conf
                             break
 
                 # take sentences from saved files
-                sent = take_sentences_json(json_object, first_elem='generated_sentence', second_elem='real_sentence')
+                sent = take_sentences_json(json_object, first_elem='generated_sentence', second_elem='real_starting')
                 gen_sentences_summary.write_summary(sent, epoch)
 
                 # write summaries
