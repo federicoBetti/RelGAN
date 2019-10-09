@@ -2,6 +2,7 @@ import random
 import sys
 
 from tensorflow.python.ops import tensor_array_ops, control_flow_ops
+from tqdm import tqdm
 
 from utils.models.relational_memory import RelationalMemory
 from utils.ops import *
@@ -150,11 +151,11 @@ class generator:
                 )
             ) / (self.seq_len * self.batch_size)
 
-    def pretrain_epoch(self, oracle_loader, sess, **kwargs):
+    def pretrain_epoch(self, sess, oracle_loader, **kwargs):
         supervised_g_losses = []
         oracle_loader.reset_pointer()
 
-        for it in range(oracle_loader.num_batch):
+        for it in tqdm(range(oracle_loader.num_batch)):
             text_batch, topic_batch = oracle_loader.next_batch(only_text=False)
             _, g_loss = sess.run([kwargs['g_pretrain_op'], self.pretrain_loss],
                                  feed_dict={self.x_real: text_batch, self.x_topic: topic_batch})

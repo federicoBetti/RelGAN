@@ -14,6 +14,8 @@ from utils.text_process import text_precess
 from utils.utils import pp, str2bool
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+# con la cpu ho un epoca di pretrain intorno a 4.5 sec
+# con la GPU circa 2.3 secondi, la metà
 
 parser = argparse.ArgumentParser(description='Train and run a RmcGAN')
 # Topic?

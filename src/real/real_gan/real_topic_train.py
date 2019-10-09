@@ -210,10 +210,9 @@ def real_topic_train(generator_obj, discriminator_obj, topic_discriminator_obj, 
         print("Information stored in the summary!")
 
         # generate oracle data and create batches
-        index_word_dict = oracle_loader.model_index_word_dict
         oracle_loader.create_batches(oracle_file)
 
-        metrics = get_metrics(config, oracle_loader, test_file, gen_text_file, losses['g_pretrain_loss'], x_real,
+        metrics = get_metrics(config, oracle_loader, test_file, gen_text_file, generator.pretrain_loss, x_real,
                               x_topic, sess,
                               json_file)
 
@@ -228,7 +227,6 @@ def real_topic_train(generator_obj, discriminator_obj, topic_discriminator_obj, 
             print("Used saved model for generator pretrain")
         except OSError:
             print('Start pre-training...')
-            generator.pretrain_epoch(sess, )
             progress = tqdm(range(npre_epochs))
             for epoch in progress:
                 # pre-training

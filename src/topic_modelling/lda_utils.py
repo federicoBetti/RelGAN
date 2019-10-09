@@ -189,6 +189,7 @@ def get_perc_sent_topic(lda, topic_num, data_file):
     try:
         sent_topics_df = load_pickle(file_path)
     except FileNotFoundError:
+        print("get perc sent topic not found")
         ldamodel = lda.lda_model
         with open(data_file) as f:
             sentences = [line.rstrip('\n') for line in f]
