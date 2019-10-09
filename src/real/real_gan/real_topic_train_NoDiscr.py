@@ -25,8 +25,7 @@ print("Available GPUs: {}".format(get_available_gpus()))
 
 
 # A function to initiate the graph and train the networks
-def real_topic_train_NoDiscr(generator: rmc_att_topic.generator, oracle_loader: RealDataTopicLoader,
-                             config, args):
+def real_topic_train_NoDiscr(generator, oracle_loader: RealDataTopicLoader, config, args):
     batch_size = config['batch_size']
     num_sentences = config['num_sentences']
     vocab_size = config['vocab_size']
@@ -69,7 +68,7 @@ def real_topic_train_NoDiscr(generator: rmc_att_topic.generator, oracle_loader: 
     # placeholder definitions
     x_real = placeholder(tf.int32, [batch_size, seq_len], name="x_real")  # tokens of oracle sequences
     x_topic = placeholder(tf.float32, [batch_size, oracle_loader.vocab_size + 1],
-                             name="x_topic")  # todo stessa cosa del +1
+                          name="x_topic")  # todo stessa cosa del +1
     x_topic_random = placeholder(tf.float32, [batch_size, oracle_loader.vocab_size + 1], name="x_topic_random")
 
     temperature = tf.Variable(1., trainable=False, name='temperature')
@@ -216,6 +215,7 @@ def real_topic_train_NoDiscr(generator: rmc_att_topic.generator, oracle_loader: 
 
                 json_object = generate_sentences(sess, x_fake, batch_size, num_sentences, oracle_loader=oracle_loader,
                                                  x_topic=x_topic)
+                write_json(json_file, json_object)
 
                 with open(gen_text_file, 'w') as outfile:
                     i = 0

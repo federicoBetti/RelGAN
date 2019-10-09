@@ -193,6 +193,7 @@ def real_train_NoDiscr(generator_obj: rmc_att_topic.generator, oracle_loader, co
             ntest_pre = 40
             if np.mod(epoch, ntest_pre) == 0:
                 json_object = generator.generate_sentences(sess, batch_size, num_sentences, oracle_loader=oracle_loader)
+                write_json(json_file, json_object)
 
                 with open(gen_text_file, 'w') as outfile:
                     i = 0

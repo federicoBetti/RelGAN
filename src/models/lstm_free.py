@@ -125,19 +125,23 @@ class generator:
 
     def generate_sentences(self, sess, batch_size, num_sentences, oracle_loader):
         generated_samples, input_sentiment = [], []
+        real_sentences = []
 
         max_gen = int(num_sentences / batch_size)  # - 155 # 156
         for ii in range(max_gen):
+            sents = oracle_loader.random_batch()
             gen_x_res = sess.run(self.gen_x)
 
             generated_samples.extend(gen_x_res)
+            real_sentences.extend(sents)
 
         json_file = {'sentences': []}
-        for sent in generated_samples:
+        for sent, random_sent in zip(generated_samples, real_sentences):
             json_file['sentences'].append({
                 'generated_sentence': " ".join([
                     oracle_loader.model_index_word_dict[str(el)] for el in sent if
-                    el < len(oracle_loader.model_index_word_dict)])
+                    el < len(oracle_loader.model_index_word_dict)]),
+                'real_starting': random_sent
             })
         return json_file
 
