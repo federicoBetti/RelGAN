@@ -32,7 +32,6 @@ def real_topic_train_NoDiscr(generator, oracle_loader: RealDataTopicLoader, conf
     seq_len = config['seq_len']
     dataset = config['dataset']
     npre_epochs = config['npre_epochs']
-    n_topic_pre_epochs = config['n_topic_pre_epochs']
     nadv_steps = config['nadv_steps']
     temper = config['temperature']
     adapt = config['adapt']

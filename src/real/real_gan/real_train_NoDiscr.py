@@ -224,7 +224,7 @@ def real_train_NoDiscr(generator_obj: rmc_att_topic.generator, oracle_loader, co
                 gc.collect()
 
             gc.collect()
-            sum_writer.close()
+        sum_writer.close()
 
 
 def get_metrics(config, oracle_loader, test_file, gen_file, g_pretrain_loss, x_real, sess, json_file):

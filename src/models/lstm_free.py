@@ -141,7 +141,9 @@ class generator:
                 'generated_sentence': " ".join([
                     oracle_loader.model_index_word_dict[str(el)] for el in sent if
                     el < len(oracle_loader.model_index_word_dict)]),
-                'real_starting': random_sent
+                'real_starting':  " ".join([
+                    oracle_loader.model_index_word_dict[str(el)] for el in random_sent if
+                    el < len(oracle_loader.model_index_word_dict)]),
             })
         return json_file
 

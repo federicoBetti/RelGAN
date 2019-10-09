@@ -192,6 +192,9 @@ def main():
 
                 oracle_loader = RealDataLoader(args.batch_size, args.seq_len)
                 oracle_loader.set_dictionaries(word_index_dict, index_word_dict)
+                oracle_loader.set_dataset(args.dataset)
+                oracle_loader.set_files(data_file, lda_file)
+                oracle_loader.topic_num = config['topic_number']
 
                 real_train_NoDiscr(generator, oracle_loader, config, args)
         else:
