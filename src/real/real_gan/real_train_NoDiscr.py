@@ -52,7 +52,7 @@ def real_train_NoDiscr(generator_obj: rmc_att_topic.generator, oracle_loader, co
     gen_text_file = os.path.join(sample_dir, 'generator_text.txt')
     # noinspection PyUnusedLocal
     gen_text_file_print = os.path.join(sample_dir, 'gen_text_file_print.txt')
-    json_file = os.path.join(sample_dir, 'json_file.txt')
+    json_file = os.path.join(sample_dir, 'json_file{}.txt'.format(args.json_file))
     csv_file = os.path.join(log_dir, 'experiment-log-rmcgan.csv')
     # noinspection PyUnusedLocal
     data_file = os.path.join(data_dir, '{}.txt'.format(dataset))
@@ -142,15 +142,7 @@ def real_train_NoDiscr(generator_obj: rmc_att_topic.generator, oracle_loader, co
 
     # ------------- initial the graph --------------
     with init_sess() as sess:
-        variables_dict = {}
-        for v in tf.trainable_variables():
-            name_scope = v.name.split('/')
-            d = variables_dict
-            params_number = np.prod(v.get_shape().as_list())
-            for name in name_scope:
-                d[name] = d.get(name, {})
-                d = d[name]
-                d['total_param'] = d.get('total_param', 0) + params_number
+        variables_dict = get_parameters_division()
 
         print("Total paramter number: {}".format(
             np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()])))
@@ -235,11 +227,11 @@ def get_metrics(config, oracle_loader, test_file, gen_file, g_pretrain_loss, x_r
         metrics.append(nll_gen)
     if config['bleu']:
         for i in range(2, 6):
-            bleu = Bleu(test_text=gen_file, real_text=test_file, gram=i, name='bleu' + str(i))
+            bleu = Bleu(test_text=json_file, real_text=test_file, gram=i, name='bleu' + str(i))
             metrics.append(bleu)
     if config['selfbleu']:
         for i in range(2, 6):
-            selfbleu = SelfBleu(test_text=gen_file, gram=i, name='selfbleu' + str(i))
+            selfbleu = SelfBleu(test_text=json_file, gram=i, name='selfbleu' + str(i))
             metrics.append(selfbleu)
     if config['KL']:
         KL_div = KL_divergence(oracle_loader, json_file, name='KL_divergence')

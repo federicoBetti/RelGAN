@@ -43,7 +43,7 @@ def real_topic_train_NoDiscr(generator, oracle_loader: RealDataTopicLoader, conf
     gen_file = os.path.join(sample_dir, 'generator.txt')
     gen_text_file = os.path.join(sample_dir, 'generator_text.txt')
     gen_text_file_print = os.path.join(sample_dir, 'gen_text_file_print.txt')
-    json_file = os.path.join(sample_dir, 'json_file.txt')
+    json_file = os.path.join(sample_dir, 'json_file{}.txt'.format(args.json_file))
     csv_file = os.path.join(log_dir, 'experiment-log-rmcgan.csv')
     data_file = os.path.join(data_dir, '{}.txt'.format(dataset))
     if dataset == 'image_coco':
@@ -185,7 +185,6 @@ def real_topic_train_NoDiscr(generator, oracle_loader: RealDataTopicLoader, conf
                 scores = [metric.get_score() for metric in metrics]
                 metrics_summary_str = sess.run(metric_summary_op, feed_dict=dict(zip(metrics_pl, scores)))
                 sum_writer.add_summary(metrics_summary_str, epoch)
-                # tqdm.write("in {} seconds".format(time.time() - t))
 
                 msg = 'pre_gen_epoch:' + str(epoch) + ', g_pre_loss: %.4f' % g_pretrain_loss_np
                 metric_names = [metric.get_name() for metric in metrics]

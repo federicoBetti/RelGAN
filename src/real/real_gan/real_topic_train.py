@@ -81,60 +81,6 @@ def real_topic_train(generator_obj, discriminator_obj, topic_discriminator_obj, 
     d_topic_real_neg = topic_discriminator_obj(x_onehot=x_real_onehot, x_topic=x_topic_random)
     d_topic_fake = topic_discriminator_obj(x_onehot=generator.gen_x_onehot_adv, x_topic=x_topic)
 
-    # A function to get different GAN losses
-    def get_losses(generator, d_real, d_fake, d_topic_real_pos, d_topic_real_neg, d_topic_fake, config):
-        EPS = 10e-5
-        batch_size = config['batch_size']
-        gan_type = config['gan_type']  # select the gan loss type
-        losses = {}
-
-        if gan_type == 'standard':  # the non-satuating GAN loss
-            with tf.variable_scope("standard_GAN_loss"):
-                losses['d_loss_real'] = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=d_real.logits, labels=tf.ones_like(d_real.logits)
-                ), name="d_loss_real")
-                losses['d_loss_fake'] = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=d_fake.logits, labels=tf.zeros_like(d_fake.logits)
-                ), name="d_loss_fake")
-                losses['d_loss'] = losses['d_loss_real'] + losses['d_loss_fake']
-
-                if d_topic_real_neg is not None:
-                    losses['d_topic_loss_real_pos'] = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-                        logits=d_topic_real_pos.logits, labels=tf.ones_like(d_topic_real_pos.logits)
-                    ), name="d_topic_loss_real_pos")
-
-                    losses['d_topic_loss_real_neg'] = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-                        logits=d_topic_real_neg.logits, labels=tf.zeros_like(d_topic_real_neg.logits)
-                    ), name="d_topic_loss_real_neg")
-
-                    losses['d_topic_loss_fake'] = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-                        logits=d_topic_fake.logits, labels=tf.zeros_like(d_topic_fake.logits)
-                    ), name="d_topic_loss_fake")
-
-                    losses['d_loss'] += (losses['d_topic_loss_real_pos'] + losses['d_topic_loss_fake']) / 10
-                else:
-                    losses['d_topic_loss_real_pos'] = None
-                    losses['d_topic_loss_real_neg'] = None
-                    losses['d_topic_loss_fake'] = None
-
-                losses['g_sentence_loss'] = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=d_fake.logits, labels=tf.ones_like(d_fake.logits)
-                ), name="g_sentence_loss")
-                losses['g_loss'] = losses['g_sentence_loss']
-
-                if d_topic_fake is not None:
-                    losses['g_topic_loss'] = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-                        logits=d_topic_fake.logits, labels=tf.ones_like(d_topic_fake.logits)
-                    ), name="g_topic_loss")
-
-                    losses['g_loss'] = losses['g_loss'] + (losses['g_topic_loss'] / 10)
-                else:
-                    losses['g_topic_loss'] = None
-
-                losses['log_pg'] = tf.reduce_mean(tf.log(generator.gen_o + EPS))  # [1], measures the log p_g(x)
-
-                return losses
-
     # GAN / Divergence type
     losses = get_losses(generator, d_real, d_fake, d_topic_real_pos, d_topic_real_neg, d_topic_fake, config)
     d_topic_loss = losses['d_topic_loss_real_pos'] + losses['d_topic_loss_real_neg']  # only from real data for pretrain
@@ -339,7 +285,7 @@ def real_topic_train(generator_obj, discriminator_obj, topic_discriminator_obj, 
 
         sum_writer.close()
 
-        save_model = True
+        save_model = False
         if save_model:
             model_dir = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
             model_path = os.path.join(resources_path("trained_models"), model_dir)
@@ -349,57 +295,6 @@ def real_topic_train(generator_obj, discriminator_obj, topic_discriminator_obj, 
                         outputs={"gen_x": generator.gen_x})
             # save_path = saver.save(sess, os.path.join(model_path, "model.ckpt"))
             print("Model saved in path: %s" % model_path)
-
-
-def generator_pretrain(npre_epochs, sess, g_pretrain_op, g_pretrain_loss, x_real, oracle_loader,
-                       gen_pretrain_loss_summary, sample_dir, x_fake, batch_size, num_sentences, x_topic, gen_text_file,
-                       index_word_dict, gen_sentences_summary, metrics, metric_summary_op, metrics_pl, sum_writer, log,
-                       lambda_values, gen_text_file_print, gen_x_no_lambda, json_file):
-    progress = tqdm(range(npre_epochs))
-    for epoch in progress:
-        # pre-training
-        g_pretrain_loss_np = pre_train_epoch(sess, g_pretrain_op, g_pretrain_loss, x_real, oracle_loader, x_topic)
-        gen_pretrain_loss_summary.write_summary(g_pretrain_loss_np, epoch)
-
-        # Test
-        ntest_pre = 40
-        if np.mod(epoch, ntest_pre) == 0:
-            # generate fake data and create batches
-            # tqdm.write("Epoch: {}; Computing Metrics and writing summaries".format(epoch), end=" ")
-            t = time.time()
-            codes_with_lambda, sentence_generated_from, codes, json_object = generate_samples_topic(sess, x_fake,
-                                                                                                    batch_size,
-                                                                                                    num_sentences,
-                                                                                                    lambda_values=lambda_values,
-                                                                                                    oracle_loader=oracle_loader,
-                                                                                                    gen_x_no_lambda=gen_x_no_lambda,
-                                                                                                    x_topic=x_topic)
-            create_json_file(json_object, json_file)
-            # gen_real_test_file_not_file(codes, sentence_generated_from, gen_save_file, index_word_dict)
-            gen_real_test_file_not_file(codes, sentence_generated_from, gen_text_file, index_word_dict, json_object)
-            gen_real_test_file_not_file(codes_with_lambda, sentence_generated_from, gen_text_file_print,
-                                        index_word_dict, json_object, True)
-
-            # take sentences from saved files
-            sent = take_sentences_topic(gen_text_file_print)
-            sent = random.sample(sent, 5)
-            gen_sentences_summary.write_summary(sent, epoch)
-
-            # write summaries
-            scores = [metric.get_score() for metric in metrics]
-            metrics_summary_str = sess.run(metric_summary_op, feed_dict=dict(zip(metrics_pl, scores)))
-            sum_writer.add_summary(metrics_summary_str, epoch)
-            # tqdm.write("in {} seconds".format(time.time() - t))
-
-            msg = 'pre_gen_epoch:' + str(epoch) + ', g_pre_loss: %.4f' % g_pretrain_loss_np
-            metric_names = [metric.get_name() for metric in metrics]
-            for (name, score) in zip(metric_names, scores):
-                msg += ', ' + name + ': %.4f' % score
-            progress.set_description(msg)
-            log.write(msg)
-            log.write('\n')
-
-            gc.collect()
 
 
 def topic_discriminator_pretrain(n_topic_pre_epochs, sess, d_topic_pretrain_op, d_topic_loss,
@@ -417,3 +312,58 @@ def topic_discriminator_pretrain(n_topic_pre_epochs, sess, d_topic_pretrain_op, 
         topic_discr_pretrain_summary.write_summary(d_topic_pretrain_loss, epoch)
         topic_discr_accuracy_summary.write_summary(accuracy_mean, epoch)
         progress.set_description('topic_loss: %4.4f, accuracy: %4.4f' % (d_topic_pretrain_loss, accuracy_mean))
+
+
+# A function to get different GAN losses
+def get_losses(generator, d_real, d_fake, d_topic_real_pos, d_topic_real_neg, d_topic_fake, config):
+    EPS = 10e-5
+    batch_size = config['batch_size']
+    gan_type = config['gan_type']  # select the gan loss type
+    losses = {}
+
+    if gan_type == 'standard':  # the non-satuating GAN loss
+        with tf.variable_scope("standard_GAN_loss"):
+            losses['d_loss_real'] = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+                logits=d_real.logits, labels=tf.ones_like(d_real.logits)
+            ), name="d_loss_real")
+            losses['d_loss_fake'] = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+                logits=d_fake.logits, labels=tf.zeros_like(d_fake.logits)
+            ), name="d_loss_fake")
+            losses['d_loss'] = losses['d_loss_real'] + losses['d_loss_fake']
+
+            if d_topic_real_neg is not None:
+                losses['d_topic_loss_real_pos'] = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=d_topic_real_pos.logits, labels=tf.ones_like(d_topic_real_pos.logits)
+                ), name="d_topic_loss_real_pos")
+
+                losses['d_topic_loss_real_neg'] = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=d_topic_real_neg.logits, labels=tf.zeros_like(d_topic_real_neg.logits)
+                ), name="d_topic_loss_real_neg")
+
+                losses['d_topic_loss_fake'] = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=d_topic_fake.logits, labels=tf.zeros_like(d_topic_fake.logits)
+                ), name="d_topic_loss_fake")
+
+                losses['d_loss'] += (losses['d_topic_loss_real_pos'] + losses['d_topic_loss_fake']) / 10
+            else:
+                losses['d_topic_loss_real_pos'] = None
+                losses['d_topic_loss_real_neg'] = None
+                losses['d_topic_loss_fake'] = None
+
+            losses['g_sentence_loss'] = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+                logits=d_fake.logits, labels=tf.ones_like(d_fake.logits)
+            ), name="g_sentence_loss")
+            losses['g_loss'] = losses['g_sentence_loss']
+
+            if d_topic_fake is not None:
+                losses['g_topic_loss'] = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=d_topic_fake.logits, labels=tf.ones_like(d_topic_fake.logits)
+                ), name="g_topic_loss")
+
+                losses['g_loss'] = losses['g_loss'] + (losses['g_topic_loss'] / 10)
+            else:
+                losses['g_topic_loss'] = None
+
+            losses['log_pg'] = tf.reduce_mean(tf.log(generator.gen_o + EPS))  # [1], measures the log p_g(x)
+
+            return losses

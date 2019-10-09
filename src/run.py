@@ -92,6 +92,9 @@ parser.add_argument('--num-rep', default=64, type=int, help="number of discrimin
 parser.add_argument('--data-dir', default=os.path.join('.', 'data'), type=str, help='Where data data is stored')
 
 
+# Files
+parser.add_argument('--json-file', default='', type=str, help='suffix to the json file name')
+
 def create_subsample_data_file(data_file, train_size=10000):
     lda_file = data_file
     print("Start of create subsample")
@@ -331,5 +334,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-

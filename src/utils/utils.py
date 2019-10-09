@@ -128,7 +128,11 @@ def generate_amazon(sess, gen_x, batch_size, generated_num, oracle_loader=None, 
 
 
 def init_sess():
-    config = tf.ConfigProto()
+    n_cpus = 2
+    config = tf.ConfigProto(device_count={"CPU": n_cpus},
+                            inter_op_parallelism_threads=n_cpus,
+                            intra_op_parallelism_threads=2,
+                            )
     config.gpu_options.allow_growth = True
     sess = tf.Session(config=config)
     sess.run([tf.global_variables_initializer(), tf.local_variables_initializer()])

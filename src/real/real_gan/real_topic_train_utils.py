@@ -288,7 +288,7 @@ def get_metrics(config, oracle_loader, test_file, gen_file, g_pretrain_loss, x_r
         doc_embsim = DocEmbSim(test_file, gen_file, config['vocab_size'], name='doc_embsim')
         metrics.append(doc_embsim)
     if config['bleu']:
-        for i in range(2, 6):
+        for i in [2, 4]: #range(2, 6):
             bleu = Bleu(test_text=json_file, real_text=test_file, gram=i, name='bleu' + str(i))
             metrics.append(bleu)
     if config['selfbleu']:
@@ -318,7 +318,7 @@ def get_metric_summary_op(config):
         metrics_sum.append(tf.summary.scalar('metrics/doc_embsim', doc_embsim))
 
     if config['bleu']:
-        for i in range(2, 6):
+        for i in [2, 4]: #range(2, 6):
             temp_pl = tf.placeholder(tf.float32, name='bleu{}'.format(i))
             metrics_pl.append(temp_pl)
             metrics_sum.append(tf.summary.scalar('metrics/bleu{}'.format(i), temp_pl))
