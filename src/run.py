@@ -7,19 +7,13 @@ import models
 from oracle.oracle_gan.oracle_loader import OracleDataLoader
 from oracle.oracle_gan.oracle_train import oracle_train
 from path_resolution import resources_path
-from real.real_gan.amazon_attribute_train import amazon_attribute_train
-from real.real_gan.customer_reviews_train import customer_reviews_train
-from real.real_gan.loaders.amazon_loader import RealDataAmazonLoader
-from real.real_gan.loaders.custom_reviews_loader import RealDataCustomerReviewsLoader
 from real.real_gan.loaders.real_loader import RealDataTopicLoader, RealDataLoader
-from real.real_gan.real_topic_train import real_topic_train
-from real.real_gan.real_topic_train_NoDiscr import real_topic_train_NoDiscr
-from real.real_gan.real_train import real_train
-from real.real_gan.real_train_NoDiscr import real_train_NoDiscr
 from utils.models.OracleLstm import OracleLstm
 from utils.static_file_manage import load_json
 from utils.text_process import text_precess
 from utils.utils import pp, str2bool
+
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 parser = argparse.ArgumentParser(description='Train and run a RmcGAN')
 # Topic?
@@ -175,12 +169,14 @@ def main():
                 oracle_loader.set_dictionaries(word_index_dict, index_word_dict)
 
                 generator = models.get_generator(args.g_architecture, vocab_size=vocab_size, batch_size=args.batch_size,
-                                                 seq_len=seq_len, gen_emb_dim=args.gen_emb_dim, mem_slots=args.mem_slots,
+                                                 seq_len=seq_len, gen_emb_dim=args.gen_emb_dim,
+                                                 mem_slots=args.mem_slots,
                                                  head_size=args.head_size, num_heads=args.num_heads,
                                                  hidden_dim=args.hidden_dim,
                                                  start_token=args.start_token, TopicInMemory=args.topic_in_memory,
                                                  NoTopic=args.no_topic)
 
+                from real.real_gan.real_topic_train_NoDiscr import real_topic_train_NoDiscr
                 real_topic_train_NoDiscr(generator, oracle_loader, config, args)
             else:
                 generator = models.get_generator(args.g_architecture, vocab_size=vocab_size, batch_size=args.batch_size,
@@ -196,6 +192,7 @@ def main():
                 oracle_loader.set_files(data_file, lda_file)
                 oracle_loader.topic_num = config['topic_number']
 
+                from real.real_gan.real_train_NoDiscr import real_train_NoDiscr
                 real_train_NoDiscr(generator, oracle_loader, config, args)
         else:
             if config['topic']:
@@ -207,36 +204,42 @@ def main():
                 oracle_loader.set_dictionaries(word_index_dict, index_word_dict)
 
                 generator = models.get_generator(args.g_architecture, vocab_size=vocab_size, batch_size=args.batch_size,
-                                                 seq_len=seq_len, gen_emb_dim=args.gen_emb_dim, mem_slots=args.mem_slots,
+                                                 seq_len=seq_len, gen_emb_dim=args.gen_emb_dim,
+                                                 mem_slots=args.mem_slots,
                                                  head_size=args.head_size, num_heads=args.num_heads,
                                                  hidden_dim=args.hidden_dim,
                                                  start_token=args.start_token, TopicInMemory=args.topic_in_memory,
                                                  NoTopic=args.no_topic)
 
-                discriminator = models.get_discriminator("rmc_vanilla", batch_size=args.batch_size,
+                discriminator = models.get_discriminator(args.d_architecture, batch_size=args.batch_size,
                                                          seq_len=seq_len,
                                                          vocab_size=vocab_size, dis_emb_dim=args.dis_emb_dim,
                                                          num_rep=args.num_rep, sn=args.sn)
 
-                topic_discriminator = models.get_topic_discriminator(args.topic_architecture, batch_size=args.batch_size,
+                topic_discriminator = models.get_topic_discriminator(args.topic_architecture,
+                                                                     batch_size=args.batch_size,
                                                                      seq_len=seq_len, vocab_size=vocab_size,
                                                                      dis_emb_dim=args.dis_emb_dim, num_rep=args.num_rep,
                                                                      sn=args.sn, discriminator=discriminator)
+                from real.real_gan.real_topic_train import real_topic_train
                 real_topic_train(generator, discriminator, topic_discriminator, oracle_loader, config, args)
             else:
 
                 generator = models.get_generator(args.g_architecture, vocab_size=vocab_size, batch_size=args.batch_size,
-                                                 seq_len=seq_len, gen_emb_dim=args.gen_emb_dim, mem_slots=args.mem_slots,
+                                                 seq_len=seq_len, gen_emb_dim=args.gen_emb_dim,
+                                                 mem_slots=args.mem_slots,
                                                  head_size=args.head_size, num_heads=args.num_heads,
                                                  hidden_dim=args.hidden_dim,
                                                  start_token=args.start_token)
 
-                discriminator = models.get_discriminator(args.d_architecture, batch_size=args.batch_size, seq_len=seq_len,
+                discriminator = models.get_discriminator(args.d_architecture, batch_size=args.batch_size,
+                                                         seq_len=seq_len,
                                                          vocab_size=vocab_size, dis_emb_dim=args.dis_emb_dim,
                                                          num_rep=args.num_rep, sn=args.sn)
 
                 oracle_loader = RealDataLoader(args.batch_size, args.seq_len)
 
+                from real.real_gan.real_train import real_train
                 real_train(generator, discriminator, oracle_loader, config, args)
 
     elif args.dataset in ['Amazon_Attribute']:
@@ -252,6 +255,7 @@ def main():
         config_file = load_json(os.path.join(data_dir, 'config.json'))
         config = {**config, **config_file}  # merge dictionaries
 
+        from real.real_gan.loaders.amazon_loader import RealDataAmazonLoader
         oracle_loader = RealDataAmazonLoader(args.batch_size, args.seq_len)
         oracle_loader.create_batches(data_file=[train_file, dev_file, test_file])
         oracle_loader.model_index_word_dict = load_json(join(data_dir, 'index_word_dict.json'))
@@ -273,8 +277,11 @@ def main():
                                                  dis_emb_dim=args.dis_emb_dim,
                                                  num_rep=args.num_rep, sn=args.sn)
 
+        from real.real_gan.amazon_attribute_train import amazon_attribute_train
         amazon_attribute_train(generator, discriminator, oracle_loader, config, args)
     elif args.dataset in ['CustomerReviews']:
+        from real.real_gan.loaders.custom_reviews_loader import RealDataCustomerReviewsLoader
+        from real.real_gan.customer_reviews_train import customer_reviews_train
         # custom dataset selected
         data_dir = resources_path(config['data_dir'], "MovieReviews", "cr")
         sample_dir = resources_path(config['sample_dir'])
@@ -318,6 +325,7 @@ def main():
 
     print("RUN FINISHED")
     return
+
 
 if __name__ == '__main__':
     main()

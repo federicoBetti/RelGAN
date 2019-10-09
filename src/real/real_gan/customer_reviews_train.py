@@ -1,22 +1,18 @@
 # In this file I will create the training for the model with topics
 import datetime
 import gc
-import random
 
 from tensorflow.python.client import device_lib
 from tensorflow.python.saved_model.simple_save import simple_save
-from tqdm import tqdm
 
-from models import customer_reviews
 from models.customer_reviews import ReviewGenerator, ReviewDiscriminator
 from path_resolution import resources_path
 from real.real_gan.loaders.custom_reviews_loader import RealDataCustomerReviewsLoader
 from real.real_gan.real_topic_train_utils import get_train_ops, \
-    get_metric_summary_op, get_fixed_temperature, create_json_file
-from utils.metrics.Bleu import BleuAmazon
+    get_metric_summary_op, get_fixed_temperature
 from utils.metrics.Jaccard import JaccardSimilarity, JaccardDiversity
 from utils.metrics.KLDivergence import KL_divergence
-from utils.metrics.Nll import NllTopic, NllReview
+from utils.metrics.Nll import NllReview
 from utils.utils import *
 
 

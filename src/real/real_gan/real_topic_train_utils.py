@@ -13,133 +13,186 @@ EPS = 1e-10
 
 
 # A function to get different GAN losses
-def get_losses(d_out_real, d_out_fake, x_real_onehot, x_fake_onehot_appr, d_topic_out_real_pos, d_topic_out_real_neg,
-               d_topic_out_fake, gen_o, discriminator, config):
-    """
-    :param d_out_real: output del discriminatore ricevuto in input una frase reale
-    :param d_out_fake: output del discriminatore ricevuto in input l'output del generatore
-    :param x_real_onehot: input reale in one-hot
-    :param x_fake_onehot_appr: frasi generate dal generatore in one hot
-    :param d_topic_out_real_pos: output del topic discriminator ricevedno in input la frase reale e il suo topic
-    :param d_topic_out_real_neg: output del topic discriminator ricevedno in input la frase reale e un topic sbagliato
-    :param d_topic_out_fake: output del topic discriminator ricevendo in input la frase generata
-    :param gen_o: distribuzione di probabilità sulle parole della frase generata dal generatore
-    :param discriminator: discriminator
-    :param config: args passed as input
-    :return:
-    """
+# def get_losses(d_out_real, d_out_fake, x_real_onehot, x_fake_onehot_appr, d_topic_out_real_pos, d_topic_out_real_neg,
+#                d_topic_out_fake, gen_o, discriminator, config):
+#     """
+#     :param d_out_real: output del discriminatore ricevuto in input una frase reale
+#     :param d_out_fake: output del discriminatore ricevuto in input l'output del generatore
+#     :param x_real_onehot: input reale in one-hot
+#     :param x_fake_onehot_appr: frasi generate dal generatore in one hot
+#     :param d_topic_out_real_pos: output del topic discriminator ricevedno in input la frase reale e il suo topic
+#     :param d_topic_out_real_neg: output del topic discriminator ricevedno in input la frase reale e un topic sbagliato
+#     :param d_topic_out_fake: output del topic discriminator ricevendo in input la frase generata
+#     :param gen_o: distribuzione di probabilità sulle parole della frase generata dal generatore
+#     :param discriminator: discriminator
+#     :param config: args passed as input
+#     :return:
+#     """
+#     batch_size = config['batch_size']
+#     gan_type = config['gan_type']  # select the gan loss type
+#
+#     if gan_type == 'standard':  # the non-satuating GAN loss
+#         with tf.variable_scope("standard_GAN_loss"):
+#             d_loss_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+#                 logits=d_out_real, labels=tf.ones_like(d_out_real)
+#             ), name="d_loss_real")
+#             d_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+#                 logits=d_out_fake, labels=tf.zeros_like(d_out_fake)
+#             ), name="d_loss_fake")
+#             d_loss = d_loss_real + d_loss_fake
+#
+#             if d_topic_out_real_neg is not None:
+#                 d_topic_loss_real_pos = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+#                     logits=d_topic_out_real_pos, labels=tf.ones_like(d_topic_out_real_neg)
+#                 ), name="d_topic_loss_real_pos")
+#
+#                 d_topic_loss_real_neg = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+#                     logits=d_topic_out_real_neg, labels=tf.zeros_like(d_topic_out_real_pos)
+#                 ), name="d_topic_loss_real_neg")
+#
+#                 d_topic_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+#                     logits=d_topic_out_fake, labels=tf.zeros_like(d_topic_out_fake)
+#                 ), name="d_topic_loss_fake")
+#
+#                 d_loss += (d_topic_loss_real_pos + d_topic_loss_fake) / 10
+#             else:
+#                 d_topic_loss_real_pos = None
+#                 d_topic_loss_real_neg = None
+#                 d_topic_loss_fake = None
+#
+#             g_sentence_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+#                 logits=d_out_fake, labels=tf.ones_like(d_out_fake)
+#             ), name="g_sentence_loss")
+#             g_loss = g_sentence_loss
+#
+#             if d_topic_out_fake is not None:
+#                 g_topic_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+#                     logits=d_topic_out_fake, labels=tf.ones_like(d_topic_out_fake)
+#                 ), name="g_topic_loss")
+#
+#                 g_loss = g_loss + (g_topic_loss / 10)
+#             else:
+#                 g_topic_loss = None
+#
+#             log_pg = tf.reduce_mean(tf.log(gen_o + EPS))  # [1], measures the log p_g(x)
+#
+#             return log_pg, g_loss, d_loss, d_loss_real, d_loss_fake, d_topic_loss_real_pos, d_topic_loss_real_neg, d_topic_loss_fake, g_sentence_loss, g_topic_loss
+#
+#     elif gan_type == 'JS':  # the vanilla GAN loss
+#         d_loss_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+#             logits=d_out_real, labels=tf.ones_like(d_out_real)
+#         ))
+#         d_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+#             logits=d_out_fake, labels=tf.zeros_like(d_out_fake)
+#         ))
+#         d_loss = d_loss_real + d_loss_fake
+#
+#         g_loss = -d_loss_fake
+#
+#     elif gan_type == 'KL':  # the GAN loss implicitly minimizing KL-divergence
+#         d_loss_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+#             logits=d_out_real, labels=tf.ones_like(d_out_real)
+#         ))
+#         d_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+#             logits=d_out_fake, labels=tf.zeros_like(d_out_fake)
+#         ))
+#         d_loss = d_loss_real + d_loss_fake
+#
+#         g_loss = tf.reduce_mean(-d_out_fake)
+#
+#     elif gan_type == 'hinge':  # the hinge loss
+#         d_loss_real = tf.reduce_mean(tf.nn.relu(1.0 - d_out_real))
+#         d_loss_fake = tf.reduce_mean(tf.nn.relu(1.0 + d_out_fake))
+#         d_loss = d_loss_real + d_loss_fake
+#
+#         g_loss = -tf.reduce_mean(d_out_fake)
+#
+#     elif gan_type == 'tv':  # the total variation distance
+#         d_loss = tf.reduce_mean(tf.tanh(d_out_fake) - tf.tanh(d_out_real))
+#         g_loss = tf.reduce_mean(-tf.tanh(d_out_fake))
+#
+#     elif gan_type == 'wgan-gp':  # WGAN-GP
+#         d_loss = tf.reduce_mean(d_out_fake) - tf.reduce_mean(d_out_real)
+#         GP = gradient_penalty(discriminator, x_real_onehot, x_fake_onehot_appr, config)
+#         d_loss += GP
+#
+#         g_loss = -tf.reduce_mean(d_out_fake)
+#
+#     elif gan_type == 'LS':  # LS-GAN
+#         d_loss_real = tf.reduce_mean(tf.squared_difference(d_out_real, 1.0))
+#         d_loss_fake = tf.reduce_mean(tf.square(d_out_fake))
+#         d_loss = d_loss_real + d_loss_fake
+#
+#         g_loss = tf.reduce_mean(tf.squared_difference(d_out_fake, 1.0))
+#
+#     elif gan_type == 'RSGAN':  # relativistic standard GAN
+#         d_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+#             logits=d_out_real - d_out_fake, labels=tf.ones_like(d_out_real)
+#         ))
+#         g_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+#             logits=d_out_fake - d_out_real, labels=tf.ones_like(d_out_fake)
+#         ))
+#
+#     else:
+#         raise NotImplementedError("Divergence '%s' is not implemented" % gan_type)
+#
+#     log_pg = tf.reduce_mean(tf.log(gen_o + EPS))  # [1], measures the log p_g(x)
+#
+#     return log_pg, g_loss, d_loss
+
+# A function to get different GAN losses
+def get_losses(generator, d_real, d_fake, d_topic_real_pos, d_topic_real_neg, d_topic_fake, config):
+    EPS = 10e-5
     batch_size = config['batch_size']
     gan_type = config['gan_type']  # select the gan loss type
+    losses = {}
 
     if gan_type == 'standard':  # the non-satuating GAN loss
         with tf.variable_scope("standard_GAN_loss"):
-            d_loss_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-                logits=d_out_real, labels=tf.ones_like(d_out_real)
+            losses['d_loss_real'] = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+                logits=d_real.logits, labels=tf.ones_like(d_real.logits)
             ), name="d_loss_real")
-            d_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-                logits=d_out_fake, labels=tf.zeros_like(d_out_fake)
+            losses['d_loss_fake'] = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+                logits=d_fake.logits, labels=tf.zeros_like(d_fake.logits)
             ), name="d_loss_fake")
-            d_loss = d_loss_real + d_loss_fake
+            losses['d_loss'] = losses['d_loss_real'] + losses['d_loss_fake']
 
-            if d_topic_out_real_neg is not None:
-                d_topic_loss_real_pos = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=d_topic_out_real_pos, labels=tf.ones_like(d_topic_out_real_neg)
+            if d_topic_real_neg is not None:
+                losses['d_topic_loss_real_pos'] = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=d_topic_real_pos.logits, labels=tf.ones_like(d_topic_real_pos.logits)
                 ), name="d_topic_loss_real_pos")
 
-                d_topic_loss_real_neg = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=d_topic_out_real_neg, labels=tf.zeros_like(d_topic_out_real_pos)
+                losses['d_topic_loss_real_neg'] = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=d_topic_real_neg.logits, labels=tf.zeros_like(d_topic_real_neg.logits)
                 ), name="d_topic_loss_real_neg")
 
-                d_topic_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=d_topic_out_fake, labels=tf.zeros_like(d_topic_out_fake)
+                losses['d_topic_loss_fake'] = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=d_topic_fake.logits, labels=tf.zeros_like(d_topic_fake.logits)
                 ), name="d_topic_loss_fake")
 
-                d_loss += (d_topic_loss_real_pos + d_topic_loss_fake) / 10
+                losses['d_loss'] += (losses['d_topic_loss_real_pos'] + losses['d_topic_loss_fake']) / 10
             else:
-                d_topic_loss_real_pos = None
-                d_topic_loss_real_neg = None
-                d_topic_loss_fake = None
+                losses['d_topic_loss_real_pos'] = None
+                losses['d_topic_loss_real_neg'] = None
+                losses['d_topic_loss_fake'] = None
 
-            g_sentence_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-                logits=d_out_fake, labels=tf.ones_like(d_out_fake)
+            losses['g_sentence_loss'] = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+                logits=d_fake.logits, labels=tf.ones_like(d_fake.logits)
             ), name="g_sentence_loss")
-            g_loss = g_sentence_loss
+            losses['g_loss'] = losses['g_sentence_loss']
 
-            if d_topic_out_fake is not None:
-                g_topic_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=d_topic_out_fake, labels=tf.ones_like(d_topic_out_fake)
+            if d_topic_fake is not None:
+                losses['g_topic_loss'] = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=d_topic_fake, labels=tf.ones_like(d_topic_fake.logits)
                 ), name="g_topic_loss")
 
-                g_loss = g_loss + (g_topic_loss / 10)
+                losses['g_loss'] = losses['g_loss'] + (losses['g_topic_loss'] / 10)
             else:
-                g_topic_loss = None
+                losses['g_topic_loss'] = None
 
-            log_pg = tf.reduce_mean(tf.log(gen_o + EPS))  # [1], measures the log p_g(x)
+            losses['log_pg'] = tf.reduce_mean(tf.log(generator.gen_o + EPS))  # [1], measures the log p_g(x)
 
-            return log_pg, g_loss, d_loss, d_loss_real, d_loss_fake, d_topic_loss_real_pos, d_topic_loss_real_neg, d_topic_loss_fake, g_sentence_loss, g_topic_loss
-
-    elif gan_type == 'JS':  # the vanilla GAN loss
-        d_loss_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-            logits=d_out_real, labels=tf.ones_like(d_out_real)
-        ))
-        d_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-            logits=d_out_fake, labels=tf.zeros_like(d_out_fake)
-        ))
-        d_loss = d_loss_real + d_loss_fake
-
-        g_loss = -d_loss_fake
-
-    elif gan_type == 'KL':  # the GAN loss implicitly minimizing KL-divergence
-        d_loss_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-            logits=d_out_real, labels=tf.ones_like(d_out_real)
-        ))
-        d_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-            logits=d_out_fake, labels=tf.zeros_like(d_out_fake)
-        ))
-        d_loss = d_loss_real + d_loss_fake
-
-        g_loss = tf.reduce_mean(-d_out_fake)
-
-    elif gan_type == 'hinge':  # the hinge loss
-        d_loss_real = tf.reduce_mean(tf.nn.relu(1.0 - d_out_real))
-        d_loss_fake = tf.reduce_mean(tf.nn.relu(1.0 + d_out_fake))
-        d_loss = d_loss_real + d_loss_fake
-
-        g_loss = -tf.reduce_mean(d_out_fake)
-
-    elif gan_type == 'tv':  # the total variation distance
-        d_loss = tf.reduce_mean(tf.tanh(d_out_fake) - tf.tanh(d_out_real))
-        g_loss = tf.reduce_mean(-tf.tanh(d_out_fake))
-
-    elif gan_type == 'wgan-gp':  # WGAN-GP
-        d_loss = tf.reduce_mean(d_out_fake) - tf.reduce_mean(d_out_real)
-        GP = gradient_penalty(discriminator, x_real_onehot, x_fake_onehot_appr, config)
-        d_loss += GP
-
-        g_loss = -tf.reduce_mean(d_out_fake)
-
-    elif gan_type == 'LS':  # LS-GAN
-        d_loss_real = tf.reduce_mean(tf.squared_difference(d_out_real, 1.0))
-        d_loss_fake = tf.reduce_mean(tf.square(d_out_fake))
-        d_loss = d_loss_real + d_loss_fake
-
-        g_loss = tf.reduce_mean(tf.squared_difference(d_out_fake, 1.0))
-
-    elif gan_type == 'RSGAN':  # relativistic standard GAN
-        d_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-            logits=d_out_real - d_out_fake, labels=tf.ones_like(d_out_real)
-        ))
-        g_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-            logits=d_out_fake - d_out_real, labels=tf.ones_like(d_out_fake)
-        ))
-
-    else:
-        raise NotImplementedError("Divergence '%s' is not implemented" % gan_type)
-
-    log_pg = tf.reduce_mean(tf.log(gen_o + EPS))  # [1], measures the log p_g(x)
-
-    return log_pg, g_loss, d_loss
-
+            return losses
 
 # A function to calculate the gradients and get training operations
 def get_train_ops(config, g_pretrain_loss, g_loss, d_loss, d_topic_loss,
@@ -347,8 +400,3 @@ def get_accuracy(d_topic_out_real_pos, d_topic_out_real_neg):
     correct = tf.equal(predicted_class, tf.equal(correct_answer, 1.0))
     accuracy = tf.reduce_mean(tf.cast(correct, 'float'))
     return accuracy
-
-
-def create_json_file(json_object, json_file):
-    with open(json_file, 'w') as outfile:
-        json.dump(json_object, outfile)

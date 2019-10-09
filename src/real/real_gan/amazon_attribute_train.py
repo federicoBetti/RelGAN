@@ -175,6 +175,7 @@ def amazon_attribute_train(generator: rmc_att_topic.generator, discriminator: rm
                     write_json(json_file_validation, json_object)
 
                     # take sentences from saved files
+                    sent = generator.get_sentences(json_object)
                     sent = take_sentences_attribute(json_object)
                     gen_sentences_summary.write_summary(sent, epoch)
 

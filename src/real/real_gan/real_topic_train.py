@@ -1,17 +1,14 @@
 # In this file I will create the training for the model with topics
 import datetime
-import random
-
 import gc
+
 from tensorflow.python.client import device_lib
 from tensorflow.python.saved_model.simple_save import simple_save
-from tqdm import tqdm
 
-from models import rmc_att_topic
 from path_resolution import resources_path
 from real.real_gan.loaders.real_loader import RealDataTopicLoader
-from real.real_gan.real_topic_train_utils import get_accuracy, get_losses, get_train_ops, \
-    get_metric_summary_op, get_metrics, get_fixed_temperature, create_json_file
+from real.real_gan.real_topic_train_utils import get_accuracy, get_train_ops, \
+    get_metric_summary_op, get_metrics, get_fixed_temperature
 from utils.utils import *
 
 
@@ -24,8 +21,7 @@ print("Available GPUs: {}".format(get_available_gpus()))
 
 
 # A function to initiate the graph and train the networks
-def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_topic.discriminator,
-                     topic_discriminator, oracle_loader: RealDataTopicLoader,
+def real_topic_train(generator_obj, discriminator_obj, topic_discriminator_obj, oracle_loader: RealDataTopicLoader,
                      config, args):
     batch_size = config['batch_size']
     num_sentences = config['num_sentences']
@@ -78,33 +74,82 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
     assert x_real_onehot.get_shape().as_list() == [batch_size, seq_len, vocab_size]
 
     # generator and discriminator outputs
-    x_fake_onehot_appr, x_fake, g_pretrain_loss, gen_o, \
-    lambda_values_returned, gen_x_no_lambda = generator(x_real=x_real,
-                                                        temperature=temperature,
-                                                        x_topic=x_topic)
-    d_out_real = discriminator(x_onehot=x_real_onehot)#, with_out=False)
-    d_out_fake = discriminator(x_onehot=x_fake_onehot_appr)#, with_out=False)
-    d_topic_out_real_pos = topic_discriminator(x_onehot=x_real_onehot, x_topic=x_topic)
-    d_topic_out_real_neg = topic_discriminator(x_onehot=x_real_onehot, x_topic=x_topic_random)
-    d_topic_out_fake = topic_discriminator(x_onehot=x_fake_onehot_appr, x_topic=x_topic)
+    generator = generator_obj(x_real=x_real, temperature=temperature, x_topic=x_topic)
+    d_real = discriminator_obj(x_onehot=x_real_onehot)
+    d_fake = discriminator_obj(x_onehot=generator.gen_x_onehot_adv)
+    d_topic_real_pos = topic_discriminator_obj(x_onehot=x_real_onehot, x_topic=x_topic)
+    d_topic_real_neg = topic_discriminator_obj(x_onehot=x_real_onehot, x_topic=x_topic_random)
+    d_topic_fake = topic_discriminator_obj(x_onehot=generator.gen_x_onehot_adv, x_topic=x_topic)
+
+    # A function to get different GAN losses
+    def get_losses(generator, d_real, d_fake, d_topic_real_pos, d_topic_real_neg, d_topic_fake, config):
+        EPS = 10e-5
+        batch_size = config['batch_size']
+        gan_type = config['gan_type']  # select the gan loss type
+        losses = {}
+
+        if gan_type == 'standard':  # the non-satuating GAN loss
+            with tf.variable_scope("standard_GAN_loss"):
+                losses['d_loss_real'] = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=d_real.logits, labels=tf.ones_like(d_real.logits)
+                ), name="d_loss_real")
+                losses['d_loss_fake'] = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=d_fake.logits, labels=tf.zeros_like(d_fake.logits)
+                ), name="d_loss_fake")
+                losses['d_loss'] = losses['d_loss_real'] + losses['d_loss_fake']
+
+                if d_topic_real_neg is not None:
+                    losses['d_topic_loss_real_pos'] = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+                        logits=d_topic_real_pos.logits, labels=tf.ones_like(d_topic_real_pos.logits)
+                    ), name="d_topic_loss_real_pos")
+
+                    losses['d_topic_loss_real_neg'] = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+                        logits=d_topic_real_neg.logits, labels=tf.zeros_like(d_topic_real_neg.logits)
+                    ), name="d_topic_loss_real_neg")
+
+                    losses['d_topic_loss_fake'] = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+                        logits=d_topic_fake.logits, labels=tf.zeros_like(d_topic_fake.logits)
+                    ), name="d_topic_loss_fake")
+
+                    losses['d_loss'] += (losses['d_topic_loss_real_pos'] + losses['d_topic_loss_fake']) / 10
+                else:
+                    losses['d_topic_loss_real_pos'] = None
+                    losses['d_topic_loss_real_neg'] = None
+                    losses['d_topic_loss_fake'] = None
+
+                losses['g_sentence_loss'] = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=d_fake.logits, labels=tf.ones_like(d_fake.logits)
+                ), name="g_sentence_loss")
+                losses['g_loss'] = losses['g_sentence_loss']
+
+                if d_topic_fake is not None:
+                    losses['g_topic_loss'] = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+                        logits=d_topic_fake.logits, labels=tf.ones_like(d_topic_fake.logits)
+                    ), name="g_topic_loss")
+
+                    losses['g_loss'] = losses['g_loss'] + (losses['g_topic_loss'] / 10)
+                else:
+                    losses['g_topic_loss'] = None
+
+                losses['log_pg'] = tf.reduce_mean(tf.log(generator.gen_o + EPS))  # [1], measures the log p_g(x)
+
+                return losses
 
     # GAN / Divergence type
-    log_pg, g_loss, d_loss, d_loss_real, d_loss_fake, d_topic_loss_real_pos, \
-    d_topic_loss_real_neg, d_topic_loss_fake, g_sentence_loss, g_topic_loss = get_losses(
-        d_out_real, d_out_fake, x_real_onehot, x_fake_onehot_appr,
-        d_topic_out_real_pos, d_topic_out_real_neg, d_topic_out_fake,
-        gen_o, discriminator, config)
-    d_topic_loss = d_topic_loss_real_pos + d_topic_loss_real_neg  # only from real data for pretrain
-    d_topic_accuracy = get_accuracy(d_topic_out_real_pos, d_topic_out_real_neg)
+    losses = get_losses(generator, d_real, d_fake, d_topic_real_pos, d_topic_real_neg, d_topic_fake, config)
+    d_topic_loss = losses['d_topic_loss_real_pos'] + losses['d_topic_loss_real_neg']  # only from real data for pretrain
+    d_topic_accuracy = get_accuracy(d_topic_real_pos.logits, d_topic_real_neg.logits)
 
     # Global step
     global_step = tf.Variable(0, trainable=False)
     global_step_op = global_step.assign_add(1)
 
     # Train ops
-    g_pretrain_op, g_train_op, d_train_op, d_topic_pretrain_op = get_train_ops(config, g_pretrain_loss, g_loss, d_loss,
+    g_pretrain_op, g_train_op, d_train_op, d_topic_pretrain_op = get_train_ops(config, generator.pretrain_loss,
+                                                                               losses['g_loss'], losses['d_loss'],
                                                                                d_topic_loss,
-                                                                               log_pg, temperature, global_step)
+                                                                               losses['log_pg'], temperature,
+                                                                               global_step)
 
     # Record wall clock time
     time_diff = tf.placeholder(tf.float32)
@@ -117,16 +162,17 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
 
     # Loss summaries
     loss_summaries = [
-        tf.summary.scalar('adv_loss/discriminator/classic/d_loss_real', d_loss_real),
-        tf.summary.scalar('adv_loss/discriminator/classic/d_loss_fake', d_loss_fake),
-        tf.summary.scalar('adv_loss/discriminator/topic_discriminator/d_topic_loss_real_pos', d_topic_loss_real_pos),
+        tf.summary.scalar('adv_loss/discriminator/classic/d_loss_real', losses['d_loss_real']),
+        tf.summary.scalar('adv_loss/discriminator/classic/d_loss_fake', losses['d_loss_fake']),
+        tf.summary.scalar('adv_loss/discriminator/topic_discriminator/d_topic_loss_real_pos',
+                          losses['d_topic_loss_real_pos']),
         # tf.summary.scalar('adv_loss/discriminator/topic_discriminator/d_topic_loss_real_neg', d_topic_loss_real_neg),
-        tf.summary.scalar('adv_loss/discriminator/topic_discriminator/d_topic_loss_fake', d_topic_loss_fake),
-        tf.summary.scalar('adv_loss/discriminator/total', d_loss),
-        tf.summary.scalar('adv_loss/generator/g_sentence_loss', g_sentence_loss),
-        tf.summary.scalar('adv_loss/generator/g_topic_loss', g_topic_loss),
-        tf.summary.scalar('adv_loss/generator/total_g_loss', g_loss),
-        tf.summary.scalar('adv_loss/log_pg', log_pg),
+        tf.summary.scalar('adv_loss/discriminator/topic_discriminator/d_topic_loss_fake', losses['d_topic_loss_fake']),
+        tf.summary.scalar('adv_loss/discriminator/total', losses['d_loss']),
+        tf.summary.scalar('adv_loss/generator/g_sentence_loss', losses['g_sentence_loss']),
+        tf.summary.scalar('adv_loss/generator/g_topic_loss', losses['g_topic_loss']),
+        tf.summary.scalar('adv_loss/generator/total_g_loss', losses['g_loss']),
+        tf.summary.scalar('adv_loss/log_pg', losses['log_pg']),
         tf.summary.scalar('adv_loss/Wall_clock_time', Wall_clock_time),
         tf.summary.scalar('adv_loss/temperature', temperature),
     ]
@@ -151,35 +197,28 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
 
     # ------------- initial the graph --------------
     with init_sess() as sess:
-        variables_dict = {}
-        for v in tf.trainable_variables():
-            name_scope = v.name.split('/')
-            d = variables_dict
-            params_number = np.prod(v.get_shape().as_list())
-            for name in name_scope:
-                d[name] = d.get(name, {})
-                d = d[name]
-                d['total_param'] = d.get('total_param', 0) + params_number
+        variables_dict = get_parameters_division()
 
-        print("Total paramter number: {}".format(np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()])))
+        print("Total paramter number: {}".format(
+            np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()])))
         log = open(csv_file, 'w')
-        # file_suffix = "date: {}, normal RelGAN, pretrain epochs: {}, adv epochs: {}".format(datetime.datetime.now(),
-        #                                                                                     npre_epochs, nadv_steps)
-        sum_writer = tf.summary.FileWriter(os.path.join(log_dir, 'summary'),
-                                           sess.graph)  # , filename_suffix=file_suffix)
+        sum_writer = tf.summary.FileWriter(os.path.join(log_dir, 'summary'), sess.graph)
         for custom_summary in custom_summaries:
             custom_summary.set_file_writer(sum_writer, sess)
 
         run_information.write_summary(str(args), 0)
         print("Information stored in the summary!")
+
         # generate oracle data and create batches
-        # todo se le parole hanno poco senso potrebbe essere perchè qua ho la corrispondenza indice-parola sbagliata
         index_word_dict = oracle_loader.model_index_word_dict
         oracle_loader.create_batches(oracle_file)
 
-        metrics = get_metrics(config, oracle_loader, test_file, gen_text_file, g_pretrain_loss, x_real, x_topic, sess, json_file)
+        metrics = get_metrics(config, oracle_loader, test_file, gen_text_file, losses['g_pretrain_loss'], x_real,
+                              x_topic, sess,
+                              json_file)
 
         gc.collect()
+
         # Check if there is a pretrained generator saved
         model_dir = "PretrainGenerator"
         model_path = resources_path(os.path.join("checkpoint_folder", model_dir))
@@ -189,37 +228,61 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
             print("Used saved model for generator pretrain")
         except OSError:
             print('Start pre-training...')
-            generator_pretrain(npre_epochs, sess, g_pretrain_op, g_pretrain_loss, x_real, oracle_loader,
-                               gen_pretrain_loss_summary, sample_dir, x_fake, batch_size, num_sentences, x_topic,
-                               gen_text_file, index_word_dict, gen_sentences_summary, metrics, metric_summary_op,
-                               metrics_pl, sum_writer, log, lambda_values_returned, gen_text_file_print,
-                               gen_x_no_lambda, json_file)
+            generator.pretrain_epoch(sess, )
+            progress = tqdm(range(npre_epochs))
+            for epoch in progress:
+                # pre-training
+                g_pretrain_loss_np = generator.pretrain_epoch(sess, oracle_loader, g_pretrain_op=g_pretrain_op)
+                gen_pretrain_loss_summary.write_summary(g_pretrain_loss_np, epoch)
 
-            # if not os.path.exists(model_path):
-            #     os.makedirs(model_path)
-            # save_path = saver.save(sess, os.path.join(model_path, "model.ckpt"))
-            # print("Up to Generator Pretrain saved in path: %s" % save_path)
+                # Test
+                ntest_pre = 40
+                if np.mod(epoch, ntest_pre) == 0:
+                    json_object = generator.generate_sentences(sess, oracle_loader, num_sentences)
+                    write_json(json_file, json_object)
+
+                    # take sentences from saved files
+                    sent = generator.get_sentences(json_object)
+                    gen_sentences_summary.write_summary(sent, epoch)
+
+                    # write summaries
+                    scores = [metric.get_score() for metric in metrics]
+                    metrics_summary_str = sess.run(metric_summary_op, feed_dict=dict(zip(metrics_pl, scores)))
+                    sum_writer.add_summary(metrics_summary_str, epoch)
+
+                    msg = 'pre_gen_epoch:' + str(epoch) + ', g_pre_loss: %.4f' % g_pretrain_loss_np
+                    metric_names = [metric.get_name() for metric in metrics]
+                    for (name, score) in zip(metric_names, scores):
+                        msg += ', ' + name + ': %.4f' % score
+                    progress.set_description(msg)
+                    log.write(msg)
+                    log.write('\n')
+
+                    gc.collect()
 
         gc.collect()
-        # Check if there is a pretrained generator and a topic discriminator saved
-        model_dir = "PretrainGeneratorAndTopicDiscriminator"
-        model_path = resources_path(os.path.join("checkpoint_folder", model_dir))
-        try:
-            new_saver = tf.train.import_meta_graph(os.path.join(model_path, "model.ckpt.meta"))
-            new_saver.restore(sess, os.path.join(model_path, "model.ckpt"))
-            print("Used saved model for topic discriminator and pretrained generator")
-        except OSError:
-            print('Start Topic Discriminator pre-training...')
-            topic_discriminator_pretrain(n_topic_pre_epochs, sess, d_topic_pretrain_op, d_topic_loss,
-                                         d_topic_accuracy, x_real, x_topic,
-                                         x_topic_random, oracle_loader,
-                                         d_topic_out_real_pos, d_topic_out_real_neg, topic_discr_pretrain_summary,
-                                         topic_discr_accuracy_summary)
+        print('Start Topic Discriminator pre-training...')
+        progress = tqdm(range(n_topic_pre_epochs))
+        for epoch in progress:
+            # pre-training and write loss
+            # Pre-train the generator using MLE for one epoch
+            supervised_g_losses = []
+            supervised_accuracy = []
+            oracle_loader.reset_pointer()
 
-            # if not os.path.exists(model_path):
-            #     os.makedirs(model_path)
-            # save_path = saver.save(sess, os.path.join(model_path, "model.ckpt"))
-            # print("Up to Topic Discriminator Pretrain saved in path: %s" % save_path)
+            for it in range(oracle_loader.num_batch):
+                text_batch, topic_batch = oracle_loader.next_batch(only_text=False)
+                _, topic_loss, accuracy = sess.run([d_topic_pretrain_op, d_topic_loss, d_topic_accuracy],
+                                                   feed_dict={x_real: text_batch, x_topic: topic_batch,
+                                                              x_topic_random: oracle_loader.random_topic()})
+                supervised_g_losses.append(topic_loss)
+                supervised_accuracy.append(accuracy)
+
+            d_topic_pretrain_loss = np.mean(supervised_g_losses)
+            accuracy_mean = np.mean(supervised_accuracy)
+            topic_discr_pretrain_summary.write_summary(d_topic_pretrain_loss, epoch)
+            topic_discr_accuracy_summary.write_summary(accuracy_mean, epoch)
+            progress.set_description('topic_loss: %4.4f, accuracy: %4.4f' % (d_topic_pretrain_loss, accuracy_mean))
 
         print('Start adversarial training...')
         progress = tqdm(range(nadv_steps))
@@ -247,7 +310,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
 
             text_batch, topic_batch = oracle_loader.random_batch(only_text=False)
             feed = {x_real: text_batch, x_topic: topic_batch, x_topic_random: oracle_loader.random_topic()}
-            g_loss_np, d_loss_np, loss_summary_str = sess.run([g_loss, d_loss, loss_summary_op], feed_dict=feed)
+            g_loss_np, d_loss_np, loss_summary_str = sess.run([losses['g_loss'], losses['d_loss'], loss_summary_op], feed_dict=feed)
             sum_writer.add_summary(loss_summary_str, niter)
 
             sess.run(global_step_op)
@@ -255,30 +318,12 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
             progress.set_description('g_loss: %4.4f, d_loss: %4.4f' % (g_loss_np, d_loss_np))
 
             # Test
-            # print("N_iter: {}, test every {} epochs".format(niter, config['ntest']))
             if np.mod(adv_epoch, 400) == 0 or adv_epoch == nadv_steps - 1:
-                # generate fake data and create batches
-                gen_save_file = os.path.join(sample_dir, 'adv_samples_{:05d}.txt'.format(niter))
-                codes_with_lambda, sentence_generated_from, codes, json_object = generate_samples_topic(sess, x_fake,
-                                                                                                        batch_size,
-                                                                                                        num_sentences,
-                                                                                                        lambda_values=lambda_values_returned,
-                                                                                                        oracle_loader=oracle_loader,
-                                                                                                        gen_x_no_lambda=gen_x_no_lambda,
-                                                                                                        x_topic=x_topic)
-                create_json_file(json_object, json_file)
-                # gen_real_test_file_not_file(codes, sentence_generated_from, gen_save_file, index_word_dict)
-                gen_real_test_file_not_file(codes, sentence_generated_from, gen_text_file, index_word_dict, json_object)
-                gen_real_test_file_not_file(codes_with_lambda, sentence_generated_from, gen_text_file_print,
-                                            index_word_dict, json_object, generator_sentences=True)
+                json_object = generator.generate_sentences(sess, oracle_loader, num_sentences)
+                write_json(json_file, json_object)
 
                 # take sentences from saved files
-                sent = take_sentences_topic(gen_text_file_print)
-                if adv_epoch < 3500:
-                    sent_number = 8
-                else:
-                    sent_number = 20
-                sent = random.sample(sent, sent_number)
+                sent = generator.get_sentences(json_object)
                 gen_sentences_summary.write_summary(sent, adv_epoch)
 
                 # write summaries
@@ -303,7 +348,7 @@ def real_topic_train(generator: rmc_att_topic.generator, discriminator: rmc_att_
             simple_save(sess,
                         model_path,
                         inputs={"x_topic": x_topic},
-                        outputs={"gen_x": x_fake})
+                        outputs={"gen_x": generator.gen_x})
             # save_path = saver.save(sess, os.path.join(model_path, "model.ckpt"))
             print("Model saved in path: %s" % model_path)
 

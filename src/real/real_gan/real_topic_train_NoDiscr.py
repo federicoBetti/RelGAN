@@ -1,18 +1,14 @@
 # In this file I will create the training for the model with topics
 import datetime
-import random
-
 import gc
+
+from tensorflow.compat.v1 import placeholder
 from tensorflow.python.client import device_lib
 from tensorflow.python.saved_model.simple_save import simple_save
-from tensorflow.compat.v1 import placeholder
-from tqdm import tqdm
 
-from models import rmc_att_topic
 from path_resolution import resources_path
 from real.real_gan.loaders.real_loader import RealDataTopicLoader
-from real.real_gan.real_topic_train_utils import get_accuracy, get_losses, get_train_ops, \
-    get_metric_summary_op, get_metrics, get_fixed_temperature, create_json_file
+from real.real_gan.real_topic_train_utils import get_metric_summary_op, get_metrics
 from utils.utils import *
 
 

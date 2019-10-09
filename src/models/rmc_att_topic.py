@@ -1,9 +1,15 @@
+import random
 import sys
 
 from tensorflow.python.ops import tensor_array_ops, control_flow_ops
 
 from utils.models.relational_memory import RelationalMemory
 from utils.ops import *
+import numpy as np
+
+
+def get_sentence_from_index(sent, model_index_word_dict):
+    return " ".join([model_index_word_dict[str(el)] for el in sent if el < len(model_index_word_dict)])
 
 
 class generator:
@@ -20,6 +26,8 @@ class generator:
         self.kwargs = kwargs
         self.vocab_size = vocab_size
         self.temperature = temperature
+        self.topic_in_memory = kwargs["TopicInMemory"]
+        self.no_topic = kwargs["NoTopic"]
 
         self.g_embeddings = tf.get_variable('g_emb', shape=[vocab_size, gen_emb_dim],
                                             initializer=create_linear_initializer(vocab_size))
@@ -46,42 +54,26 @@ class generator:
                                                        infer_shape=True)
 
         def _gen_recurrence(i, x_t, h_tm1, gen_o, gen_x, gen_x_onehot_adv, lambda_values, gen_x_no_lambda):
-            mem_o_t, h_t = self.gen_mem(x_t,
-                                        h_tm1)  # hidden_memory_tuple, output della memoria che si potrebbe riutilizzare
-            if self.kwargs["TopicInMemory"] and not self.kwargs["NoTopic"]:
+            mem_o_t, h_t = self.gen_mem(x_t, h_tm1)  # hidden_memory_tuple
+            if self.topic_in_memory and not self.no_topic:
                 mem_o_t, h_t = self.gen_mem(self.g_topic_embedding(self.x_topic), h_t)
             o_t = self.g_output_unit(mem_o_t)  # batch x vocab, logits not prob
 
-            # print_op = tf.print("o_t shape", o_t.shape, ", o_t: ", o_t[0], output_stream=sys.stderr)
-
-            if not self.kwargs["TopicInMemory"] and not self.kwargs["NoTopic"]:
+            if not self.topic_in_memory and not self.kwargs["NoTopic"]:
                 topic_vector = self.x_topic
                 lambda_param = self.g_output_unit_lambda(mem_o_t)
-                # print_op_lambda = tf.print("Lambda= iteration:", i, " shape: {}, values:".format(lambda_param.shape), lambda_param)
                 next_token_no_lambda = tf.cast(tf.argmax(o_t, axis=1), tf.int32)
-                # o_t = add_gumbel(o_t)
-                # lambda_param = tf.zeros(lambda_param.shape)
                 o_t = o_t + lambda_param * topic_vector
             else:
                 lambda_param = tf.zeros(self.batch_size)
                 next_token_no_lambda = tf.cast(tf.argmax(o_t, axis=1), tf.int32)
 
             gumbel_t = add_gumbel(o_t)
-            # gumbel_t = tf.divide(gumbel_t, tf.reduce_sum(gumbel_t, axis=1, keepdims=True))
-            # print_op1 = tf.print("Gumbel_t before lambda: ", gumbel_t[0])
-            # print_op2 = tf.print("x_topic shape", x_topic.shape, ", x_topic: ", x_topic, output_stream=sys.stderr)
-
-            # print_op_topic = tf.print("Topic: ", topic_vector[0])
 
             next_token = tf.cast(tf.argmax(gumbel_t, axis=1), tf.int32)
 
             x_onehot_appr = tf.nn.softmax(tf.multiply(gumbel_t, self.temperature, name="gumbel_x_temp"),
                                           name="softmax_gumbel_temp")  # one-hot-like, [batch_size x vocab_size]
-            # x_onehot_appr = (1 - lambda_param) * x_onehot_appr + lambda_param * topic_vector
-            # print_op2 = tf.print("Final x_one_hot_appr: ", x_onehot_appr[0])
-            # x_tp1 = tf.matmul(x_onehot_appr, g_embeddings)  # approximated embeddings, [batch_size x emb_dim]
-
-            # with tf.control_dependencies([print_op, print_op1, print_op2, print_op_topic, print_op_lambda]):
             x_tp1 = tf.nn.embedding_lookup(self.g_embeddings, next_token)  # embeddings, [batch_size x emb_dim]
             gen_o = gen_o.write(i, tf.reduce_sum(tf.multiply(tf.one_hot(next_token, self.vocab_size, 1.0, 0.0),
                                                              tf.nn.softmax(o_t)), 1))  # [batch_size] , prob
@@ -129,10 +121,10 @@ class generator:
 
         def _pretrain_recurrence(i, x_t, h_tm1, g_predictions):
             mem_o_t, h_t = self.gen_mem(x_t, h_tm1)
-            if self.kwargs["TopicInMemory"] and not self.kwargs["NoTopic"]:
+            if self.topic_in_memory and not self.no_topic:
                 mem_o_t, h_t = self.gen_mem(self.g_topic_embedding(self.x_topic), h_t)
             o_t = self.g_output_unit(mem_o_t)
-            if not self.kwargs["TopicInMemory"] and not self.kwargs["NoTopic"]:
+            if not self.topic_in_memory and not self.no_topic:
                 lambda_param = self.g_output_unit_lambda(mem_o_t)
                 o_t = o_t + lambda_param * self.x_topic
             g_predictions = g_predictions.write(i, tf.nn.softmax(o_t))  # batch_size x vocab_size
@@ -154,88 +146,185 @@ class generator:
         with tf.variable_scope("pretrain_loss_computation"):
             self.pretrain_loss = -tf.reduce_sum(
                 tf.one_hot(tf.cast(tf.reshape(self.x_real, [-1]), tf.int32), self.vocab_size, 1.0, 0.0) * tf.log(
-                    tf.clip_by_value(tf.reshape(g_predictions, [-1, self.vocab_size]), 1e-20, 1.0)
+                    tf.clip_by_value(tf.reshape(self.g_predictions, [-1, self.vocab_size]), 1e-20, 1.0)
                 )
             ) / (self.seq_len * self.batch_size)
 
+    def pretrain_epoch(self, oracle_loader, sess, **kwargs):
+        supervised_g_losses = []
+        oracle_loader.reset_pointer()
 
-def discriminator(x_onehot, with_out, batch_size, seq_len, vocab_size, dis_emb_dim, num_rep, sn):
-    # Compute its embedding matrix
-    d_embeddings = tf.get_variable('d_emb', shape=[vocab_size, dis_emb_dim],
-                                   initializer=create_linear_initializer(vocab_size))
-    input_x_re = tf.reshape(x_onehot, [-1, vocab_size], name="input_reshaping")
-    # Multiply each input for its embedding matrix
-    emb_x_re = tf.matmul(input_x_re, d_embeddings, name="input_x_embeddings")
-    emb_x = tf.reshape(emb_x_re, [batch_size, seq_len, dis_emb_dim],
-                       name="reshape_back")  # batch_size x seq_len x dis_emb_dim
+        for it in range(oracle_loader.num_batch):
+            text_batch, topic_batch = oracle_loader.next_batch(only_text=False)
+            _, g_loss = sess.run([kwargs['g_pretrain_op'], self.pretrain_loss],
+                                 feed_dict={self.x_real: text_batch, self.x_topic: topic_batch})
+            supervised_g_losses.append(g_loss)
 
-    emb_x_expanded = tf.expand_dims(emb_x, 2, name="add_fake_dim_for_conv")  # batch_size x seq_len x 1 x emd_dim
-    # convolution
-    out = conv2d(emb_x_expanded, dis_emb_dim * 2, k_h=2, d_h=2, sn=sn, scope='conv1')
-    out = tf.nn.relu(out)
-    out = conv2d(out, dis_emb_dim * 2, k_h=1, d_h=1, sn=sn, scope='conv2')
-    out = tf.nn.relu(out)
+        return np.mean(supervised_g_losses)
 
-    # self-attention
-    out = self_attention(out, dis_emb_dim * 2, sn=sn)
+    def generate_samples_topic(self, sess, generated_num, oracle_loader):
+        generated_samples = []
+        generated_samples_lambda = []
+        sentence_generated_from = []
+        generated_samples_no_lambda_words = []
 
-    # convolution
-    out = conv2d(out, dis_emb_dim * 4, k_h=2, d_h=2, sn=sn, scope='conv3')
-    out = tf.nn.relu(out)
-    out = conv2d(out, dis_emb_dim * 4, k_h=1, d_h=1, sn=sn, scope='conv4')
-    out = tf.nn.relu(out)
+        max_gen = int(generated_num / self.batch_size)  # - 155 # 156
+        for ii in range(max_gen):
+            if self.no_topic:
+                gen_x_res = sess.run(self.gen_x)
 
-    # fc
-    out = tf.contrib.layers.flatten(out, scope="flatten_output_layer")
-    logits = linear(out, output_size=1, use_bias=True, sn=sn, scope='fc5')
-    logits = tf.squeeze(logits, -1)  # batch_size
+            else:
+                text_batch, topic_batch = oracle_loader.random_batch(only_text=False)
+                feed = {self.x_topic: topic_batch}
+                sentence_generated_from.extend(text_batch)
+                if self.topic_in_memory:
+                    gen_x_res = sess.run(self.gen_x, feed_dict=feed)
+                else:
+                    gen_x_res, lambda_values_res, gen_x_no_lambda_res = sess.run(
+                        [self.gen_x, self.topicness_values, self.gen_x_no_lambda],
+                        feed_dict=feed)
+                    generated_samples_lambda.extend(lambda_values_res)
+                    generated_samples_no_lambda_words.extend(gen_x_no_lambda_res)
 
-    # todo si potrebbe mettere qua e fare due output, uno che riguarda la frase in generale e uno che riguarda il topic
-    if with_out:
-        return logits, out, d_embeddings
-    else:
-        return logits
+            generated_samples.extend(gen_x_res)
+
+        codes = ""
+        codes_with_lambda = ""
+        json_file = {'sentences': []}
+        if self.no_topic:
+            for sent in generated_samples:
+                json_file['sentences'].append({
+                    'generated_sentence': get_sentence_from_index(sent, oracle_loader.model_index_word_dict)
+                })
+        else:
+            if self.topic_in_memory:
+                for sent, start_sentence in zip(generated_samples, sentence_generated_from):
+                    json_file['sentences'].append({
+                        'real_starting': get_sentence_from_index(start_sentence, oracle_loader.model_index_word_dict),
+                        'generated_sentence': get_sentence_from_index(sent, oracle_loader.model_index_word_dict)
+                    })
+            else:
+                for sent, lambda_value_sent, no_lambda_words, start_sentence in zip(generated_samples,
+                                                                                    generated_samples_lambda,
+                                                                                    generated_samples_no_lambda_words,
+                                                                                    sentence_generated_from):
+                    sent_json = []
+                    for x, y, z in zip(sent, lambda_value_sent, no_lambda_words):
+                        sent_json.append({
+                            'word_code': int(x),
+                            'word_text': '' if x == len(oracle_loader.model_index_word_dict) else
+                            oracle_loader.model_index_word_dict[str(x)],
+                            'lambda': float(y),
+                            'no_lambda_word': '' if z == len(oracle_loader.model_index_word_dict) else
+                            oracle_loader.model_index_word_dict[str(z)]
+                        })
+                        codes_with_lambda += "{} ({:.4f};{}) ".format(x, y, z)
+                        codes += "{} ".format(x)
+                    json_file['sentences'].append({
+                        'generated': sent_json,
+                        'real_starting': get_sentence_from_index(start_sentence, oracle_loader.model_index_word_dict),
+                        'generated_sentence': get_sentence_from_index(sent, oracle_loader.model_index_word_dict)
+                    })
+
+        return json_file
+
+    def get_sentences(self, json_object):
+        sentences = json_object['sentences']
+        sent_number = 10
+        sent = random.sample(sentences, sent_number)
+        all_sentences = []
+        for s in sent:
+            if self.no_topic:
+                all_sentences.append("{}".format(s['generated_sentence']))
+            else:
+                if self.topic_in_memory:
+                    all_sentences.append("{} --- {}".format(str(s['generated_sentence']), s['real_starting']))
+                else:
+                    word_with_no_lambda = []
+                    for letter in sent['generated']:
+                        generated_word, real_word = letter['word_text'], letter['no_lambda_word']
+                        if generated_word:
+                            word_with_no_lambda.append(
+                                "{} ({}, {})".format(generated_word, letter['lambda'], real_word))
+                    word_with_no_lambda = " ".join(word_with_no_lambda)
+                    all_sentences.append("{} ---- {} ---- {}".format(s['generated_sentence'], word_with_no_lambda, s['real_starting']))
+        return all_sentences
 
 
-def topic_discriminator(x_onehot, x_topic, batch_size, seq_len, vocab_size, dis_emb_dim, num_rep, sn, discriminator):
-    # Compute its embedding matrix
-    d_embeddings = tf.get_variable('d_emb', shape=[vocab_size, dis_emb_dim],
-                                   initializer=create_linear_initializer(vocab_size))
-    input_x_re = tf.reshape(x_onehot, [-1, vocab_size], name="input_reshaping")
-    # Multiply each input for its embedding matrix
-    emb_x_re = tf.matmul(input_x_re, d_embeddings, name="input_x_embeddings")
-    emb_x = tf.reshape(emb_x_re, [batch_size, seq_len, dis_emb_dim],
-                       name="reshape_back")  # batch_size x seq_len x dis_emb_dim
+class discriminator:
+    def __init__(self, x_onehot, batch_size, seq_len, vocab_size, dis_emb_dim, num_rep, sn):
+        self.x_onehot = x_onehot
+        # Compute its embedding matrix
+        d_embeddings = tf.get_variable('d_emb', shape=[vocab_size, dis_emb_dim],
+                                       initializer=create_linear_initializer(vocab_size))
+        input_x_re = tf.reshape(x_onehot, [-1, vocab_size], name="input_reshaping")
+        # Multiply each input for its embedding matrix
+        emb_x_re = tf.matmul(input_x_re, d_embeddings, name="input_x_embeddings")
+        emb_x = tf.reshape(emb_x_re, [batch_size, seq_len, dis_emb_dim],
+                           name="reshape_back")  # batch_size x seq_len x dis_emb_dim
 
-    emb_x_expanded = tf.expand_dims(emb_x, 2, name="add_fake_dim_for_conv")  # batch_size x seq_len x 1 x emd_dim
-    # convolution
-    out = conv2d(emb_x_expanded, dis_emb_dim * 2, k_h=2, d_h=2, sn=sn, scope='conv1')
-    out = tf.nn.relu(out)
-    out = conv2d(out, dis_emb_dim * 2, k_h=1, d_h=1, sn=sn, scope='conv2')
-    out = tf.nn.relu(out)
+        emb_x_expanded = tf.expand_dims(emb_x, 2, name="add_fake_dim_for_conv")  # batch_size x seq_len x 1 x emd_dim
+        # convolution
+        out = conv2d(emb_x_expanded, dis_emb_dim * 2, k_h=2, d_h=2, sn=sn, scope='conv1')
+        out = tf.nn.relu(out)
+        out = conv2d(out, dis_emb_dim * 2, k_h=1, d_h=1, sn=sn, scope='conv2')
+        out = tf.nn.relu(out)
 
-    # self-attention
-    out = self_attention(out, dis_emb_dim * 2, sn=sn)
+        # self-attention
+        out = self_attention(out, dis_emb_dim * 2, sn=sn)
 
-    # convolution
-    out = conv2d(out, dis_emb_dim * 4, k_h=2, d_h=2, sn=sn, scope='conv3')
-    out = tf.nn.relu(out)
-    out = conv2d(out, dis_emb_dim * 4, k_h=1, d_h=1, sn=sn, scope='conv4')
-    out = tf.nn.relu(out)
+        # convolution
+        out = conv2d(out, dis_emb_dim * 4, k_h=2, d_h=2, sn=sn, scope='conv3')
+        out = tf.nn.relu(out)
+        out = conv2d(out, dis_emb_dim * 4, k_h=1, d_h=1, sn=sn, scope='conv4')
+        out = tf.nn.relu(out)
 
-    # fc
-    out = tf.contrib.layers.flatten(out, scope="flatten_output_layer")
+        # fc
+        out = tf.contrib.layers.flatten(out, scope="flatten_output_layer")
+        logits = linear(out, output_size=1, use_bias=True, sn=sn, scope='fc5')
+        self.logits = tf.squeeze(logits, -1)  # batch_size
 
-    # topic network
-    emb_topic = tf.matmul(x_topic, d_embeddings, name="x_topic_embeddings")
-    first_topic = linear(emb_topic, output_size=128, use_bias=True, sn=sn, scope='topic_first_linear')
 
-    flatten = tf.concat([out, first_topic], axis=1)
+class topic_discriminator:
+    def __init__(self, x_onehot, x_topic, batch_size, seq_len, vocab_size, dis_emb_dim, num_rep, sn, discriminator):
+        self.x_onehot = x_onehot
+        # Compute its embedding matrix
+        d_embeddings = tf.get_variable('d_emb', shape=[vocab_size, dis_emb_dim],
+                                       initializer=create_linear_initializer(vocab_size))
+        input_x_re = tf.reshape(x_onehot, [-1, vocab_size], name="input_reshaping")
+        # Multiply each input for its embedding matrix
+        emb_x_re = tf.matmul(input_x_re, d_embeddings, name="input_x_embeddings")
+        emb_x = tf.reshape(emb_x_re, [batch_size, seq_len, dis_emb_dim],
+                           name="reshape_back")  # batch_size x seq_len x dis_emb_dim
 
-    logits = linear(flatten, output_size=1, use_bias=True, sn=sn, scope='fc_topic')
-    logits = tf.squeeze(logits, -1)  # batch_size
-    logits = tf.sigmoid(logits)
-    return logits
+        emb_x_expanded = tf.expand_dims(emb_x, 2, name="add_fake_dim_for_conv")  # batch_size x seq_len x 1 x emd_dim
+        # convolution
+        out = conv2d(emb_x_expanded, dis_emb_dim * 2, k_h=2, d_h=2, sn=sn, scope='conv1')
+        out = tf.nn.relu(out)
+        out = conv2d(out, dis_emb_dim * 2, k_h=1, d_h=1, sn=sn, scope='conv2')
+        out = tf.nn.relu(out)
+
+        # self-attention
+        out = self_attention(out, dis_emb_dim * 2, sn=sn)
+
+        # convolution
+        out = conv2d(out, dis_emb_dim * 4, k_h=2, d_h=2, sn=sn, scope='conv3')
+        out = tf.nn.relu(out)
+        out = conv2d(out, dis_emb_dim * 4, k_h=1, d_h=1, sn=sn, scope='conv4')
+        out = tf.nn.relu(out)
+
+        # fc
+        out = tf.contrib.layers.flatten(out, scope="flatten_output_layer")
+
+        # topic network
+        emb_topic = tf.matmul(x_topic, d_embeddings, name="x_topic_embeddings")
+        first_topic = linear(emb_topic, output_size=128, use_bias=True, sn=sn, scope='topic_first_linear')
+
+        flatten = tf.concat([out, first_topic], axis=1)
+
+        logits = linear(flatten, output_size=1, use_bias=True, sn=sn, scope='fc_topic')
+        logits = tf.squeeze(logits, -1)  # batch_size
+        self.logits = tf.sigmoid(logits)
 
 
 def topic_discriminator_reuse(x_onehot, x_topic, batch_size, seq_len, vocab_size, dis_emb_dim, num_rep, sn,
