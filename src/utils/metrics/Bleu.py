@@ -58,6 +58,7 @@ class Bleu(Metrics):
         weight = tuple((1. / ngram for _ in range(ngram)))
         json_obj = load_json(self.test_data)
         for i, hypothesis in enumerate(json_obj['sentences']):
+            hypothesis = hypothesis['generated_sentence']
             if i >= self.sample_size:
                 break
             hypothesis = nltk.word_tokenize(hypothesis)

@@ -158,9 +158,9 @@ def real_topic_train_NoDiscr(generator, oracle_loader: RealDataTopicLoader, conf
         progress = tqdm(range(npre_epochs))
         for epoch in progress:
             # pre-training
-            # g_pretrain_loss_np = pre_train_epoch(sess, g_pretrain_op, g_pretrain_loss, x_real, oracle_loader, x_topic)
-            # gen_pretrain_loss_summary.write_summary(g_pretrain_loss_np, epoch)
-            # progress.set_description("Pretrain_loss: {}".format(g_pretrain_loss_np))
+            g_pretrain_loss_np = pre_train_epoch(sess, g_pretrain_op, g_pretrain_loss, x_real, oracle_loader, x_topic)
+            gen_pretrain_loss_summary.write_summary(g_pretrain_loss_np, epoch)
+            progress.set_description("Pretrain_loss: {}".format(g_pretrain_loss_np))
 
             # Test
             ntest_pre = 40
