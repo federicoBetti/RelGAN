@@ -128,10 +128,11 @@ def generate_amazon(sess, gen_x, batch_size, generated_num, oracle_loader=None, 
 
 
 def init_sess():
+    config = tf.ConfigProto()
     n_cpus = 2
     config = tf.ConfigProto(device_count={"CPU": n_cpus},
                             inter_op_parallelism_threads=n_cpus,
-                            intra_op_parallelism_threads=2,
+                            intra_op_parallelism_threads=1,
                             )
     config.gpu_options.allow_growth = True
     sess = tf.Session(config=config)
@@ -144,7 +145,7 @@ def pre_train_epoch(sess, g_pretrain_op, g_pretrain_loss, x_real, data_loader, x
     supervised_g_losses = []
     data_loader.reset_pointer()
 
-    for it in range(data_loader.num_batch):
+    for it in tqdm(range(data_loader.num_batch)):
         if x_topic is not None:
             text_batch, topic_batch = data_loader.next_batch(only_text=False)
             _, g_loss = sess.run([g_pretrain_op, g_pretrain_loss], feed_dict={x_real: text_batch, x_topic: topic_batch})

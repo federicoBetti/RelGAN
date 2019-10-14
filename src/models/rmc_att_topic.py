@@ -157,13 +157,13 @@ class generator:
 
         for it in tqdm(range(oracle_loader.num_batch)):
             text_batch, topic_batch = oracle_loader.next_batch(only_text=False)
-            _, g_loss = sess.run([kwargs['g_pretrain_op'], self.pretrain_loss],
+            _, g_loss = sess.run([self.g_pretrain_op, self.pretrain_loss],
                                  feed_dict={self.x_real: text_batch, self.x_topic: topic_batch})
             supervised_g_losses.append(g_loss)
 
         return np.mean(supervised_g_losses)
 
-    def generate_samples_topic(self, sess, generated_num, oracle_loader):
+    def generate_samples_topic(self, sess, oracle_loader, generated_num):
         generated_samples = []
         generated_samples_lambda = []
         sentence_generated_from = []
@@ -173,7 +173,8 @@ class generator:
         for ii in range(max_gen):
             if self.no_topic:
                 gen_x_res = sess.run(self.gen_x)
-
+                text_batch = oracle_loader.random_batch(only_text=True)
+                sentence_generated_from.extend(text_batch)
             else:
                 text_batch, topic_batch = oracle_loader.random_batch(only_text=False)
                 feed = {self.x_topic: topic_batch}
@@ -192,40 +193,34 @@ class generator:
         codes = ""
         codes_with_lambda = ""
         json_file = {'sentences': []}
-        if self.no_topic:
-            for sent in generated_samples:
+        if self.no_topic or self.topic_in_memory:
+            for sent, start_sentence in zip(generated_samples, sentence_generated_from):
                 json_file['sentences'].append({
+                    'real_starting': get_sentence_from_index(start_sentence, oracle_loader.model_index_word_dict),
                     'generated_sentence': get_sentence_from_index(sent, oracle_loader.model_index_word_dict)
                 })
         else:
-            if self.topic_in_memory:
-                for sent, start_sentence in zip(generated_samples, sentence_generated_from):
-                    json_file['sentences'].append({
-                        'real_starting': get_sentence_from_index(start_sentence, oracle_loader.model_index_word_dict),
-                        'generated_sentence': get_sentence_from_index(sent, oracle_loader.model_index_word_dict)
+            for sent, lambda_value_sent, no_lambda_words, start_sentence in zip(generated_samples,
+                                                                                generated_samples_lambda,
+                                                                                generated_samples_no_lambda_words,
+                                                                                sentence_generated_from):
+                sent_json = []
+                for x, y, z in zip(sent, lambda_value_sent, no_lambda_words):
+                    sent_json.append({
+                        'word_code': int(x),
+                        'word_text': '' if x == len(oracle_loader.model_index_word_dict) else
+                        oracle_loader.model_index_word_dict[str(x)],
+                        'lambda': float(y),
+                        'no_lambda_word': '' if z == len(oracle_loader.model_index_word_dict) else
+                        oracle_loader.model_index_word_dict[str(z)]
                     })
-            else:
-                for sent, lambda_value_sent, no_lambda_words, start_sentence in zip(generated_samples,
-                                                                                    generated_samples_lambda,
-                                                                                    generated_samples_no_lambda_words,
-                                                                                    sentence_generated_from):
-                    sent_json = []
-                    for x, y, z in zip(sent, lambda_value_sent, no_lambda_words):
-                        sent_json.append({
-                            'word_code': int(x),
-                            'word_text': '' if x == len(oracle_loader.model_index_word_dict) else
-                            oracle_loader.model_index_word_dict[str(x)],
-                            'lambda': float(y),
-                            'no_lambda_word': '' if z == len(oracle_loader.model_index_word_dict) else
-                            oracle_loader.model_index_word_dict[str(z)]
-                        })
-                        codes_with_lambda += "{} ({:.4f};{}) ".format(x, y, z)
-                        codes += "{} ".format(x)
-                    json_file['sentences'].append({
-                        'generated': sent_json,
-                        'real_starting': get_sentence_from_index(start_sentence, oracle_loader.model_index_word_dict),
-                        'generated_sentence': get_sentence_from_index(sent, oracle_loader.model_index_word_dict)
-                    })
+                    codes_with_lambda += "{} ({:.4f};{}) ".format(x, y, z)
+                    codes += "{} ".format(x)
+                json_file['sentences'].append({
+                    'generated': sent_json,
+                    'real_starting': get_sentence_from_index(start_sentence, oracle_loader.model_index_word_dict),
+                    'generated_sentence': get_sentence_from_index(sent, oracle_loader.model_index_word_dict)
+                })
 
         return json_file
 
@@ -248,7 +243,8 @@ class generator:
                             word_with_no_lambda.append(
                                 "{} ({}, {})".format(generated_word, letter['lambda'], real_word))
                     word_with_no_lambda = " ".join(word_with_no_lambda)
-                    all_sentences.append("{} ---- {} ---- {}".format(s['generated_sentence'], word_with_no_lambda, s['real_starting']))
+                    all_sentences.append(
+                        "{} ---- {} ---- {}".format(s['generated_sentence'], word_with_no_lambda, s['real_starting']))
         return all_sentences
 
 

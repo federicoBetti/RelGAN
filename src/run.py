@@ -13,7 +13,7 @@ from utils.static_file_manage import load_json
 from utils.text_process import text_precess
 from utils.utils import pp, str2bool
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+# os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 # con la cpu ho un epoca di pretrain intorno a 4.5 sec
 # con la GPU circa 2.3 secondi, la metà
 
@@ -221,11 +221,14 @@ def main():
                                                          vocab_size=vocab_size, dis_emb_dim=args.dis_emb_dim,
                                                          num_rep=args.num_rep, sn=args.sn)
 
-                topic_discriminator = models.get_topic_discriminator(args.topic_architecture,
-                                                                     batch_size=args.batch_size,
-                                                                     seq_len=seq_len, vocab_size=vocab_size,
-                                                                     dis_emb_dim=args.dis_emb_dim, num_rep=args.num_rep,
-                                                                     sn=args.sn, discriminator=discriminator)
+                if not args.no_topic:
+                    topic_discriminator = models.get_topic_discriminator(args.topic_architecture,
+                                                                         batch_size=args.batch_size,
+                                                                         seq_len=seq_len, vocab_size=vocab_size,
+                                                                         dis_emb_dim=args.dis_emb_dim, num_rep=args.num_rep,
+                                                                         sn=args.sn, discriminator=discriminator)
+                else:
+                    topic_discriminator = None
                 from real.real_gan.real_topic_train import real_topic_train
                 real_topic_train(generator, discriminator, topic_discriminator, oracle_loader, config, args)
             else:

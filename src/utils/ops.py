@@ -55,15 +55,15 @@ def linear(input_, output_size, use_bias=False, sn=False, scope=None):
     # Now the computation.
     with tf.variable_scope(scope or "Linear"):
         W = get_variable("Matrix", shape=[output_size, input_size],
-                            initializer=create_linear_initializer(input_size, input_.dtype),
-                            dtype=input_.dtype)
+                         initializer=create_linear_initializer(input_size, input_.dtype),
+                         dtype=input_.dtype)
         if sn:
             W = spectral_norm(W)
         output_ = tf.matmul(input_, tf.transpose(W))
         if use_bias:
             bias_term = get_variable("Bias", [output_size],
-                                        initializer=create_bias_initializer(input_.dtype),
-                                        dtype=input_.dtype)
+                                     initializer=create_bias_initializer(input_.dtype),
+                                     dtype=input_.dtype)
             output_ += bias_term
 
     return output_
@@ -128,7 +128,7 @@ def conv2d(input_, out_nums, k_h=2, k_w=1, d_h=2, d_w=1, stddev=None, sn=False, 
         stddev = math.sqrt(2. / (k_h * k_w * in_nums))
     with tf.variable_scope(scope or "Conv2d"):
         W = get_variable("Matrix", shape=[k_h, k_w, in_nums, out_nums],
-                            initializer=tf.truncated_normal_initializer(stddev=stddev))
+                         initializer=tf.truncated_normal_initializer(stddev=stddev))
         if sn:
             W = spectral_norm(W)
         b = get_variable("Bias", shape=[out_nums], initializer=tf.zeros_initializer)
@@ -212,12 +212,13 @@ def create_output_unit(output_size, vocab_size):
 def create_topic_embedding_unit(input_size, output_size):
     # output_size = self.gen_mem.output_size.as_list()[0]
     Wo = get_variable('W_topic_embedding', shape=[input_size, output_size],
-                         initializer=create_linear_initializer(input_size))
+                      initializer=create_linear_initializer(input_size))
     bo = get_variable('b_topic_embedding', shape=[output_size], initializer=create_bias_initializer())
 
     def unit(hidden_mem_o):
-        with tf.variable_scope("output_unit_topic_embedding"):
+        with tf.variable_scope("output_unit_topic_embedding", reuse=tf.AUTO_REUSE):
             logits = tf.matmul(hidden_mem_o, Wo) + bo
+            logits = attend_over_vector(tf.expand_dims(logits, 1))
         return logits
 
     return unit
@@ -232,7 +233,7 @@ def create_output_unit_lambda(output_size, input_size, additive_scope="_lambda",
     :return:
     """
     Wo = get_variable('W' + additive_scope, shape=[input_size, output_size],
-                         initializer=create_linear_initializer(input_size))
+                      initializer=create_linear_initializer(input_size))
     bo = get_variable('b' + additive_scope, shape=[output_size], initializer=create_bias_initializer())
 
     def unit(hidden_mem_o):
@@ -244,11 +245,86 @@ def create_output_unit_lambda(output_size, input_size, additive_scope="_lambda",
     return unit
 
 
+def multihead_attention(memory):
+    """Perform multi-head attention from 'Attention is All You Need'.
+
+    Implementation of the attention mechanism from
+    https://arxiv.org/abs/1706.03762.
+
+    Args:
+      memory: Memory tensor to perform attention on, with size [B, N, H*V].
+
+    Returns:
+      new_memory: New memory tensor.
+    """
+
+    head_size = 32
+    key_size = head_size
+    num_heads = 1
+    mem_size = memory.shape[-1]
+    qkv_size = 2 * key_size + head_size
+    total_size = qkv_size * num_heads  # Denote as F.
+    batch_size = memory.get_shape().as_list()[0]  # Denote as B
+    memory_flattened = tf.reshape(memory, [-1, mem_size])  # [B * N, H * V]
+    qkv = linear(memory_flattened, total_size, use_bias=False, scope='lin_qkv')  # [B*N, F]
+    qkv = tf.reshape(qkv, [batch_size, -1, total_size])  # [B, N, F]
+    qkv = tf.contrib.layers.layer_norm(qkv, trainable=True)  # [B, N, F]
+
+    # [B, N, F] -> [B, N, H, F/H]
+    qkv_reshape = tf.reshape(qkv, [batch_size, -1, num_heads, qkv_size])
+
+    # [B, N, H, F/H] -> [B, H, N, F/H]
+    qkv_transpose = tf.transpose(qkv_reshape, [0, 2, 1, 3])
+    q, k, v = tf.split(qkv_transpose, [key_size, key_size, head_size], -1)
+
+    q *= qkv_size ** -0.5
+    dot_product = tf.matmul(q, k, transpose_b=True)  # [B, H, N, N]
+    weights = tf.nn.softmax(dot_product)
+
+    output = tf.matmul(weights, v)  # [B, H, N, V]
+
+    # [B, H, N, V] -> [B, N, H, V]
+    output_transpose = tf.transpose(output, [0, 2, 1, 3])
+
+    # [B, N, H, V] -> [B, N, H * V]
+    new_memory = tf.reshape(output_transpose, [batch_size, -1, mem_size])
+    return new_memory
+
+
+def attend_over_vector(vector):
+    """Perform multiheaded attention over `memory`.
+
+    Args:
+      vector: input vector [batch_size, 1, dim] 
+
+    Returns:
+      The attended-over vector.
+    """
+
+    # Memoria 'modificata'
+    mem_size = vector.shape[-1]
+    attended_vector = multihead_attention(vector)  # [B, N, H * V]
+
+    # Add a skip connection to the multiheaded attention's input.
+    vector = tf.contrib.layers.layer_norm(vector + attended_vector, trainable=True)  # [B, N, H * V]
+
+    # Add a mlp map
+    batch_size = vector.get_shape().as_list()[0]
+
+    memory_mlp = tf.reshape(vector, [-1, mem_size])  # [B * N, H * V]
+    memory_mlp = mlp(memory_mlp, [mem_size] * 1)  # [B * N, H * V]
+    memory_mlp = tf.reshape(memory_mlp, [batch_size, -1, mem_size])
+
+    # Add a skip connection to the memory_mlp's input.
+    vector = tf.contrib.layers.layer_norm(vector + memory_mlp, trainable=True)  # [B, N, H * V]
+
+    return vector
+
+
 def create_1D_self_attention_unit(scope, output_dim):
     self.W1 = tf.keras.layers.Dense(units)
     self.W2 = tf.keras.layers.Dense(units)
     self.V = tf.keras.layers.Dense(1)
-
 
     def unit(query, values):
         # hidden shape == (batch_size, hidden size)

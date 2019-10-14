@@ -50,6 +50,7 @@ def real_train(generator, discriminator, oracle_loader, config, args):
     if dataset == 'image_coco':
         test_file = os.path.join(data_dir, 'testdata/test_coco.txt')
     elif dataset == 'emnlp_news':
+        data_file = os.path.join(data_dir, '{}_train.txt'.format(dataset))
         test_file = os.path.join(data_dir, 'testdata/test_emnlp.txt')
     else:
         raise NotImplementedError('Unknown dataset!')
@@ -121,21 +122,16 @@ def real_train(generator, discriminator, oracle_loader, config, args):
 
     # ------------- initial the graph --------------
     with init_sess() as sess:
+        print("Inizia sessione")
         restore_model = False
-        if restore_model:
-            try:
-                # Restore variables from disk.
-                saver.restore(sess, "/tmp/model.ckpt")
-                print("Model restored.")
-            except NotFoundError:
-                a = 1  # to continue
         log = open(csv_file, 'w')
-        # file_suffix = "date: {}, normal RelGAN, pretrain epochs: {}, adv epochs: {}".format(datetime.datetime.now(),
-        #                                                                                     npre_epochs, nadv_steps)
+
         sum_writer = tf.summary.FileWriter(os.path.join(log_dir, 'summary'), sess.graph)
 
         # generate oracle data and create batches
         index_word_dict = get_oracle_file(data_file, oracle_file, seq_len)
+
+        print("Inizio creo batch")
         oracle_loader.create_batches(oracle_file)
 
         metrics = get_metrics(config, oracle_loader, test_file, gen_text_file, g_pretrain_loss, x_real, sess)
@@ -180,12 +176,6 @@ def real_train(generator, discriminator, oracle_loader, config, args):
                 log.write(msg)
                 log.write('\n')
 
-                # Save the variables to disk.
-                # model_path = os.path.join("tmp", "model.ckpt")
-                # save_path = saver.save(sess, model_path)
-                # print("Model saved in path: %s" % save_path)
-                # send_mail(files=[os.path.join("tmp", f) for f in os.listdir("tmp")],
-                #           text="Model saved at epoch {} of pretrain, time: {}".format(epoch, time.time()))
 
         print('Start adversarial training...')
         progress = tqdm(range(nadv_steps))

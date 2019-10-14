@@ -78,10 +78,6 @@ def real_topic_train_NoDiscr(generator, oracle_loader: RealDataTopicLoader, conf
                                                         temperature=temperature,
                                                         x_topic=x_topic)
 
-    # Global step
-    global_step = tf.Variable(0, trainable=False)
-    global_step_op = global_step.assign_add(1)
-
     # A function to calculate the gradients and get training operations
     def get_train_ops(config, g_pretrain_loss):
         gpre_lr = config['gpre_lr']
@@ -99,22 +95,6 @@ def real_topic_train_NoDiscr(generator, oracle_loader: RealDataTopicLoader, conf
 
     # Train ops
     g_pretrain_op = get_train_ops(config, g_pretrain_loss)
-
-    # Record wall clock time
-    time_diff = placeholder(tf.float32)
-    Wall_clock_time = tf.Variable(0., trainable=False)
-    update_Wall_op = Wall_clock_time.assign_add(time_diff)
-
-    # Temperature placeholder
-    temp_var = placeholder(tf.float32)
-    update_temperature_op = temperature.assign(temp_var)
-
-    # Loss summaries
-    loss_summaries = [
-        tf.summary.scalar('adv_loss/Wall_clock_time', Wall_clock_time),
-        tf.summary.scalar('adv_loss/temperature', temperature),
-    ]
-    loss_summary_op = tf.summary.merge(loss_summaries)
 
     # Metric Summaries
     metrics_pl, metric_summary_op = get_metric_summary_op(config)
@@ -196,8 +176,8 @@ def real_topic_train_NoDiscr(generator, oracle_loader: RealDataTopicLoader, conf
 
                 gc.collect()
 
-            gc.collect()
-            sum_writer.close()
+        gc.collect()
+        sum_writer.close()
 
         save_model = True
         if save_model:
