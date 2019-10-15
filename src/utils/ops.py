@@ -218,7 +218,7 @@ def create_topic_embedding_unit(input_size, output_size):
     def unit(hidden_mem_o):
         with tf.variable_scope("output_unit_topic_embedding", reuse=tf.AUTO_REUSE):
             logits = tf.matmul(hidden_mem_o, Wo) + bo
-            logits = attend_over_vector(tf.expand_dims(logits, 1))
+            logits = tf.squeeze(attend_over_vector(tf.expand_dims(logits, 1)))
         return logits
 
     return unit
@@ -257,38 +257,38 @@ def multihead_attention(memory):
     Returns:
       new_memory: New memory tensor.
     """
+    with tf.variable_scope("multihead_attention_vector"):
+        head_size = 32
+        key_size = head_size
+        num_heads = 1
+        mem_size = memory.shape[-1]
+        qkv_size = 2 * key_size + head_size
+        total_size = qkv_size * num_heads  # Denote as F.
+        batch_size = memory.get_shape().as_list()[0]  # Denote as B
+        memory_flattened = tf.reshape(memory, [-1, mem_size])  # [B * N, H * V]
+        qkv = linear(memory_flattened, total_size, use_bias=False, scope='lin_qkv')  # [B*N, F]
+        qkv = tf.reshape(qkv, [batch_size, -1, total_size])  # [B, N, F]
+        qkv = tf.contrib.layers.layer_norm(qkv, trainable=True)  # [B, N, F]
 
-    head_size = 32
-    key_size = head_size
-    num_heads = 1
-    mem_size = memory.shape[-1]
-    qkv_size = 2 * key_size + head_size
-    total_size = qkv_size * num_heads  # Denote as F.
-    batch_size = memory.get_shape().as_list()[0]  # Denote as B
-    memory_flattened = tf.reshape(memory, [-1, mem_size])  # [B * N, H * V]
-    qkv = linear(memory_flattened, total_size, use_bias=False, scope='lin_qkv')  # [B*N, F]
-    qkv = tf.reshape(qkv, [batch_size, -1, total_size])  # [B, N, F]
-    qkv = tf.contrib.layers.layer_norm(qkv, trainable=True)  # [B, N, F]
+        # [B, N, F] -> [B, N, H, F/H]
+        qkv_reshape = tf.reshape(qkv, [batch_size, -1, num_heads, qkv_size])
 
-    # [B, N, F] -> [B, N, H, F/H]
-    qkv_reshape = tf.reshape(qkv, [batch_size, -1, num_heads, qkv_size])
+        # [B, N, H, F/H] -> [B, H, N, F/H]
+        qkv_transpose = tf.transpose(qkv_reshape, [0, 2, 1, 3])
+        q, k, v = tf.split(qkv_transpose, [key_size, key_size, head_size], -1)
 
-    # [B, N, H, F/H] -> [B, H, N, F/H]
-    qkv_transpose = tf.transpose(qkv_reshape, [0, 2, 1, 3])
-    q, k, v = tf.split(qkv_transpose, [key_size, key_size, head_size], -1)
+        q *= qkv_size ** -0.5
+        dot_product = tf.matmul(q, k, transpose_b=True)  # [B, H, N, N]
+        weights = tf.nn.softmax(dot_product)
 
-    q *= qkv_size ** -0.5
-    dot_product = tf.matmul(q, k, transpose_b=True)  # [B, H, N, N]
-    weights = tf.nn.softmax(dot_product)
+        output = tf.matmul(weights, v)  # [B, H, N, V]
 
-    output = tf.matmul(weights, v)  # [B, H, N, V]
+        # [B, H, N, V] -> [B, N, H, V]
+        output_transpose = tf.transpose(output, [0, 2, 1, 3])
 
-    # [B, H, N, V] -> [B, N, H, V]
-    output_transpose = tf.transpose(output, [0, 2, 1, 3])
-
-    # [B, N, H, V] -> [B, N, H * V]
-    new_memory = tf.reshape(output_transpose, [batch_size, -1, mem_size])
-    return new_memory
+        # [B, N, H, V] -> [B, N, H * V]
+        new_memory = tf.reshape(output_transpose, [batch_size, -1, mem_size])
+        return new_memory
 
 
 def attend_over_vector(vector):
@@ -304,6 +304,7 @@ def attend_over_vector(vector):
     # Memoria 'modificata'
     mem_size = vector.shape[-1]
     attended_vector = multihead_attention(vector)  # [B, N, H * V]
+    return attended_vector
 
     # Add a skip connection to the multiheaded attention's input.
     vector = tf.contrib.layers.layer_norm(vector + attended_vector, trainable=True)  # [B, N, H * V]
