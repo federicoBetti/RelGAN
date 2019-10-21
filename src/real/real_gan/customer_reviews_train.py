@@ -165,7 +165,7 @@ def customer_reviews_train(generator: ReviewGenerator, discriminator_positive: R
             return metrics
 
         metrics = get_metrics()
-        generator_obj.generated_num = num_sentences
+        generator_obj.generated_num = 200#num_sentences
 
         gc.collect()
         # Check if there is a pretrained generator saved
@@ -189,7 +189,7 @@ def customer_reviews_train(generator: ReviewGenerator, discriminator_positive: R
                 progress.set_description(msg)
 
                 # Test
-                ntest_pre = 20
+                ntest_pre = 30
                 if np.mod(epoch, ntest_pre) == 0 or epoch == npre_epochs - 1:
                     json_object = generator_obj.generate_json(oracle_loader, sess)
                     write_json(json_file, json_object)
@@ -277,13 +277,12 @@ def customer_reviews_train(generator: ReviewGenerator, discriminator_positive: R
 
             # Test
             # print("N_iter: {}, test every {} epochs".format(niter, config['ntest']))
-            if np.mod(adv_epoch, 20) == 0 or adv_epoch == nadv_steps - 1:
+            if np.mod(adv_epoch, 100) == 0 or adv_epoch == nadv_steps - 1:
                 json_object = generator_obj.generate_json(oracle_loader, sess)
                 write_json(json_file, json_object)
 
                 # take sentences from saved files
                 sent = take_sentences_json(json_object)
-                print(sent[:5])
                 gen_sentences_summary.write_summary(sent, niter + config['npre_epochs'])
 
                 # write summaries

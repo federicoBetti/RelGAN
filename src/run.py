@@ -153,7 +153,7 @@ def main():
         else:
             raise NotImplementedError('Unknown dataset!')
 
-        if args.dataset == 'emnlp_news':
+        if args.dataset == 'emnlp_news' and False:
             data_file, lda_file = create_subsample_data_file(data_file)
         else:
             lda_file = data_file

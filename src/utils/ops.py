@@ -218,7 +218,7 @@ def create_topic_embedding_unit(input_size, output_size):
     def unit(hidden_mem_o):
         with tf.variable_scope("output_unit_topic_embedding", reuse=tf.AUTO_REUSE):
             logits = tf.matmul(hidden_mem_o, Wo) + bo
-            logits = tf.squeeze(attend_over_vector(tf.expand_dims(logits, 1)))
+            # logits = tf.squeeze(attend_over_vector(tf.expand_dims(logits, 1)))
         return logits
 
     return unit

@@ -1,3 +1,5 @@
+from tqdm import tqdm
+
 from utils.metrics.Metrics import Metrics
 from utils.static_file_manage import load_json
 import numpy as np
@@ -14,9 +16,11 @@ class JaccardSimilarity(Metrics):
         return self.computeDistanceJaccard()
 
     def computeDistanceJaccard(self):
-        generated_sentences = self.get_sentences()
         jaccard_values = []
-        for generated_sentence in generated_sentences:
+
+        data = load_json(self.json_file)
+        for el in data['sentences']:
+            generated_sentence = el['generated_sentence']
             values = []
             for real_sent in self.all_sentences:
                 values.append(distJaccard(generated_sentence, real_sent))
@@ -68,4 +72,8 @@ class JaccardDiversity(Metrics):
 def distJaccard(str1, str2):
     str1 = set(str1.split())
     str2 = set(str2.split())
-    return float(len(str1 & str2)) / len(str1 | str2)
+    try:
+        return float(len(str1 & str2)) / len(str1 | str2)
+    except ZeroDivisionError:
+        print("Zero divsion found")
+        return float(len(str1 & str2)) / 1000
