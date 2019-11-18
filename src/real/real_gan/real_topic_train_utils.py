@@ -3,7 +3,7 @@ import json
 import tensorflow as tf
 from utils.metrics.Bleu import Bleu
 from utils.metrics.DocEmbSim import DocEmbSim
-from utils.metrics.KLDivergence import KL_divergence
+from utils.metrics.KLDivergence import KL_divergence, EarthMover
 from utils.metrics.Nll import Nll, NllTopic
 from utils.metrics.SelfBleu import SelfBleu
 from utils.ops import gradient_penalty
@@ -194,6 +194,7 @@ def get_losses(generator, d_real, d_fake, d_topic_real_pos, d_topic_real_neg, d_
 
             return losses
 
+
 # A function to calculate the gradients and get training operations
 def get_train_ops(config, g_pretrain_loss, g_loss, d_loss, d_topic_loss,
                   log_pg, temperature, global_step):
@@ -266,7 +267,7 @@ def get_train_ops(config, g_pretrain_loss, g_loss, d_loss, d_topic_loss,
     d_train_op = d_optimizer.apply_gradients(zip(d_grads, d_vars))
 
     # gradient clipping
-    if d_topic_loss is not None:
+    if d_topic_loss is not None and len(d_topic_vars) > 0:
         d_topic_grads, _ = tf.clip_by_global_norm(
             tf.gradients(d_topic_loss, d_topic_vars, name="gradients_d_topic_adv"),
             grad_clip, name="d_topic_adv_clipping")
@@ -288,16 +289,19 @@ def get_metrics(config, oracle_loader, test_file, gen_file, g_pretrain_loss, x_r
         doc_embsim = DocEmbSim(test_file, gen_file, config['vocab_size'], name='doc_embsim')
         metrics.append(doc_embsim)
     if config['bleu']:
-        for i in [2, 4]: #range(2, 6):
+        for i in [2, 4]:  # range(2, 6):
             bleu = Bleu(test_text=json_file, real_text=test_file, gram=i, name='bleu' + str(i))
             metrics.append(bleu)
     if config['selfbleu']:
-        for i in range(2, 6):
-            selfbleu = SelfBleu(test_text=gen_file, gram=i, name='selfbleu' + str(i))
+        for i in [4]:
+            selfbleu = SelfBleu(test_text=json_file, gram=i, name='selfbleu' + str(i))
             metrics.append(selfbleu)
     if config['KL']:
         KL_div = KL_divergence(oracle_loader, json_file, name='KL_divergence')
         metrics.append(KL_div)
+    if config['earth_mover']:
+        EM_div = EarthMover(oracle_loader, json_file, name='Earth_Mover_Distance')
+        metrics.append(EM_div)
 
     return metrics
 
@@ -318,7 +322,7 @@ def get_metric_summary_op(config):
         metrics_sum.append(tf.summary.scalar('metrics/doc_embsim', doc_embsim))
 
     if config['bleu']:
-        for i in [2, 4]: #range(2, 6):
+        for i in [2, 4]:  # range(2, 6):
             temp_pl = tf.placeholder(tf.float32, name='bleu{}'.format(i))
             metrics_pl.append(temp_pl)
             metrics_sum.append(tf.summary.scalar('metrics/bleu{}'.format(i), temp_pl))
@@ -336,7 +340,7 @@ def get_metric_summary_op(config):
             metrics_sum.append(tf.summary.scalar('metrics/BleuAmazon_validation_{}'.format(i), temp_pl))
 
     if config['selfbleu']:
-        for i in range(2, 6):
+        for i in [4]:
             temp_pl = tf.placeholder(tf.float32, name='selfbleu{}'.format(i))
             metrics_pl.append(temp_pl)
             metrics_sum.append(tf.summary.scalar('metrics/selfbleu{}'.format(i), temp_pl))
@@ -345,6 +349,11 @@ def get_metric_summary_op(config):
         KL_placeholder = tf.placeholder(tf.float32)
         metrics_pl.append(KL_placeholder)
         metrics_sum.append(tf.summary.scalar('metrics/KL_topic_divergence', KL_placeholder))
+
+    if config['earth_mover']:
+        earth_placeholder = tf.placeholder(tf.float32)
+        metrics_pl.append(earth_placeholder)
+        metrics_sum.append(tf.summary.scalar('metrics/earth_mover_distance', earth_placeholder))
 
     if config['jaccard_similarity']:
         Jaccard_placeholder = tf.placeholder(tf.float32)

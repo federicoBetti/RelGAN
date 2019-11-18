@@ -29,6 +29,7 @@ class generator:
         self.temperature = temperature
         self.topic_in_memory = kwargs["TopicInMemory"]
         self.no_topic = kwargs["NoTopic"]
+        self.gen_emb_dim = gen_emb_dim
 
         self.g_embeddings = tf.get_variable('g_emb', shape=[vocab_size, gen_emb_dim],
                                             initializer=create_linear_initializer(vocab_size))
@@ -37,6 +38,7 @@ class generator:
         self.g_topic_embedding = create_topic_embedding_unit(vocab_size, gen_emb_dim)
         self.g_output_unit_lambda = create_output_unit_lambda(output_size=1, input_size=self.output_memory_size,
                                                               additive_scope="_lambda", min_value=0.01)
+        self.first_embedding = self.first_embedding_function
 
         # initial states
         self.init_states = self.gen_mem.initial_state(batch_size)
@@ -88,7 +90,7 @@ class generator:
         _, _, _, gen_o, gen_x, gen_x_onehot_adv, topicness_values, gen_x_no_lambda = control_flow_ops.while_loop(
             cond=lambda i, _1, _2, _3, _4, _5, _6, _7: i < self.seq_len,
             body=_gen_recurrence,
-            loop_vars=(tf.constant(0, dtype=tf.int32), tf.nn.embedding_lookup(self.g_embeddings, self.start_tokens),
+            loop_vars=(tf.constant(0, dtype=tf.int32), self.first_embedding(),
                        self.init_states, gen_o, gen_x, gen_x_onehot_adv, topicness_values, gen_x_no_lambda),
             name="while_adv_recurrence")
 
@@ -135,7 +137,7 @@ class generator:
         _, _, _, g_predictions = control_flow_ops.while_loop(
             cond=lambda i, _1, _2, _3: i < self.seq_len,
             body=_pretrain_recurrence,
-            loop_vars=(tf.constant(0, dtype=tf.int32), tf.nn.embedding_lookup(self.g_embeddings, self.start_tokens),
+            loop_vars=(tf.constant(0, dtype=tf.int32), self.first_embedding(),
                        self.init_states, g_predictions),
             name="while_pretrain")
 
@@ -237,7 +239,7 @@ class generator:
                     all_sentences.append("{} --- {}".format(str(s['generated_sentence']), s['real_starting']))
                 else:
                     word_with_no_lambda = []
-                    for letter in sent['generated']:
+                    for letter in s['generated']:
                         generated_word, real_word = letter['word_text'], letter['no_lambda_word']
                         if generated_word:
                             word_with_no_lambda.append(
@@ -246,6 +248,10 @@ class generator:
                     all_sentences.append(
                         "{} ---- {} ---- {}".format(s['generated_sentence'], word_with_no_lambda, s['real_starting']))
         return all_sentences
+
+    def first_embedding_function(self):
+        return tf.nn.embedding_lookup(self.g_embeddings, self.start_tokens)
+        return tf.random.uniform([self.batch_size, self.gen_emb_dim])
 
 
 class discriminator:
@@ -285,6 +291,8 @@ class discriminator:
 class topic_discriminator:
     def __init__(self, x_onehot, x_topic, batch_size, seq_len, vocab_size, dis_emb_dim, num_rep, sn, discriminator):
         self.x_onehot = x_onehot
+        # self.logits = tf.ones(batch_size) # questo l'ho messo per annullare l'effetto del topic discriminator
+        # return
         # Compute its embedding matrix
         d_embeddings = tf.get_variable('d_emb', shape=[vocab_size, dis_emb_dim],
                                        initializer=create_linear_initializer(vocab_size))

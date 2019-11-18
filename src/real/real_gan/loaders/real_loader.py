@@ -185,6 +185,7 @@ class RealDataTopicLoader(RealDataLoader):
         self.token_stream = self.token_stream[:self.num_batch * self.batch_size]
         self.sentence_topic_array = np.asarray(self.sentence_topic_array)[:self.num_batch * self.batch_size]
 
+        print(self.num_batch, self.batch_size, len(self.sentence_topic_array))
         self.sequence_batches = np.split(np.array(self.token_stream), self.num_batch, axis=0)
         self.topic_batches = np.split(np.array(self.sentence_topic_array), self.num_batch, axis=0)
 

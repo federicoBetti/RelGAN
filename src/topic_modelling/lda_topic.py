@@ -88,7 +88,8 @@ def use_lda(model_name='lda_model.pkl'):
     return lda_train
 
 
-def train_specific_LDA(corpus, num_top, passes, iterations, random_state_lda=3, chunksize=2000, dataset_name="NO") -> LDA:
+def train_specific_LDA(corpus, num_top, passes, iterations, random_state_lda=3, chunksize=2000, dataset_name="NO",
+                       additional_stops=[]) -> LDA:
     '''
     create an LDA model if needed, if it has been already computed and saved, use that one \n
     :param corpus: corpus (plain text)
@@ -102,16 +103,24 @@ def train_specific_LDA(corpus, num_top, passes, iterations, random_state_lda=3, 
     try:
         file_path = resources_path("topic_models",
                                    'lda_model_ntop_{}_iter_{}_pass_{}_chunk_{}_ds_{}.pkl'.format(num_top, iterations,
-                                                                                                   passes, chunksize,
-                                                                                                   dataset_name))
+                                                                                                 passes, chunksize,
+                                                                                                 dataset_name))
         lda = load_pickle(file_path)
         print("Model loaded")
         return lda
     except FileNotFoundError:
         print("No model found")
+    additional_stops = [
+        'get',
+        'one',
+        'two',
+        'u',
+        'even',
+        'since', 'year', 'going', 'make', 'think', 'like', 'say', 'go', 'really', 'percent'
+    ]
     t = time.time()
-    print("Start training a specific LDA model for dataset {} and number of topic {}".format(dataset_name, num_top))
-    stops = set(stopwords.words('english'))
+    print("Start traeining a specific LDA model for dataset {} and number of topic {}".format(dataset_name, num_top))
+    stops = set(stopwords.words('english') + additional_stops)
     tmp = process_texts(corpus, stops)
     dictionary = Dictionary(tmp)
     corpus_bow = [dictionary.doc2bow(i) for i in tmp]
@@ -120,11 +129,12 @@ def train_specific_LDA(corpus, num_top, passes, iterations, random_state_lda=3, 
                          iterations=iterations, random_state=random_state_lda, dtype=np.float32)
     # df = get_perc_sent_topic(lda=lda_train, corpus=corpus_bow, texts=tmp, topic_num=num_top)
     lda = LDA(lda_train=lda_train, corpus_text=corpus, corpus_bow=corpus_bow, stops=stops, topic_num=num_top,
-              dictionary=dictionary)#, perc_topic_dict=df)
+              dictionary=dictionary)  # , perc_topic_dict=df)
 
     file_path = resources_path("topic_models",
                                'lda_model_ntop_{}_iter_{}_pass_{}_chunk_{}_ds_{}.pkl'.format(num_top, iterations,
-                                                                                               passes, chunksize, dataset_name))
+                                                                                             passes, chunksize,
+                                                                                             dataset_name))
     write_pickle(file_path, lda)
 
     print("New model saved in {} sec".format(time.time() - t))

@@ -162,7 +162,13 @@ def real_topic_train(generator_obj, discriminator_obj, topic_discriminator_obj, 
         print("Total paramter number: {}".format(
             np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()])))
         log = open(csv_file, 'w')
-        sum_writer = tf.compat.v1.summary.FileWriter(os.path.join(log_dir, 'summary'), sess.graph)
+
+        now = datetime.datetime.now()
+        additional_text = now.strftime("%Y-%m-%d_%H-%M") + "_" + args.summary_name
+        summary_dir = os.path.join(log_dir, 'summary', additional_text)
+        if not os.path.exists(summary_dir):
+            os.makedirs(summary_dir)
+        sum_writer = tf.compat.v1.summary.FileWriter(os.path.join(summary_dir), sess.graph)
         for custom_summary in custom_summaries:
             custom_summary.set_file_writer(sum_writer, sess)
 
@@ -187,14 +193,14 @@ def real_topic_train(generator_obj, discriminator_obj, topic_discriminator_obj, 
             print("Used saved model for generator pretrain")
         except OSError:
             print('Start pre-training...')
-            progress = tqdm(range(npre_epochs))
+            progress = tqdm(range(npre_epochs), dynamic_ncols=True)
             for epoch in progress:
                 # pre-training
                 g_pretrain_loss_np = generator.pretrain_epoch(sess, oracle_loader)
                 gen_pretrain_loss_summary.write_summary(g_pretrain_loss_np, epoch)
 
                 # Test
-                ntest_pre = 40
+                ntest_pre = 30
                 if np.mod(epoch, ntest_pre) == 0:
                     json_object = generator.generate_samples_topic(sess, oracle_loader, num_sentences)
                     write_json(json_file, json_object)
@@ -204,6 +210,7 @@ def real_topic_train(generator_obj, discriminator_obj, topic_discriminator_obj, 
                     gen_sentences_summary.write_summary(sent, epoch)
 
                     # write summaries
+                    t = time.time()
                     scores = [metric.get_score() for metric in metrics]
                     metrics_summary_str = sess.run(metric_summary_op, feed_dict=dict(zip(metrics_pl, scores)))
                     sum_writer.add_summary(metrics_summary_str, epoch)
@@ -211,8 +218,9 @@ def real_topic_train(generator_obj, discriminator_obj, topic_discriminator_obj, 
                     msg = 'pre_gen_epoch:' + str(epoch) + ', g_pre_loss: %.4f' % g_pretrain_loss_np
                     metric_names = [metric.get_name() for metric in metrics]
                     for (name, score) in zip(metric_names, scores):
+                        score = score * 1e5 if 'Earth' in name else score
                         msg += ', ' + name + ': %.4f' % score
-                    progress.set_description(msg)
+                    progress.set_description(msg + " in {:.2f} sec".format(time.time() - t))
                     log.write(msg)
                     log.write('\n')
 
@@ -278,7 +286,7 @@ def real_topic_train(generator_obj, discriminator_obj, topic_discriminator_obj, 
             progress.set_description('g_loss: %4.4f, d_loss: %4.4f' % (g_loss_np, d_loss_np))
 
             # Test
-            if np.mod(adv_epoch, 600) == 0 or adv_epoch == nadv_steps - 1:
+            if np.mod(adv_epoch, 400) == 0 or adv_epoch == nadv_steps - 1:
                 json_object = generator.generate_samples_topic(sess, oracle_loader, num_sentences)
                 write_json(json_file, json_object)
 
@@ -336,6 +344,7 @@ def get_losses(generator, d_real, d_fake, d_topic_real_pos, d_topic_real_neg, d_
     EPS = 10e-5
     batch_size = config['batch_size']
     gan_type = config['gan_type']  # select the gan loss type
+    topic_loss_weight = config['topic_loss_weight']
     losses = {}
 
     if gan_type == 'standard':  # the non-satuating GAN loss
@@ -361,7 +370,7 @@ def get_losses(generator, d_real, d_fake, d_topic_real_pos, d_topic_real_neg, d_
                     logits=d_topic_fake.logits, labels=tf.zeros_like(d_topic_fake.logits)
                 ), name="d_topic_loss_fake")
 
-                losses['d_loss'] += (losses['d_topic_loss_real_pos'] + losses['d_topic_loss_fake']) / 10
+                losses['d_loss'] += (topic_loss_weight * (losses['d_topic_loss_real_pos'] + losses['d_topic_loss_fake']))
             else:
                 losses['d_topic_loss_real_pos'] = None
                 losses['d_topic_loss_real_neg'] = None
@@ -377,7 +386,7 @@ def get_losses(generator, d_real, d_fake, d_topic_real_pos, d_topic_real_neg, d_
                     logits=d_topic_fake.logits, labels=tf.ones_like(d_topic_fake.logits)
                 ), name="g_topic_loss")
 
-                losses['g_loss'] = losses['g_loss'] + (losses['g_topic_loss'] / 10)
+                losses['g_loss'] = losses['g_loss'] + (topic_loss_weight * losses['g_topic_loss'])
             else:
                 losses['g_topic_loss'] = None
 

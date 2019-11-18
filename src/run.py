@@ -28,6 +28,8 @@ parser.add_argument('--no-topic', type=str2bool, nargs='?',
                     const=True, default=False,
                     help="Use condition on topic.")
 parser.add_argument('--LSTM', default=False, action='store_true', help='If LSTM need to be used')
+parser.add_argument('--summary_name', default='', type=str, help='Name of the summary')
+parser.add_argument('--topic_loss_weight', default=1e-1, type=float, help='Weight of the topic loss')
 
 # Architecture
 parser.add_argument('--gf-dim', default=64, type=int, help='Number of filters to use for generator')
@@ -69,6 +71,7 @@ parser.add_argument('--bleu', default=False, action='store_true', help='if using
 parser.add_argument('--selfbleu', default=False, action='store_true', help='if using selfbleu metric, [2,3,4,5]')
 parser.add_argument('--doc-embsim', default=False, action='store_true', help='if using DocEmbSim metric')
 parser.add_argument('--KL', default=False, action='store_true', help='if using KL divergence metric')
+parser.add_argument('--earth_mover', default=False, action='store_true', help='if using earth mover distance metric')
 parser.add_argument('--jaccard-similarity', default=False, action='store_true', help='if using Jaccard metric')
 parser.add_argument('--jaccard-diversity', default=False, action='store_true', help='if using Jaccard diversity metric')
 parser.add_argument('--bleu-amazon', default=False, action='store_true', help='if using bleu on amazon dataset')
@@ -153,7 +156,7 @@ def main():
         else:
             raise NotImplementedError('Unknown dataset!')
 
-        if args.dataset == 'emnlp_news' and False:
+        if args.dataset == 'emnlp_news':
             data_file, lda_file = create_subsample_data_file(data_file)
         else:
             lda_file = data_file
@@ -163,6 +166,8 @@ def main():
         config['seq_len'] = seq_len
         config['vocab_size'] = vocab_size
         print('seq_len: %d, vocab_size: %d' % (seq_len, vocab_size))
+
+        config['topic_loss_weight'] = args.topic_loss_weight
 
         if config['LSTM']:
             if config['topic']:
@@ -287,11 +292,16 @@ def main():
 
         from real.real_gan.amazon_attribute_train import amazon_attribute_train
         amazon_attribute_train(generator, discriminator, oracle_loader, config, args)
-    elif args.dataset in ['CustomerReviews']:
+    elif args.dataset in ['CustomerReviews', 'imdb']:
         from real.real_gan.loaders.custom_reviews_loader import RealDataCustomerReviewsLoader
         from real.real_gan.customer_reviews_train import customer_reviews_train
         # custom dataset selected
-        data_dir = resources_path(config['data_dir'], "MovieReviews", "cr")
+        if args.dataset == 'CustomerReviews':
+            data_dir = resources_path(config['data_dir'], "MovieReviews", "cr")
+        elif args.dataset == 'imdb':
+            data_dir = resources_path(config['data_dir'], "MovieReviews", 'movie', 'sstb')
+        else:
+            raise ValueError
         sample_dir = resources_path(config['sample_dir'])
         oracle_file = os.path.join(sample_dir, 'oracle_{}.txt'.format(args.dataset))
         train_file = os.path.join(data_dir, 'train.csv')
